@@ -38,10 +38,12 @@ public:
 	/* vector<vector<TerrainAvailability> > getTerrain
 	Returns terrain.
 	*/
-	vector<vector<TerrainAvailability> > getTerrain();
+	vector<vector<TerrainAvailability> > * getTerrainP();
+	//int getTerrain();
 
 private:
 	vector<vector<TerrainAvailability> > _terrain;
+	//int _terrain;	//test
 };
 
 #endif

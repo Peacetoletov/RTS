@@ -17,14 +17,14 @@ Level::Level() {}
 Level::Level(std::string levelName, int rows, int columns, Graphics &graphics) :
 		_levelName(levelName)
 {
+	cout << "Creating level. Position of pathfinder is " << &this->_pathfinder << endl;
+
 	this->_map = Map(rows, columns);
 
-	cout << "Size of vector in level = " << this->_map.getTerrain().size() << endl;
+	//cout << "Size of vector in level = " << this->_map.getTerrain()->size() << endl;
+	//cout << "Size of vector in level = " << this->_map.getTerrain() << endl;
 
-	this->_pathfinder = Pathfinder(&_map);
-
-	cout << "Testing the function from level" << endl;
-	this->_pathfinder.testPointer();
+	this->_pathfinder = Pathfinder(&this->_map);
 
 	//this->loadMap(mapName, graphics);
 }

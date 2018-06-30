@@ -5,6 +5,8 @@
 #include "map.h"
 #include "pathfinder.h"
 
+#include <iostream>
+
 class Graphics;
 struct SDL_Texture;
 
@@ -17,8 +19,9 @@ public:
 	void draw(Graphics &graphics);
 
 	//test purpose only
-	Pathfinder getPathfinder() {
-		return this->_pathfinder;
+	Pathfinder * getPathfinderP() {
+		std::cout << "Returning pointer to the pathfinder. It has position " << &this->_pathfinder << endl;
+		return &this->_pathfinder;
 	};
 	Map getMap() {
 		return this->_map;

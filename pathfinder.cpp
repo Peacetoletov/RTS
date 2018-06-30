@@ -13,24 +13,17 @@ This class deals with pathfinding.
 
 Pathfinder::Pathfinder() {}
 
-Pathfinder::Pathfinder(Map* mapp) {
+Pathfinder::Pathfinder(Map* mapp) :
+	_mapp(mapp)
+{
 
-	/*
-	Už asi tuším, kde je problém
-	Já tady sice vezmu jako argument pointer mapp, ale až tahle funkce (contrusctor) skonèí, tak je ta hodnota zahozena.
-	Stejnì tak je nejspíš zahozena i hodnota, na kterou odkazovala member variable _mapp.
+	//std::cout << "Size of vector in pathfinder's constructor using the original pointer = " << mapp->getTerrain().size() << endl;
 
-	*/
-
-	std::cout << "Size of vector in pathfinder's constructor using the original pointer = " << mapp->getTerrain().size() << endl;
-
-	this->_mapp = mapp;
-
-	std::cout << "Size of vector in pathfinder's constructor using this + original pointer = " << this->_mapp->getTerrain().size() << endl;
+	//std::cout << "Size of vector in pathfinder's constructor using this + original pointer = " << this->_mapp->getTerrain().size() << endl;
 
 	std::cout << "Creating pathfinder" << endl;
 
-	std::cout << "Value of _mapp in constructor = " << _mapp << endl;
+	//std::cout << "Value of _mapp in constructor = " << _mapp << endl;
 
 	testPointer();
 }
@@ -54,7 +47,8 @@ void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
 void Pathfinder::testPointer() {
 	//vector<vector<TerrainAvailability> > terrain = this->_mapp->getTerrain();
 
-	std::cout << "Inside testPointer function; this->_mapp = " << this->_mapp << endl;
+	//std::cout << "Inside testPointer function; this->_mapp = " << this->_mapp << endl;
 
-	std::cout << "Size = " << this->_mapp->getTerrain().size() << std::endl;
+	std::cout << "Size = " << this->_mapp->getTerrainP()->size() << std::endl;
+	//std::cout << "Size = " << this->_mapp->getTerrain() << std::endl;
 }
