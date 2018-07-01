@@ -21,17 +21,10 @@ Map::Map(int rows, int columns) :
 }
 
 void Map::setTerrainTile(int row, int column, TerrainAvailability type) {
-	//_terrain[row][column] = type;		
+	_terrain[row][column] = type;		
 }
 
 
-vector<vector<TerrainAvailability> > * Map::getTerrainP() {
+vector<vector<Map::TerrainAvailability> > * Map::getTerrainP() {
 	return &this->_terrain;
 }
-
-
-/*
-int Map::getTerrain() {
-	return _terrain;
-}
-*/

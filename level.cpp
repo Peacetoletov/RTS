@@ -17,19 +17,15 @@ Level::Level() {}
 Level::Level(std::string levelName, int rows, int columns, Graphics &graphics) :
 		_levelName(levelName)
 {
-	cout << "Creating level. Position of pathfinder is " << &this->_pathfinder << endl;
-
 	this->_map = Map(rows, columns);
-
-	//cout << "Size of vector in level = " << this->_map.getTerrain()->size() << endl;
-	//cout << "Size of vector in level = " << this->_map.getTerrain() << endl;
-
 	this->_pathfinder = Pathfinder(&this->_map);
 
 	//this->loadMap(mapName, graphics);
 }
 
-Level::~Level() {}
+Level::~Level() {
+	cout << "Destryoing level!" << endl;
+}
 
 /*
 void Level::loadMap(std::string mapName, Graphics &graphics) {
@@ -62,3 +58,10 @@ void Level::draw(Graphics &graphics) {
 	
 }
 
+Pathfinder * Level::getPathfinderP() {
+	return &this->_pathfinder;
+}
+
+Map * Level::getMapP() {
+	return &this->_map;
+}

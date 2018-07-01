@@ -10,6 +10,7 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
 
 /* Game class
 This class holds information for the main game loop
@@ -29,42 +30,22 @@ Game::~Game() {}
 Game::Game() {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	this->gameLoop();
+
+	delete this->_level;
 }
 
 void Game::gameLoop() {
 	
 	Graphics graphics;
-	/*
 	Input input;
 	SDL_Event event;
-	*/
-
 	
-	this->_level = Level("level 1", 10, 10, graphics);
-	/*
-	std::cout << "Testing from game.cpp using testPathfinderPointer function" << std::endl;
-	this->_level.testPathfinderPointer();		//this is 0
-	*/
-	this->_level.getPathfinderP()->testPointer();	//this is 0
-	
-	/*
-	JSEM KUREVSKY BLÍZKO K VYŘEŠENÍ TOHODLE BUGU.
-	ZJISTIL JSEM, ŽE KDYŽ TO NEVYJDE, TAK JE TO PROTO, ŽE SE VYTVOŘÍ 2 PATHFINDERY.
-	KDYŽ TO VYJDE, JE TO PROTO, ŽE JE JENOM 1 A NA TEN SE SPRÁVNĚ ODKAZUJE.
-	JEŠTĚ ZBÝVÁ ZJISTIT, PROČ SE VYTVÁŘÍ 2 PATHFINDERY.
-	*/
+	this->_level = new Level("level 1", 10, 10, graphics);
+	cout << "The value of tile [0][0] is " << (*this->_level->getMapP()->getTerrainP())[0][0] << endl;
+	this->_level->getMapP()->setTerrainTile(0, 0, Map::NONE);
+	cout << "The value of tile [0][0] after modifying it is " << (*this->_level->getMapP()->getTerrainP())[0][0] << endl;
 
-	Level testLevel("test", 10, 10, graphics);
-
-	std::cout << "alright this is the one:";
-	testLevel.getPathfinderP()->testPointer();
-
-	//std::cout << "Size from game.cpp = " << testLevel.getMap().getTerrainP()->size() << std::endl;
-	//std::cout << "Size from game.cpp = " << this->_level.getMap().getTerrainP()->size() << std::endl;
-
-	std::cout << "end\n";
 		
-	/*
 	int LAST_UPDATE_TIME = SDL_GetTicks();
 	//Start the game loop
 	while (true) {
@@ -108,7 +89,6 @@ void Game::gameLoop() {
 
 		this->draw(graphics);
 	}
-	*/
 }
 
 
@@ -116,11 +96,11 @@ void Game::draw(Graphics &graphics) {
 	graphics.clear();
 
 	//this->_level.draw(graphics);
-	this->_pathfinder.testDrawTiles(globals::TILE_SIZE, graphics);
+	this->_level->getPathfinderP()->testDrawTiles(globals::TILE_SIZE, graphics);
 
 	graphics.flip();
 }
 
 void Game::update(float elapsedTime) {
-	this->_level.update(elapsedTime);
+	//this->_level.update(elapsedTime);
 }

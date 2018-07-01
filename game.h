@@ -15,8 +15,8 @@ private:
 	void draw(Graphics &graphics);
 	void update(float elapsedTime);
 
-	Level _level;
-	Pathfinder _pathfinder;
+	Level* _level;
+	//Pathfinder _pathfinder;
 };
 
 #endif

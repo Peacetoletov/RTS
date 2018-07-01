@@ -14,6 +14,10 @@ int main(int argc, char *args[]) {
 
 	Game game;
 
+	cout << "Program ended! Type 'kokot' to close the console" << endl;
+	string y;
+	cin >> y;
+
 	return 0;
 }
 
@@ -21,8 +25,6 @@ int main(int argc, char *args[]) {
 /*
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {+
 	Game game;
-
-	//while (true) {};
 
 	return 0;
 }

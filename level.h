@@ -17,19 +17,8 @@ public:
 	~Level();
 	void update(int elapsedTime);
 	void draw(Graphics &graphics);
-
-	//test purpose only
-	Pathfinder * getPathfinderP() {
-		std::cout << "Returning pointer to the pathfinder. It has position " << &this->_pathfinder << endl;
-		return &this->_pathfinder;
-	};
-	Map getMap() {
-		return this->_map;
-	};
-
-	void testPathfinderPointer() {
-		this->_pathfinder.testPointer();
-	};
+	Pathfinder * getPathfinderP();
+	Map * getMapP();
 
 private:
 	std::string _levelName;

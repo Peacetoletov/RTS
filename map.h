@@ -5,22 +5,21 @@
 
 using namespace std;
 
-/* enum TerrainAvailability
-Indicates which units can move to the tile of that type.
-*/
-
-enum TerrainAvailability {
-	ALL,
-	AIR,
-	NONE
-};
-
 /* class Map
 This class contains information about the tiles on the map.
 */
 
 class Map {
 public:
+	/* enum TerrainAvailability
+	Indicates which units can move to the tile of that type.
+	*/
+	enum TerrainAvailability {
+		ALL,
+		AIR,
+		NONE
+	};
+
 	Map();
 
 	/* Map
@@ -40,6 +39,7 @@ public:
 	*/
 	vector<vector<TerrainAvailability> > * getTerrainP();
 	//int getTerrain();
+
 
 private:
 	vector<vector<TerrainAvailability> > _terrain;
