@@ -14,6 +14,12 @@ Map::Map(int rows, int columns) :
 	
 }
 
+Map::~Map() {
+	for (int i = 0; i < this->_objects.size(); i++) {
+		delete this->_objects[i];
+	}
+}
+
 void Map::loadTestMap() {
 	/* Legend 
 	# = ALL
@@ -22,12 +28,26 @@ void Map::loadTestMap() {
 	*/
 
 	vector<string> mapVector;
+	/*
 	mapVector = { 
 		"##y###",
 		"######",
 		"######",
 		"######",
 		"###x##",
+	};
+	*/
+	mapVector = {
+		"########",
+		"########",
+		"####x###",
+		"####x###",
+		"####x###",
+		"####x###",
+		"####x###",
+		"####x###",
+		"####x###",
+		"########",
 	};
 
 	for (int i = 0; i < mapVector.size(); i++) {
@@ -56,8 +76,18 @@ void Map::loadTestMap() {
 	
 }
 
-vector<vector<Map::TerrainAvailability> > * Map::getTerrainP() {
+void Map::loadTestObjects() {
+	//Currently, I'm only creating 1 unit at [1][4]
+	GameObject* unit = new GameObject(1, 4);
+	this->_objects.push_back(unit);
+}
+
+vector<vector<Map::TerrainAvailability> >* Map::getTerrainP() {
 	return &this->_terrain;
+}
+
+vector<GameObject*>* Map::getObjectsP() {
+	return &this->_objects;
 }
 
 void Map::setTerrainTile(int row, int column, TerrainAvailability type) {
