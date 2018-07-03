@@ -2,6 +2,7 @@
 #define MAP_H
 
 #include <vector>
+#include "gameobject.h"
 
 using namespace std;
 
@@ -12,7 +13,7 @@ This class contains information about the tiles on the map.
 class Map {
 public:
 	/* enum TerrainAvailability
-	Indicates which units can move to the tile of that type.
+	Indicates which units can move to a tile of that type.
 	*/
 	enum TerrainAvailability {
 		ALL,
@@ -23,20 +24,34 @@ public:
 	Map();
 
 	/* Map
-	Initializes a map with all tiles available to all units (empty map).
+	Initializes terrain with all tiles available to all units.
 	*/
 	Map(int rows, int columns);
 
-	//TODO: Create a constructor that take an aditional parameter to immediately create all tiles.
+	/* ~Map
+	Deletes instances of GameObject in _objects
+	*/
+	~Map();
 
+	/* void loadTestMap
+	Changes values of _terrain to new values defined in this function.
+	*/
 	void loadTestMap();
 
-	/* vector<vector<TerrainAvailability> > getTerrain
-	Returns terrain.
+	/* void loadTestObjects 
+	Creates instances (defined in this function) of GameObject in _objects to test the pathfinder
 	*/
-	vector<vector<TerrainAvailability> > * getTerrainP();
-	//int getTerrain();
+	void loadTestObjects();
 
+	/* vector<vector<TerrainAvailability> >* getTerrainP
+	Returns a pointer to _terrain.
+	*/
+	vector<vector<TerrainAvailability> >* getTerrainP();
+
+	/* vector<GameObject*>* getObjectsP
+	Returns a pointer to _objects.
+	*/
+	vector<GameObject*>* getObjectsP();
 
 private:
 	/* void setTerrainTile
@@ -44,7 +59,16 @@ private:
 	*/
 	void setTerrainTile(int row, int column, TerrainAvailability type);
 
+	/* _terrain
+	Contains information about each tile and its availability to different types of units.
+	*/
 	vector<vector<TerrainAvailability> > _terrain;
+
+	/* _objects
+	Contains information about units and building on the map.
+	*/
+	vector<GameObject*> _objects;		//Alternatively, this can be divided into 2 separate vectors,
+										//1 containing  units and the other one buildings.
 };
 
 #endif
