@@ -22,9 +22,9 @@ public:
 
 private:
 	std::string _levelName;
-	SDL_Texture* _backgroundTexture;
-	Map _map;
-	Pathfinder _pathfinder;
+	SDL_Texture * _backgroundTexture;
+	Map * _mapP;
+	Pathfinder * _pathfinderP;
 
 	/* void loadMap
 	Loads a map.

@@ -29,10 +29,7 @@ public:
 
 	//TODO: Create a constructor that take an aditional parameter to immediately create all tiles.
 
-	/* void setTerrainTile
-	Sets a tile in the map to a certain type, based on the terrain availability.
-	*/
-	void setTerrainTile(int row, int column, TerrainAvailability type);
+	void loadTestMap();
 
 	/* vector<vector<TerrainAvailability> > getTerrain
 	Returns terrain.
@@ -42,8 +39,12 @@ public:
 
 
 private:
+	/* void setTerrainTile
+	Sets a tile in the map to a certain type, based on the terrain availability.
+	*/
+	void setTerrainTile(int row, int column, TerrainAvailability type);
+
 	vector<vector<TerrainAvailability> > _terrain;
-	//int _terrain;	//test
 };
 
 #endif

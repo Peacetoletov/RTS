@@ -17,13 +17,16 @@ Level::Level() {}
 Level::Level(std::string levelName, int rows, int columns, Graphics &graphics) :
 		_levelName(levelName)
 {
-	this->_map = Map(rows, columns);
-	this->_pathfinder = Pathfinder(&this->_map);
+	this->_mapP = new Map(5, 6);
+	this->_mapP->loadTestMap();
+	this->_pathfinderP = new Pathfinder(this->_mapP);
 
 	//this->loadMap(mapName, graphics);
 }
 
 Level::~Level() {
+	delete this->_mapP;
+	delete this->_pathfinderP;
 	cout << "Destryoing level!" << endl;
 }
 
@@ -59,9 +62,9 @@ void Level::draw(Graphics &graphics) {
 }
 
 Pathfinder * Level::getPathfinderP() {
-	return &this->_pathfinder;
+	return this->_pathfinderP;
 }
 
 Map * Level::getMapP() {
-	return &this->_map;
+	return this->_mapP;
 }

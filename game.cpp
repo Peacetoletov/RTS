@@ -41,9 +41,12 @@ void Game::gameLoop() {
 	SDL_Event event;
 	
 	this->_level = new Level("level 1", 10, 10, graphics);
+
+	/*
 	cout << "The value of tile [0][0] is " << (*this->_level->getMapP()->getTerrainP())[0][0] << endl;
 	this->_level->getMapP()->setTerrainTile(0, 0, Map::NONE);
 	cout << "The value of tile [0][0] after modifying it is " << (*this->_level->getMapP()->getTerrainP())[0][0] << endl;
+	*/
 
 		
 	int LAST_UPDATE_TIME = SDL_GetTicks();
