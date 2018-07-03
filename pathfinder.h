@@ -12,12 +12,12 @@ class Graphics;
 class Pathfinder {
 public:
 	Pathfinder();
-	Pathfinder(Map* mapP);
+	Pathfinder(Map* mapp);
 
 	void testDrawTiles(float tileSize, Graphics &graphics);
 	void testPointer();
 private:
-	Map* _mapP;
+	Map* _mapp;
 };
 
 #endif

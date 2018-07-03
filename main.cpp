@@ -3,7 +3,6 @@ The entry point of the program
 */
 
 #include "game.h"
-#include "test.h"
 
 #include <iostream>
 #include <Windows.h>
@@ -11,10 +10,9 @@ The entry point of the program
 //Debugging version (with console)
 int main(int argc, char *args[]) {
 
-	//std::cout << "kokot" << std::endl;
+	std::cout << "kokot" << std::endl;
 
-	//Test test;			//1 of these 2 must be commented out
-	Game game;		//1 of these 2 must be commented out
+	Game game;
 
 	cout << "Program ended! Type 'kokot' to close the console" << endl;
 	string y;
