@@ -16,7 +16,7 @@ Pathfinder::Pathfinder() {}
 Pathfinder::Pathfinder(Map* mapP) :
 	_mapP(mapP)
 {
-	//Create tiles
+	//TODO: Create tiles
 }
 
 void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
@@ -24,9 +24,8 @@ void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
 	SDL_Renderer* renderer = graphics.getRenderer();
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
-	vector<vector<Map::TerrainAvailability> >* terrainP = this->_mapP->getTerrainP();
-	int tilesInColumn = terrainP->size();
-	int tilesInRow = (*terrainP)[0].size();
+	int tilesInColumn = this->_mapP->getRows();
+	int tilesInRow = this->_mapP->getColumns();
 
 	//DRAW LINES
 	//Draw rows
@@ -44,6 +43,10 @@ void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
 	Tiles accessible by air units are GREY.
 	Tiles accessible by no units are WHITE.
 	*/
+
+	//TODO: Fix this. Make terrain drawing great again.
+	//I'll do this by looping through all tiles and checking their types.
+	/*
 	for (int column = 0; column < tilesInRow; column++) {
 		for (int row = 0; row < tilesInColumn; row++) {
 
@@ -65,6 +68,7 @@ void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
 			SDL_RenderFillRect(renderer, &rect);
 		}
 	}
+	*/
 
 	//DRAW UNITS
 	/* Legend
@@ -74,8 +78,10 @@ void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
 	vector<GameObject*> *units = this->_mapP->getObjectsP();
 	for (int i = 0; i < units->size(); i++) {
 		SDL_Rect rect;
-		rect.x = (*units)[i]->getColumn() * tileSize;
-		rect.y = (*units)[i]->getRow() * tileSize;
+		//rect.x = (*units)[i]->getColumn() * tileSize;
+		//rect.y = (*units)[i]->getRow() * tileSize;
+		rect.x = this->_mapP->idToColumn((*units)[i]->getId()) * tileSize;
+		rect.y = this->_mapP->idToRow((*units)[i]->getId()) * tileSize;
 		rect.w = tileSize;
 		rect.h = tileSize;
 		SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
@@ -85,11 +91,6 @@ void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
 }
 
 void Pathfinder::findPath(Tile* start, Tile* end) {
-	/* TODO
-	Remove _terrain in map.h. This becomes unnecessary once I create tile.h with
-	all the information that was in _terrain anyway.
-	*/
-
 	/*
 	I will hold all tiles in a map so that I can access individual tiles by their position.
 	I will use  std::pair<int, int> as a key, that way I can use 2 values in the key (column, row).

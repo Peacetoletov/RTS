@@ -2,8 +2,9 @@
 
 Tile::Tile() {}
 
-Tile::Tile(int id) : 
-	_id(id)
+Tile::Tile(int id, TerrainAvailability type) : 
+	_id(id),
+	_type(type)
 {
 
 }

@@ -13,16 +13,8 @@ This class contains information about the tiles on the map.
 
 class Map {
 public:
-	/* enum TerrainAvailability
-	Indicates which units can move to a tile of that type.
-	*/
-	enum TerrainAvailability {
-		ALL,
-		AIR,
-		NONE
-	};
 
-	Map();
+	Map();			//Won't be used
 
 	/* Map
 	Initializes terrain with all tiles available to all units.
@@ -44,26 +36,29 @@ public:
 	*/
 	void loadTestObjects();
 
-	/* vector<vector<TerrainAvailability> >* getTerrainP
-	Returns a pointer to _terrain.
+	/* int idToRow
+	Returns the row based on the id
 	*/
-	vector<vector<TerrainAvailability> >* getTerrainP();
+	int idToRow(int id);
 
-	/* vector<GameObject*>* getObjectsP
-	Returns a pointer to _objects.
+	/* int idToColumn
+	Returns the column based on the id
 	*/
+	int idToColumn(int id);
+
+	/* int positionToId
+	Returns the id based on the row and column
+	*/
+	int positionToId(int row, int column);
+
+	//Getters
+	int getRows();
+	int getColumns();
 	vector<GameObject*>* getObjectsP();
 
 private:
-	/* void setTerrainTile
-	Sets a tile in the map to a certain type, based on the terrain availability.
-	*/
-	void setTerrainTile(int row, int column, TerrainAvailability type);
-
-	/* _terrain
-	Contains information about each tile and its availability to different types of units.
-	*/
-	vector<vector<TerrainAvailability> > _terrain;		//TODO: Remove this		//also, if I wanted to do it this way, I should use a 2d dynamically allocated array, not a vector
+	int _rows;
+	int _columns;
 
 	/* _objects
 	Contains information about units and building on the map.

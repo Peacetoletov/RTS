@@ -3,12 +3,18 @@
 
 class Tile {
 public:
+	enum TerrainAvailability {
+		ALL,
+		AIR,
+		NONE
+	};
+
 	Tile();			//Won't be used
 
 	/* Tile
-	Creates the object and initializes _row, _column
+	Creates the object and initializes _id, _type
 	*/
-	Tile(int id);
+	Tile(int id, TerrainAvailability type);
 
 	/* void setNeighbours
 	Sets **_neighbours
@@ -17,10 +23,9 @@ public:
 
 private:
 	int _id;
+	TerrainAvailability _type;
+
 	Tile** _neighbours;		//Pointer to an array holding pointers to neighbour tiles
-	//TODO: Check if the array really has to be holding pointers, if plain objects 
-	//in the array wouldn't be sufficient (Tile* instead of Tile**)
-	//nvm, I checked it and looks like double pointer is necessary
 };
 
 #endif

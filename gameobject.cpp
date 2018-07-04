@@ -3,9 +3,8 @@
 
 GameObject::GameObject() {}
 
-GameObject::GameObject(int column, int row) : 
-	_column(column),
-	_row(row)
+GameObject::GameObject(int id) : 
+	_id(id)
 {
 
 }
@@ -14,10 +13,6 @@ GameObject::~GameObject() {
 	//std::cout << "Destroying game object!";
 }
 
-int GameObject::getColumn() {
-	return _column;
-}
-
-int GameObject::getRow() {
-	return _row;
+int GameObject::getId() {
+	return _id;
 }

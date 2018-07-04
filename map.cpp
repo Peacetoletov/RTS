@@ -8,34 +8,33 @@ This class contains information about the tiles on the map.
 
 Map::Map() {}
 
-Map::Map(int rows, int columns) :
-	//TODO: Remove _terrain completely
-	_terrain(rows, vector<TerrainAvailability>(columns, ALL))	//_terrain[row][column]
+Map::Map(int rows, int columns) : 
+	_rows(rows),
+	_columns(columns)
 {
 	//Create tiles
 	int tilesAmount = rows * columns;
 	Tile** tiles = new Tile*[tilesAmount];
 
 	for (int i = 0; i < tilesAmount; i++) {
-		//tiles[i] = new Tile(i);
+		tiles[i] = new Tile(i, Tile::TerrainAvailability::ALL);
 	}
 
-	/* TODO
-	Instead of storing 2 variables in each tile (row, line), I will only store 1 variable (id).
-	I will also store 2 variables (rows, lines) in Map, passed in constructor from Level.
-	This will allow for easier manipulation with tiles as a whole. 
-	A simple function can be used to convert the id to a row or column, thanks to the presence
-	of variables rows and lines, containing the amount of rows and lines a level has.
-	*/
-
-	//TODO: Delete tiles!
-
+	this->_tiles = tiles;
 }
 
 Map::~Map() {
+	//Delete GameObjects in _objects
 	for (int i = 0; i < this->_objects.size(); i++) {
 		delete this->_objects[i];
 	}
+
+	//Delete contents of array _tiles and the array itself
+	int tilesAmount = _rows * _columns;
+	for (int i = 0; i < tilesAmount; i++) {
+		delete this->_tiles[i];
+	}
+	delete[] this->_tiles;
 }
 
 void Map::loadTestMap() {
@@ -68,23 +67,27 @@ void Map::loadTestMap() {
 		"########",
 	};
 
+	//TODO: Make this work again
+
+	/*
 	for (int i = 0; i < mapVector.size(); i++) {
 		for (int j = 0; j < mapVector[0].size(); j++) {
 			if (mapVector[i][j] == '#') {
-				setTerrainTile(i, j, Map::ALL);
+				setTerrainTile(i, j, Tile::ALL);
 			}
 			else if (mapVector[i][j] == 'y') {
 				cout << "Setting air tile to [" << i << "][" << j << "]" << endl;
-				setTerrainTile(i, j, Map::AIR);
+				setTerrainTile(i, j, Tile::AIR);
 			}
 			else if (mapVector[i][j] == 'x') {
-				setTerrainTile(i, j, Map::NONE);
+				setTerrainTile(i, j, Tile::NONE);
 			}
 			else {
 				std::cout << "Error in creating a map" << endl;
 			}
 		}
 	}
+	*/
 	
 	/*
 	std::cout << "Position of [0][0] is " << this->_terrain[0][0] << endl;
@@ -95,19 +98,31 @@ void Map::loadTestMap() {
 }
 
 void Map::loadTestObjects() {
-	//Currently, I'm only creating 1 unit at [1][4]
-	GameObject* unit = new GameObject(1, 4);
+	//Currently, I'm only creating 1 unit at row 4, column 1
+	GameObject* unit = new GameObject(positionToId(4, 1));
 	this->_objects.push_back(unit);
 }
 
-vector<vector<Map::TerrainAvailability> >* Map::getTerrainP() {
-	return &this->_terrain;
+int Map::idToRow(int id) {
+	return (id / this->_columns);
+}
+
+int Map::idToColumn(int id) {
+	return (id % this->_columns);
+}
+
+int Map::positionToId(int row, int column) {
+	return (column + (row * this->_columns));
+}
+
+int Map::getRows() {
+	return this->_rows;
+}
+
+int Map::getColumns() {
+	return this->_columns;
 }
 
 vector<GameObject*>* Map::getObjectsP() {
 	return &this->_objects;
-}
-
-void Map::setTerrainTile(int row, int column, TerrainAvailability type) {
-	this->_terrain[row][column] = type;
 }

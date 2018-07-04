@@ -11,23 +11,14 @@ public:
 	/* GameObject(int column, int row)
 	Initializes the object and private variables _column, _row.
 	*/
-	GameObject(int column, int row);
+	GameObject(int id);
 
 	~GameObject();		//test purpose only (for now)
 
-	/* int getColumn
-	Returns _column.
-	*/
-	int getColumn();
-
-	/* int getRow
-	Returns _row.
-	*/
-	int getRow();
+	int getId();
 
 private:
-	int _column;
-	int _row;
+	int _id;
 };
 
 #endif
