@@ -22,20 +22,9 @@ Pathfinder::Pathfinder(Map* mapP) :
 void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
 
 	SDL_Renderer* renderer = graphics.getRenderer();
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
-	int tilesInColumn = this->_mapP->getRows();
-	int tilesInRow = this->_mapP->getColumns();
-
-	//DRAW LINES
-	//Draw rows
-	for (int row = 0; row < (tilesInColumn + 1); row++) {
-		SDL_RenderDrawLine(renderer, 0, (row * tileSize), (tilesInRow * tileSize), (row * tileSize));
-	}
-	//Draw columns
-	for (int column = 0; column < (tilesInRow + 1); column++) {
-		SDL_RenderDrawLine(renderer, (column * tileSize), 0, (column * tileSize), (tilesInColumn * tileSize));
-	}
+	int rows = this->_mapP->getRows();
+	int columns = this->_mapP->getColumns();
 
 	//DRAW TERRAIN
 	/* Legend
@@ -44,31 +33,37 @@ void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
 	Tiles accessible by no units are WHITE.
 	*/
 
-	//TODO: Fix this. Make terrain drawing great again.
-	//I'll do this by looping through all tiles and checking their types.
-	/*
-	for (int column = 0; column < tilesInRow; column++) {
-		for (int row = 0; row < tilesInColumn; row++) {
-
-			if ((*terrainP)[row][column] == Map::ALL) {
-				continue;
-			}
-			else if ((*terrainP)[row][column] == Map::AIR) {
-				SDL_SetRenderDrawColor(renderer, 127, 127, 127, SDL_ALPHA_OPAQUE);
-			}
-			else if ((*terrainP)[row][column] == Map::NONE) {
-				SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-			}
-
-			SDL_Rect rect;
-			rect.x = column * tileSize;
-			rect.y = row * tileSize;
-			rect.w = tileSize;
-			rect.h = tileSize;
-			SDL_RenderFillRect(renderer, &rect);
+	Tile** tiles = this->_mapP->getTilesP();
+	for (int id = 0; id < (rows * columns); id++) {
+		if (tiles[id]->getType() == Tile::ALL) {
+			continue;
 		}
+		else if (tiles[id]->getType() == Tile::AIR) {
+			SDL_SetRenderDrawColor(renderer, 127, 127, 127, SDL_ALPHA_OPAQUE);
+		}
+		else if (tiles[id]->getType() == Tile::NONE) {
+			SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+		}
+
+		SDL_Rect rect;
+		rect.x = this->_mapP->idToColumn(id) * tileSize;
+		rect.y = this->_mapP->idToRow(id) * tileSize;
+		rect.w = tileSize;
+		rect.h = tileSize;
+		SDL_RenderFillRect(renderer, &rect);
 	}
-	*/
+
+	//DRAW LINES
+	SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+
+	//Draw rows
+	for (int row = 0; row < (rows + 1); row++) {
+		SDL_RenderDrawLine(renderer, 0, (row * tileSize), (columns * tileSize), (row * tileSize));
+	}
+	//Draw columns
+	for (int column = 0; column < (columns + 1); column++) {
+		SDL_RenderDrawLine(renderer, (column * tileSize), 0, (column * tileSize), (rows * tileSize));
+	}
 
 	//DRAW UNITS
 	/* Legend
@@ -78,8 +73,6 @@ void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
 	vector<GameObject*> *units = this->_mapP->getObjectsP();
 	for (int i = 0; i < units->size(); i++) {
 		SDL_Rect rect;
-		//rect.x = (*units)[i]->getColumn() * tileSize;
-		//rect.y = (*units)[i]->getRow() * tileSize;
 		rect.x = this->_mapP->idToColumn((*units)[i]->getId()) * tileSize;
 		rect.y = this->_mapP->idToRow((*units)[i]->getId()) * tileSize;
 		rect.w = tileSize;

@@ -12,14 +12,27 @@ public:
 	Tile();			//Won't be used
 
 	/* Tile
-	Creates the object and initializes _id, _type
+	Creates the object and initializes _id, _type.
 	*/
 	Tile(int id, TerrainAvailability type);
 
+	/* ~Tile
+	Test purpose only (for now)
+	*/
+	~Tile();
+
 	/* void setNeighbours
-	Sets **_neighbours
+	Sets **_neighbours.
 	*/
 	void setNeighbours(Tile** neighbours);
+
+	/* void setType
+	Sets _type.
+	*/
+	void setType(TerrainAvailability type);
+
+	//Getters
+	TerrainAvailability getType();
 
 private:
 	int _id;

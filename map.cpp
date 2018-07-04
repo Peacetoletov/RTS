@@ -16,8 +16,8 @@ Map::Map(int rows, int columns) :
 	int tilesAmount = rows * columns;
 	Tile** tiles = new Tile*[tilesAmount];
 
-	for (int i = 0; i < tilesAmount; i++) {
-		tiles[i] = new Tile(i, Tile::TerrainAvailability::ALL);
+	for (int id = 0; id < tilesAmount; id++) {
+		tiles[id] = new Tile(id, Tile::TerrainAvailability::ALL);
 	}
 
 	this->_tiles = tiles;
@@ -55,40 +55,34 @@ void Map::loadTestMap() {
 	};
 	*/
 	mapVector = {
+		"#yyy####",
 		"########",
-		"########",
+		"###yx###",
 		"####x###",
 		"####x###",
 		"####x###",
 		"####x###",
 		"####x###",
 		"####x###",
-		"####x###",
-		"########",
+		"######yy",
 	};
 
-	//TODO: Make this work again
-
-	/*
-	for (int i = 0; i < mapVector.size(); i++) {
-		for (int j = 0; j < mapVector[0].size(); j++) {
-			if (mapVector[i][j] == '#') {
-				setTerrainTile(i, j, Tile::ALL);
-			}
-			else if (mapVector[i][j] == 'y') {
-				cout << "Setting air tile to [" << i << "][" << j << "]" << endl;
-				setTerrainTile(i, j, Tile::AIR);
-			}
-			else if (mapVector[i][j] == 'x') {
-				setTerrainTile(i, j, Tile::NONE);
-			}
-			else {
-				std::cout << "Error in creating a map" << endl;
-			}
+	for (int id = 0; id < (_rows * _columns); id++) {
+		if (mapVector[idToRow(id)][idToColumn(id)] == '#') {
+			this->_tiles[id]->setType(Tile::ALL);
+		}
+		else if (mapVector[idToRow(id)][idToColumn(id)] == 'y') {
+			//cout << "Setting air tile to row " << idToRow(id) << " and column " << idToColumn(id) << endl;
+			this->_tiles[id]->setType(Tile::AIR);
+		}
+		else if (mapVector[idToRow(id)][idToColumn(id)] == 'x') {
+			this->_tiles[id]->setType(Tile::NONE);
+		}
+		else {
+			std::cout << "Error in creating a map" << endl;
 		}
 	}
-	*/
-	
+
 	/*
 	std::cout << "Position of [0][0] is " << this->_terrain[0][0] << endl;
 	std::cout << "Position of [0][2] is " << this->_terrain[0][2] << endl;
@@ -125,4 +119,8 @@ int Map::getColumns() {
 
 vector<GameObject*>* Map::getObjectsP() {
 	return &this->_objects;
+}
+
+Tile** Map::getTilesP() {
+	return this->_tiles;
 }

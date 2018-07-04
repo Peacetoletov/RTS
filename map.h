@@ -55,6 +55,7 @@ public:
 	int getRows();
 	int getColumns();
 	vector<GameObject*>* getObjectsP();
+	Tile** getTilesP();
 
 private:
 	int _rows;
