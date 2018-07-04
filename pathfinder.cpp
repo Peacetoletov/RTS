@@ -16,7 +16,7 @@ Pathfinder::Pathfinder() {}
 Pathfinder::Pathfinder(Map* mapP) :
 	_mapP(mapP)
 {
-	
+	//Create tiles
 }
 
 void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
@@ -84,6 +84,19 @@ void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
 	
 }
 
-void Pathfinder::testPointer() {
-	std::cout << "Size = " << this->_mapP->getTerrainP()->size() << std::endl;
+void Pathfinder::findPath(Tile* start, Tile* end) {
+	/* TODO
+	Remove _terrain in map.h. This becomes unnecessary once I create tile.h with
+	all the information that was in _terrain anyway.
+	*/
+
+	/*
+	I will hold all tiles in a map so that I can access individual tiles by their position.
+	I will use  std::pair<int, int> as a key, that way I can use 2 values in the key (column, row).
+	Example: std::map<std::pair<int,int>, int> myMap;
+	Source: https://stackoverflow.com/questions/1112531/what-is-the-best-way-to-use-two-keys-with-a-stdmap
+	*/
+
+
 }
+

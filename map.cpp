@@ -9,9 +9,27 @@ This class contains information about the tiles on the map.
 Map::Map() {}
 
 Map::Map(int rows, int columns) :
+	//TODO: Remove _terrain completely
 	_terrain(rows, vector<TerrainAvailability>(columns, ALL))	//_terrain[row][column]
 {
-	
+	//Create tiles
+	int tilesAmount = rows * columns;
+	Tile** tiles = new Tile*[tilesAmount];
+
+	for (int i = 0; i < tilesAmount; i++) {
+		//tiles[i] = new Tile(i);
+	}
+
+	/* TODO
+	Instead of storing 2 variables in each tile (row, line), I will only store 1 variable (id).
+	I will also store 2 variables (rows, lines) in Map, passed in constructor from Level.
+	This will allow for easier manipulation with tiles as a whole. 
+	A simple function can be used to convert the id to a row or column, thanks to the presence
+	of variables rows and lines, containing the amount of rows and lines a level has.
+	*/
+
+	//TODO: Delete tiles!
+
 }
 
 Map::~Map() {

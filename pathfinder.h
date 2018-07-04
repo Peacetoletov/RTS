@@ -2,6 +2,7 @@
 #define PATHFINDER_H
 
 #include "map.h"
+#include "tile.h"
 
 /* class Pathfinder
 This class deals with pathfinding.
@@ -15,7 +16,9 @@ public:
 	Pathfinder(Map* mapP);
 
 	void testDrawTiles(float tileSize, Graphics &graphics);
-	void testPointer();
+
+	void findPath(Tile* start, Tile* end);
+
 private:
 	Map* _mapP;
 };
