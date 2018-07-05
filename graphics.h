@@ -6,6 +6,7 @@ Holds all information dealing with graphics for the game
 */
 
 #include <SDL.h>
+#include <SDL_ttf.h>
 
 #include <map>
 #include <string>
@@ -41,6 +42,11 @@ public:
 	*/
 	void clear();
 
+	/* void drawText
+	Takes a bunch of arguments and draws text on the screen
+	*/
+	void drawText(std::string fontName, int fontSize, SDL_Color color, std::string text, int x, int y);
+
 	/*SDL_Renderer* getRenderer
 	Returns the renderer.
 	*/
@@ -48,6 +54,7 @@ public:
 private:
 	SDL_Window* _window;
 	SDL_Renderer* _renderer;
+	//TTF_Font* _font;		
 
 	std::map<std::string, SDL_Surface*> _spriteSheets;
 };

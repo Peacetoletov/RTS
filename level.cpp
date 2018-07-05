@@ -16,13 +16,13 @@ Needs to be modified to work with an RTS.
 
 Level::Level() {}
 
-Level::Level(std::string levelName, int rows, int columns, Graphics &graphics) :
+Level::Level(std::string levelName, int rows, int columns, Graphics* graphicsP) :
 		_levelName(levelName)
 {
 	this->_mapP = new Map(10, 8);
 	this->_mapP->loadTestMap();
 	this->_mapP->loadTestObjects();
-	this->_pathfinderP = new Pathfinder(this->_mapP);
+	this->_pathfinderP = new Pathfinder(this->_mapP, graphicsP);
 
 	//findPath test
 	Tile** tiles = this->_mapP->getTilesP();

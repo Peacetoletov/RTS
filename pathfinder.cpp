@@ -1,6 +1,5 @@
 #include "pathfinder.h"
 
-#include <SDL.h>
 #include "graphics.h"
 #include "globals.h"
 
@@ -13,15 +12,16 @@ This class deals with pathfinding.
 
 Pathfinder::Pathfinder() {}
 
-Pathfinder::Pathfinder(Map* mapP) :
-	_mapP(mapP)
+Pathfinder::Pathfinder(Map* mapP, Graphics* graphicsP) :
+	_mapP(mapP),
+	_graphicsP(graphicsP)
 {
 	//TODO: Create tiles
 }
 
-void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
+void Pathfinder::testDrawTiles(float tileSize) {
 
-	SDL_Renderer* renderer = graphics.getRenderer();
+	SDL_Renderer* renderer = this->_graphicsP->getRenderer();
 
 	int rows = this->_mapP->getRows();
 	int columns = this->_mapP->getColumns();
@@ -80,6 +80,9 @@ void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
 		SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
 		SDL_RenderFillRect(renderer, &rect);
 	}
+
+	SDL_Color color = { 255, 255, 0 };
+	_graphicsP->drawText("arial.ttf", 15, color, "Hello, programmer!", 0, 400);
 	
 }
 
@@ -104,7 +107,7 @@ void Pathfinder::findPath(Tile* start, Tile* end) {
 		Maybe create a vector of checked tiles?
 		*/
 
-		
+		pathFound = true;
 	}
 
 }

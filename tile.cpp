@@ -40,9 +40,11 @@ int Tile::calculateH(Tile* endTile) {
 	//the other one will respond to the amount of straight paths.
 	distance += (rowDiff + columnDiff - 2 * smaller) * 10;
 	
+	/*
 	std::cout << "Minimal distance between tile " << _mapP->idToRow(this->_id) << "|" << _mapP->idToColumn(this->_id) <<
 		" and tile " << _mapP->idToRow(endTile->getId()) << "|" << _mapP->idToColumn(endTile->getId()) << 
 		" is " << distance << std::endl;
+		*/
 
 	return distance;
 }

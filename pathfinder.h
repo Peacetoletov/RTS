@@ -13,14 +13,15 @@ class Graphics;
 class Pathfinder {
 public:
 	Pathfinder();
-	Pathfinder(Map* mapP);
+	Pathfinder(Map* mapP, Graphics* graphics);
 
-	void testDrawTiles(float tileSize, Graphics &graphics);
+	void testDrawTiles(float tileSize);
 
 	void findPath(Tile* start, Tile* end);
 
 private:
 	Map* _mapP;
+	Graphics* _graphicsP;
 };
 
 #endif

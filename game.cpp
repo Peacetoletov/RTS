@@ -1,6 +1,7 @@
 ﻿
 #include <SDL.h>
 #include <algorithm>﻿		//std::min
+#include <SDL_ttf.h>		//fonts, drwaing text
 
 #include "game.h"
 #include "graphics.h"
@@ -8,9 +9,6 @@
 #include "globals.h"		//TILE_SIZE
 
 #include <iostream>
-#include <vector>
-
-using namespace std;
 
 /* Game class
 This class holds information for the main game loop
@@ -29,6 +27,7 @@ Game::~Game() {}
 
 Game::Game() {
 	SDL_Init(SDL_INIT_EVERYTHING);
+	TTF_Init();
 	this->gameLoop();
 
 	delete this->_level;
@@ -40,7 +39,7 @@ void Game::gameLoop() {
 	Input input;
 	SDL_Event event;
 	
-	this->_level = new Level("level 1", 10, 10, graphics);
+	this->_level = new Level("level 1", 10, 10, &graphics);
 
 	/*
 	cout << "The value of tile [0][0] is " << (*this->_level->getMapP()->getTerrainP())[0][0] << endl;
@@ -99,7 +98,7 @@ void Game::draw(Graphics &graphics) {
 	graphics.clear();
 
 	//this->_level.draw(graphics);
-	this->_level->getPathfinderP()->testDrawTiles(globals::TILE_SIZE, graphics);
+	this->_level->getPathfinderP()->testDrawTiles(globals::TILE_SIZE);
 
 	graphics.flip();
 }

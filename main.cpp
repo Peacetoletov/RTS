@@ -8,9 +8,13 @@ The entry point of the program
 #include <iostream>
 #include <Windows.h>
 
+//test
+#include <SDL.h>
+#include <SDL_ttf.h>
+
 //Debugging version (with console)
 int main(int argc, char *args[]) {
-
+	
 	//std::cout << "kokot" << std::endl;
 
 	//Test test;			//1 of these 2 must be commented out
@@ -21,6 +25,7 @@ int main(int argc, char *args[]) {
 	cin >> y;
 
 	return 0;
+
 }
 
 //Final version (without console)
