@@ -54,7 +54,6 @@ public:
 private:
 	SDL_Window* _window;
 	SDL_Renderer* _renderer;
-	//TTF_Font* _font;		
 
 	std::map<std::string, SDL_Surface*> _spriteSheets;
 };

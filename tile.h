@@ -43,8 +43,8 @@ public:
 	int getId();
 	TerrainAvailability getType();
 	bool getWasChecked();
-	//int getG();
-	//int getH();		//I'm not sure if I need getG and getH
+	//int getG();		//I'm not sure if I need getG and getH
+	int getH();			//This one is currently being used for testing
 	int getF();
 
 private:

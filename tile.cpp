@@ -81,6 +81,10 @@ bool Tile::getWasChecked() {
 	return this->_wasChecked;
 }
 
+int Tile::getH() {
+	return this->_H;
+}
+
 int Tile::getF() {
 	return (this->_G + this->_H);
 }

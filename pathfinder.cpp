@@ -81,8 +81,17 @@ void Pathfinder::testDrawTiles(float tileSize) {
 		SDL_RenderFillRect(renderer, &rect);
 	}
 
-	SDL_Color color = { 255, 255, 0 };
-	_graphicsP->drawText("arial.ttf", 15, color, "Hello, programmer!", 0, 400);
+	//TEST: Draw the H value for each tile, end tile is 4|1
+	SDL_Color color = { 200, 200, 200 };
+	for (int id = 0; id < (rows * columns); id++) {
+		tiles[id]->setH(tiles[id]->calculateH(tiles[this->_mapP->positionToId(4, 1)]));		//sets H
+		int row = this->_mapP->idToRow(id);
+		int column = this->_mapP->idToColumn(id);
+		int x = 3 + column * tileSize;
+		int y = (tileSize - 20) + row * tileSize;
+		//std::cout << "H value of tile " << id << " is " << tiles[id]->getH() << endl;
+		_graphicsP->drawText("arial.ttf", 15, color, std::to_string(tiles[id]->getH()), x, y);
+	}
 	
 }
 

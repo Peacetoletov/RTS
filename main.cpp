@@ -8,10 +8,6 @@ The entry point of the program
 #include <iostream>
 #include <Windows.h>
 
-//test
-#include <SDL.h>
-#include <SDL_ttf.h>
-
 //Debugging version (with console)
 int main(int argc, char *args[]) {
 	
