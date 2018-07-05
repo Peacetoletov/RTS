@@ -58,6 +58,7 @@ public:
 	Tile** getTilesP();
 
 private:
+	//VARIABLES
 	int _rows;
 	int _columns;
 
@@ -66,8 +67,18 @@ private:
 	*/
 	vector<GameObject*> _objects;		//Alternatively, this can be divided into 2 separate vectors,
 										//1 containing  units and the other one buildings.
+	/* Tile** _tiles
+	Pointer to an array of pointers to instances of Tile object.
+	_tiles[i] points to a tile with id i.
+	Example: _tiles[20] points to a tile with id 20.
+	*/
+	Tile** _tiles;						
 
-	Tile** _tiles;						//Pointer to an array of pointers to instances of Tile object
+	//METHODS
+	/* void setNeighbours(Tile* tile, Tile** tiles)
+	Sets neighbours of tiles[id] (id = arg1) as pointers to other tiles from array tiles (arg2)
+	*/
+	void setNeighbours(int id, Tile** tiles);
 
 };
 

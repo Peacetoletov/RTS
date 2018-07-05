@@ -84,13 +84,28 @@ void Pathfinder::testDrawTiles(float tileSize, Graphics &graphics) {
 }
 
 void Pathfinder::findPath(Tile* start, Tile* end) {
-	/*
-	I will hold all tiles in a map so that I can access individual tiles by their position.
-	I will use  std::pair<int, int> as a key, that way I can use 2 values in the key (column, row).
-	Example: std::map<std::pair<int,int>, int> myMap;
-	Source: https://stackoverflow.com/questions/1112531/what-is-the-best-way-to-use-two-keys-with-a-stdmap
-	*/
+	
+	//Set up the start tile
+	start->setG(0);
+	start->setH(start->calculateH(end));
+	
+	//Set the start tile as the current tile, begin the loop
+	Tile* currentTile = start;
+	bool pathFound = false;
 
+	while (!pathFound) {
+		//ANALYZE NEIGHBOURS
+
+
+		//MARK THE CURRENT TILE OFF OF THE LIST
+		currentTile->setWasChecked(true);
+
+		/*
+		Maybe create a vector of checked tiles?
+		*/
+
+		
+	}
 
 }
 

@@ -6,6 +6,8 @@
 #include <math.h>
 #include <iostream>
 
+#include "tile.h"		//testing only
+
 using namespace std;
 
 /*
@@ -21,6 +23,15 @@ Level::Level(std::string levelName, int rows, int columns, Graphics &graphics) :
 	this->_mapP->loadTestMap();
 	this->_mapP->loadTestObjects();
 	this->_pathfinderP = new Pathfinder(this->_mapP);
+
+	//findPath test
+	Tile** tiles = this->_mapP->getTilesP();
+	int startRow = 5;
+	int startColumn = 5;
+	int endRow = 2;
+	int endColumn = 2;
+	this->_pathfinderP->findPath(tiles[this->_mapP->positionToId(startRow, startColumn)],
+		tiles[this->_mapP->positionToId(endRow, endColumn)]);
 
 	//this->loadMap(mapName, graphics);
 }
