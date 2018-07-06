@@ -20,26 +20,23 @@ namespace {
 	const int MAX_FRAME_TIME = 5 * 1000 / FPS;
 }
 
-
-
 Game::~Game() {}
 
-
 Game::Game() {
-	SDL_Init(SDL_INIT_EVERYTHING);
-	TTF_Init();
-	this->gameLoop();
+	SDL_Init(SDL_INIT_EVERYTHING);		
+	TTF_Init();							
+	this->gameLoop();					
 
-	delete this->_level;
+	delete this->_level;		
 }
 
 void Game::gameLoop() {
-	
+
 	Graphics graphics;
 	Input input;
 	SDL_Event event;
 	
-	this->_level = new Level("level 1", 10, 10, &graphics);
+	this->_level = new Level("level 1", 10, 10, &graphics);		
 
 	/*
 	cout << "The value of tile [0][0] is " << (*this->_level->getMapP()->getTerrainP())[0][0] << endl;
@@ -98,7 +95,7 @@ void Game::draw(Graphics &graphics) {
 	graphics.clear();
 
 	//this->_level.draw(graphics);
-	this->_level->getPathfinderP()->testDrawTiles(globals::TILE_SIZE);
+	this->_level->getPathfinderP()->testDrawTiles(globals::TILE_SIZE);		
 
 	graphics.flip();
 }

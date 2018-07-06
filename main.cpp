@@ -5,8 +5,13 @@ The entry point of the program
 #include "game.h"
 #include "test.h"
 
-#include <iostream>
+#include <iostream>		
 #include <Windows.h>
+
+//Detecting memory leaks
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
 
 //Debugging version (with console)
 int main(int argc, char *args[]) {
@@ -14,12 +19,14 @@ int main(int argc, char *args[]) {
 	//std::cout << "kokot" << std::endl;
 
 	//Test test;			//1 of these 2 must be commented out
-	Game game;		//1 of these 2 must be commented out
+	Game game;				//1 of these 2 must be commented out
+
+	_CrtDumpMemoryLeaks();	//Needs to be before the cin because otherwise it would report memory leaks for some reason
 
 	cout << "Program ended! Type 'kokot' to close the console" << endl;
 	string y;
 	cin >> y;
-
+	
 	return 0;
 
 }
