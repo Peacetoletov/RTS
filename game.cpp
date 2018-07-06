@@ -6,6 +6,7 @@
 #include "game.h"
 #include "graphics.h"
 #include "input.h"
+#include "inputhandler.h"
 #include "globals.h"		//TILE_SIZE
 
 #include <iostream>
@@ -27,7 +28,7 @@ Game::Game() {
 	TTF_Init();							
 	this->gameLoop();					
 
-	delete this->_level;		
+	delete this->_levelP;		
 }
 
 void Game::gameLoop() {
@@ -36,7 +37,7 @@ void Game::gameLoop() {
 	Input input;
 	SDL_Event event;
 	
-	this->_level = new Level("level 1", 10, 10, &graphics);		
+	this->_levelP = new Level("level 1", 10, 10, &graphics);		
 
 	/*
 	cout << "The value of tile [0][0] is " << (*this->_level->getMapP()->getTerrainP())[0][0] << endl;
@@ -44,10 +45,12 @@ void Game::gameLoop() {
 	cout << "The value of tile [0][0] after modifying it is " << (*this->_level->getMapP()->getTerrainP())[0][0] << endl;
 	*/
 
+	InputHandler inputHandler(&input, this->_levelP);
 		
 	int LAST_UPDATE_TIME = SDL_GetTicks();
 	//Start the game loop
 	while (true) {
+		//Register input
 		input.beginNewFrame();
 		if (SDL_PollEvent(&event)) {
 			switch (event.type) {
@@ -74,32 +77,16 @@ void Game::gameLoop() {
 			}
 		}
 
-		if (input.wasMouseButtonPressed(SDL_BUTTON_LEFT)) {
-			cout << "Left mouse button pressed!" << endl;
-		}
-		if (input.wasMouseButtonPressed(SDL_BUTTON_RIGHT)) {
-			cout << "Right mouse button pressed!" << endl;
-		}
-		if (input.wasKeyPressed(SDL_SCANCODE_ESCAPE)) {
-			return;
-		} 
-		
-		////else if (input.isKeyHeld(SDL_SCANCODE_LEFT)) {
-		////	this->_player.moveLeft();
-		////} else if (input.isKeyHeld(SDL_SCANCODE_RIGHT)) {
-		////	this->_player.moveRight();
-		////}
+		//Handle the input
+		inputHandler.handleInput();
 
-		////if (!input.isKeyHeld(SDL_SCANCODE_LEFT) && !input.isKeyHeld(SDL_SCANCODE_RIGHT)) {
-		////	this->_player.stopMoving();
-		////}
-		
-
+		//Some kind of magic
 		const int CURRENT_TIME_MS = SDL_GetTicks();
 		int ELAPSED_TIME_MS = CURRENT_TIME_MS - LAST_UPDATE_TIME;
 		this->update(std::min(ELAPSED_TIME_MS, MAX_FRAME_TIME));
 		LAST_UPDATE_TIME = CURRENT_TIME_MS;
 
+		//Draw
 		this->draw(graphics);
 	}
 }
@@ -109,11 +96,11 @@ void Game::draw(Graphics &graphics) {
 	graphics.clear();
 
 	//this->_level.draw(graphics);
-	this->_level->getPathfinderP()->testDrawTiles(globals::TILE_SIZE);		
+	this->_levelP->getPathfinderP()->testDrawTiles();		
 
 	graphics.flip();
 }
 
-void Game::update(float elapsedTime) {
+void Game::update(int elapsedTime) {
 	//this->_level.update(elapsedTime);
 }

@@ -16,12 +16,17 @@ Pathfinder::Pathfinder(Map* mapP, Graphics* graphicsP) :
 	_mapP(mapP),
 	_graphicsP(graphicsP)
 {
-	//TODO: Create tiles
+	this->_font = TTF_OpenFont("arial.ttf", 15);
 }
 
-void Pathfinder::testDrawTiles(float tileSize) {
+Pathfinder::~Pathfinder() {
+	TTF_CloseFont(this->_font);
+}
+
+void Pathfinder::testDrawTiles() {
 
 	SDL_Renderer* renderer = this->_graphicsP->getRenderer();
+	int tileSize = globals::TILE_SIZE;
 
 	int rows = this->_mapP->getRows();
 	int columns = this->_mapP->getColumns();
@@ -70,7 +75,7 @@ void Pathfinder::testDrawTiles(float tileSize) {
 	Land units are GREEN.		//for now, all units are land (and green)
 	Air units are BLUE.
 	*/
-	vector<GameObject*> *units = this->_mapP->getObjectsP();
+	std::vector<GameObject*> *units = this->_mapP->getObjectsP();
 	for (int i = 0; i < units->size(); i++) {
 		SDL_Rect rect;
 		rect.x = this->_mapP->idToColumn((*units)[i]->getId()) * tileSize;
@@ -82,15 +87,17 @@ void Pathfinder::testDrawTiles(float tileSize) {
 	}
 
 	//TEST: Draw the H value for each tile, end tile is 4|1
+	
 	SDL_Color color = { 200, 200, 200 };
+	
 	for (int id = 0; id < (rows * columns); id++) {
-		tiles[id]->setH(tiles[id]->calculateH(tiles[this->_mapP->positionToId(4, 1)]));		//sets H
+		int targetTileId = (*this->_mapP->getObjectsP())[0]->getTargetTileP()->getId();
+		tiles[id]->setH(tiles[id]->calculateH(tiles[targetTileId]));		//sets H
 		int row = this->_mapP->idToRow(id);
 		int column = this->_mapP->idToColumn(id);
 		int x = 3 + column * tileSize;
 		int y = (tileSize - 20) + row * tileSize;
-		//std::cout << "H value of tile " << id << " is " << tiles[id]->getH() << endl;
-		_graphicsP->drawText("arial.ttf", 15, color, std::to_string(tiles[id]->getH()), x, y);
+		_graphicsP->drawText(std::to_string(tiles[id]->getH()), x, y, this->_font, color);
 	}
 	
 }

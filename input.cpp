@@ -74,3 +74,11 @@ bool Input::wasMouseButtonReleased(Uint8 button) {
 bool Input::isMouseButtonHeld(Uint8 button) {
 	return this->_heldMouseButtons[button];
 }
+
+int Input::getMouseX() {
+	return this->_mouseX;
+}
+
+int Input::getMouseY() {
+	return this->_mouseY;
+}

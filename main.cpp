@@ -23,9 +23,9 @@ int main(int argc, char *args[]) {
 
 	_CrtDumpMemoryLeaks();	//Needs to be before the cin because otherwise it would report memory leaks for some reason
 
-	cout << "Program ended! Type 'kokot' to close the console" << endl;
-	string y;
-	cin >> y;
+	std::cout << "Program ended! Type 'kokot' to close the console" << std::endl;
+	std::string y;
+	std::cin >> y;
 	
 	return 0;
 

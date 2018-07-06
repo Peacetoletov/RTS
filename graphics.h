@@ -45,7 +45,7 @@ public:
 	/* void drawText
 	Takes a bunch of arguments and draws text on the screen
 	*/
-	void drawText(std::string fontName, int fontSize, SDL_Color color, std::string text, int x, int y);
+	void drawText(std::string text, int x, int y, TTF_Font* font, SDL_Color &color);			
 
 	/*SDL_Renderer* getRenderer
 	Returns the renderer.

@@ -13,9 +13,9 @@ public:
 private:
 	void gameLoop();
 	void draw(Graphics &graphics);
-	void update(float elapsedTime);
+	void update(int elapsedTime);
 
-	Level* _level;
+	Level* _levelP;
 	//Pathfinder _pathfinder;
 };
 

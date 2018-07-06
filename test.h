@@ -13,7 +13,7 @@ public:
 		
 	}
 private:
-	vector<vector<int> > _testVector2d;
+	std::vector<std::vector<int> > _testVector2d;
 };
 
 #endif

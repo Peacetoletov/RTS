@@ -5,8 +5,6 @@
 #include "gameobject.h"
 #include "tile.h"
 
-using namespace std;
-
 /* class Map
 This class contains information about the tiles on the map.
 */
@@ -54,7 +52,7 @@ public:
 	//Getters
 	int getRows();
 	int getColumns();
-	vector<GameObject*>* getObjectsP();
+	std::vector<GameObject*>* getObjectsP();
 	Tile** getTilesP();
 
 private:
@@ -65,7 +63,7 @@ private:
 	/* _objects
 	Contains information about units and building on the map.
 	*/
-	vector<GameObject*> _objects;		//Alternatively, this can be divided into 2 separate vectors,
+	std::vector<GameObject*> _objects;		//Alternatively, this can be divided into 2 separate vectors,
 										//1 containing  units and the other one buildings.
 	/* Tile** _tiles
 	Pointer to an array of pointers to instances of Tile object.

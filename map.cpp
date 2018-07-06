@@ -50,7 +50,7 @@ void Map::loadTestMap() {
 	x = NONE
 	*/
 
-	vector<string> mapVector;
+	std::vector<std::string> mapVector;
 	/*
 	mapVector = { 
 		"##y###",
@@ -85,7 +85,7 @@ void Map::loadTestMap() {
 			this->_tiles[id]->setType(Tile::NONE);
 		}
 		else {
-			std::cout << "Error in creating a map" << endl;
+			std::cout << "Error in creating a map" << std::endl;
 		}
 	}
 
@@ -98,7 +98,7 @@ void Map::loadTestMap() {
 }
 
 void Map::loadTestObject(int row, int column) {
-	GameObject* unit = new GameObject(positionToId(row, column));
+	GameObject* unit = new GameObject(positionToId(row, column), this->_tiles[0]);
 	this->_objects.push_back(unit);
 }
 
@@ -122,7 +122,7 @@ int Map::getColumns() {
 	return this->_columns;
 }
 
-vector<GameObject*>* Map::getObjectsP() {
+std::vector<GameObject*>* Map::getObjectsP() {
 	return &this->_objects;
 }
 
@@ -132,7 +132,7 @@ Tile** Map::getTilesP() {
 
 //PRIVATE METHODS
 void Map::setNeighbours(int id, Tile** tiles) {
-	vector<Tile*> neighbours;
+	std::vector<Tile*> neighbours;
 	int row = idToRow(id);
 	int column = idToColumn(id);
 

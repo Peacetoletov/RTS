@@ -23,17 +23,19 @@ public:
 	bool wasMouseButtonReleased(Uint8 button);
 	bool isMouseButtonHeld(Uint8 button);
 
+	//Getters
+	int getMouseX();
+	int getMouseY();
+
 private:
 	std::map<SDL_Scancode, bool> _heldKeys;
 	std::map<SDL_Scancode, bool> _pressedKeys;
 	std::map<SDL_Scancode, bool> _releasedKeys;
 
-	
 	std::map<Uint8, bool> _heldMouseButtons;
 	std::map<Uint8, bool> _pressedMouseButtons;
 	std::map<Uint8, bool> _releasedMouseButtons;
 	
-
 	int _mouseX;
 	int _mouseY;
 };
