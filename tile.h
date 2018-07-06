@@ -32,6 +32,12 @@ public:
 	*/
 	int calculateH(Tile* endTile);
 
+	/* bool isNeighbourDiagonal
+	Returns true if the neighbour tile is touching this tile by a corner.
+	Returns false if the neighbour tile is touching this tile by an edge.
+	*/
+	bool isNeighbourDiagonal(Tile* neighbour);
+
 	//Setters
 	void setType(TerrainAvailability type);
 	void setNeighbours(std::vector<Tile*> neighbours);
@@ -42,8 +48,9 @@ public:
 	//Getters
 	int getId();
 	TerrainAvailability getType();
+	std::vector<Tile*>* getNeighboursP();
 	bool getWasChecked();
-	//int getG();		//I'm not sure if I need getG and getH
+	int getG();		
 	int getH();			//This one is currently being used for testing
 	int getF();
 

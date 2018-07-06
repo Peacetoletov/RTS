@@ -49,6 +49,15 @@ int Tile::calculateH(Tile* endTile) {
 	return distance;
 }
 
+bool Tile::isNeighbourDiagonal(Tile* neighbour) {
+	//Get difference in rows and columns between the tiles
+	int rowDiff = abs(_mapP->idToRow(this->_id) - _mapP->idToRow(neighbour->getId()));
+	int columnDiff = abs(_mapP->idToColumn(this->_id) - _mapP->idToColumn(neighbour->getId()));
+
+	//If the difference in rows and columns is 1, return true. Otherwise return false.
+	return ((rowDiff == 1 && columnDiff == 1) ? true : false);
+}
+
 void Tile::setType(TerrainAvailability type) {
 	this->_type = type;
 }
@@ -77,8 +86,16 @@ Tile::TerrainAvailability Tile::getType() {
 	return this->_type;
 }
 
+std::vector<Tile*>* Tile::getNeighboursP() {
+	return &this->_neighbours;
+}
+
 bool Tile::getWasChecked() {
 	return this->_wasChecked;
+}
+
+int Tile::getG() {
+	return this->_G;
 }
 
 int Tile::getH() {

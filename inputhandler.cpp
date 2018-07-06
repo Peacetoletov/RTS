@@ -3,6 +3,9 @@
 
 #include <iostream>
 
+//test
+#include <vector>
+
 InputHandler::InputHandler() {}
 
 InputHandler::InputHandler(Input* inputP, Level* levelP) :
@@ -36,6 +39,12 @@ void InputHandler::leftMouseButtonPressed() {
 		//mapP->getObjectsP[0]->setTargetTileP(mapP->getTilesP[mapP->positionToId(mouseY / globals::TILE_SIZE, mouseX / globals::TILE_SIZE)]);
 		
 		Tile* targetTileP = mapP->getTilesP()[mapP->positionToId(mouseY / globals::TILE_SIZE, mouseX / globals::TILE_SIZE)];
+
+		//Set the targetTileP of the (only) GameObject in _objects in Map
 		(*mapP->getObjectsP())[0]->setTargetTileP(targetTileP);
+
+		//Test pathfinding
+		Tile* startTile = mapP->getTilesP()[(*mapP->getObjectsP())[0]->getId()];		//It's some kind of elvish, I can't read it	
+		this->_levelP->getPathfinderP()->findPath(startTile, targetTileP);
 	}
 }

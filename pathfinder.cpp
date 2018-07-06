@@ -87,7 +87,7 @@ void Pathfinder::testDrawTiles() {
 	}
 
 	//TEST: Draw the H value for each tile, end tile is 4|1
-	
+	/*
 	SDL_Color color = { 200, 200, 200 };
 	
 	for (int id = 0; id < (rows * columns); id++) {
@@ -99,7 +99,7 @@ void Pathfinder::testDrawTiles() {
 		int y = (tileSize - 20) + row * tileSize;
 		_graphicsP->drawText(std::to_string(tiles[id]->getH()), x, y, this->_font, color);
 	}
-	
+	*/
 }
 
 void Pathfinder::findPath(Tile* start, Tile* end) {
@@ -113,8 +113,24 @@ void Pathfinder::findPath(Tile* start, Tile* end) {
 	bool pathFound = false;
 
 	while (!pathFound) {
+
 		//ANALYZE NEIGHBOURS
 
+		std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
+		for (int i = 0; i < neighbours->size(); i++) {
+			//I first need to check if the neighbour tile is diagonal or not.
+			//If it's diagonal, I add 14 to the current G, otherwise 10.
+
+			int G_increase = currentTile->isNeighbourDiagonal((*neighbours)[i]) ? 14 : 10;
+
+			(*neighbours)[i]->setG(currentTile->getG() + G_increase);
+
+			/* 
+			std::cout << "Tile " << _mapP->idToRow((*neighbours)[i]->getId()) << "|" <<
+				_mapP->idToColumn((*neighbours)[i]->getId()) << " has G " <<
+				(*neighbours)[i]->getG() << std::endl;
+				*/
+		}
 
 		//MARK THE CURRENT TILE OFF OF THE LIST
 		currentTile->setWasChecked(true);
