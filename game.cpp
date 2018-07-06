@@ -49,26 +49,40 @@ void Game::gameLoop() {
 	//Start the game loop
 	while (true) {
 		input.beginNewFrame();
-
 		if (SDL_PollEvent(&event)) {
-			if (event.type == SDL_KEYDOWN) {
+			switch (event.type) {
+			case SDL_KEYDOWN:
 				if (event.key.repeat == 0) {
 					input.keyDownEvent(event);
 				}
-			}
-			else if (event.type == SDL_KEYUP) {
+				break;
+			case SDL_KEYUP:
 				input.keyUpEvent(event);
-			}
-
-			else if (event.type == SDL_QUIT) {
+				break;
+			case SDL_MOUSEMOTION:
+				input.mouseMotionEvent(event);
+				break;
+			case SDL_MOUSEBUTTONDOWN:
+				input.mouseButtonDownEvent(event);
+				break;
+			case SDL_MOUSEBUTTONUP:
+				input.mouseButtonUpEvent(event);
+				break;
+			case SDL_QUIT:
 				return;
+				break;
 			}
 		}
-		
+
+		if (input.wasMouseButtonPressed(SDL_BUTTON_LEFT)) {
+			cout << "Left mouse button pressed!" << endl;
+		}
+		if (input.wasMouseButtonPressed(SDL_BUTTON_RIGHT)) {
+			cout << "Right mouse button pressed!" << endl;
+		}
 		if (input.wasKeyPressed(SDL_SCANCODE_ESCAPE)) {
 			return;
 		} 
-
 		
 		////else if (input.isKeyHeld(SDL_SCANCODE_LEFT)) {
 		////	this->_player.moveLeft();

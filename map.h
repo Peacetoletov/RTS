@@ -32,9 +32,9 @@ public:
 	void loadTestMap();
 
 	/* void loadTestObjects 
-	Creates instances (defined in this function) of GameObject in _objects to test the pathfinder
+	Creates an instance of GameObject in _objects at the specified position to test the pathfinder
 	*/
-	void loadTestObjects();
+	void loadTestObject(int row, int column);
 
 	/* int idToRow
 	Returns the row based on the id

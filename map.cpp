@@ -97,9 +97,8 @@ void Map::loadTestMap() {
 	
 }
 
-void Map::loadTestObjects() {
-	//Currently, I'm only creating 1 unit at row 4, column 1
-	GameObject* unit = new GameObject(positionToId(4, 1));
+void Map::loadTestObject(int row, int column) {
+	GameObject* unit = new GameObject(positionToId(row, column));
 	this->_objects.push_back(unit);
 }
 
