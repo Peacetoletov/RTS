@@ -31,6 +31,8 @@ public:
 	*/
 	void A_Star(Tile* start, Tile* end);
 
+	//TODO: Create a goal-based Dijkstra pathfinding algorithm
+
 private:
 	Map* _mapP;
 	Graphics* _graphicsP;

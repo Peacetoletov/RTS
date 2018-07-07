@@ -113,6 +113,10 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 	on any units.
 	*/
 
+	/* TODO
+	Put all the tiles that are included in the path to a vector and pass the vector to the unit.
+	*/
+
 	//Create a vector of analyzed tiles
 	//Will be used after the path is found to loop through all the analyzed tiles to reset them.
 	std::vector<Tile*> analyzedTiles;
@@ -144,15 +148,13 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 
 	while (!pathFound) {
 
-		//TODO: Do something if the openTiles vector is empty
-
 		//Sort open tiles, choose the most suitable tile to visit
 		if (openTiles.size() != 0) {
 			std::sort(openTiles.begin(), openTiles.end(), compareTilesF);
 			currentTile = openTiles[openTiles.size() - 1];
 		}
 		else {
-			std::cout << "Out of tiles! Path not found!" << std::endl;
+			//std::cout << "Out of tiles! Path not found!" << std::endl;
 			break;
 		}
 
@@ -226,21 +228,6 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 				}
 			}
 		}
-
-		/* Test
-		std::cout << "Before sorting:" << std::endl;
-		for (int i = 0; i < openTiles.size(); i++) {
-			std::cout << "openTiles[i] has F " << openTiles[i]->getF() << std::endl;
-		}
-		std::sort(openTiles.begin(), openTiles.end(), compareTilesF);
-		std::cout << "After sorting:" << std::endl;
-		for (int i = 0; i < openTiles.size(); i++) {
-			std::cout << "openTiles[i] has F " << openTiles[i]->getF() << std::endl;
-		}
-		*/
-		
-		//TODO: Correctly set pathFound to true
-		//pathFound = true;
 	}
 
 	//Reset all analyzed tiles
