@@ -38,6 +38,11 @@ public:
 	*/
 	bool isNeighbourDiagonal(Tile* neighbour);
 
+	/* void reset
+	Resets all member variables to their default state.
+	*/
+	void reset();
+
 	//Setters
 	void setType(TerrainAvailability type);
 	void setNeighbours(std::vector<Tile*> neighbours);

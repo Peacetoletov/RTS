@@ -2,6 +2,7 @@
 
 #include "graphics.h"
 #include "globals.h"
+#include <algorithm>		//std::sort
 
 #include <iostream>
 
@@ -137,14 +138,27 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 	analyzedTiles.push_back(start);
 	openTiles.push_back(start);
 
-	//Set the start tile as the current tile, begin the loop
-	Tile* currentTile = start;
+	//Begin the loop
 	bool pathFound = false;
+	Tile* currentTile = nullptr;
 
 	while (!pathFound) {
 
-		//TODO: Sort open tiles, choose the most suitable tile to visit
+		//TODO: Do something if the openTiles vector is empty
 
+		//Sort open tiles, choose the most suitable tile to visit
+		if (openTiles.size() != 0) {
+			std::sort(openTiles.begin(), openTiles.end(), compareTilesF);
+			currentTile = openTiles[openTiles.size() - 1];
+		}
+		else {
+			std::cout << "Out of tiles! Path not found!" << std::endl;
+			break;
+		}
+
+		//Test
+		std::cout << "Visiting tile " << _mapP->idToRow(currentTile->getId()) <<
+			"|" << _mapP->idToColumn(currentTile->getId()) << std::endl;
 
 		//Remove the pointer to the current tile from the openTiles vector, as I'm about to visit the tile
 		openTiles.pop_back();
@@ -165,18 +179,7 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 			*/
 
 			if (!(*neighbours)[i]->getWasVisited() && (*neighbours)[i]->getType() == Tile::TerrainAvailability::ALL) {
-
-				//This can only happen once per tile
-				if ((*neighbours)[i]->getH() == INT_MAX) {
-					//Set H value
-					int H = (*neighbours)[i]->calculateH(this->_mapP->getTilesP()[end->getId()]);
-					(*neighbours)[i]->setH(H);
-
-					//Add this tile to the vector of analyzed and open tiles
-					analyzedTiles.push_back((*neighbours)[i]);
-					openTiles.push_back((*neighbours)[i]);
-				}
-
+								
 				//This can happen multiple times per tile
 				
 				//Set G value
@@ -194,8 +197,8 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 
 					/*
 					std::cout << "Tile " << _mapP->idToRow((*neighbours)[i]->getId()) << "|" <<
-					_mapP->idToColumn((*neighbours)[i]->getId()) << " has G " <<
-					(*neighbours)[i]->getG() << std::endl;
+					_mapP->idToColumn((*neighbours)[i]->getId()) << " has F " <<
+					(*neighbours)[i]->getF() << std::endl;
 					*/
 
 					//Set the parent
@@ -204,22 +207,51 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 
 					//std::cout << "Parent of tile " << (*neighbours)[i]->getId() << " is " << currentTile->getId() << std::endl;
 				}
+
+				//This can only happen once per tile
+				if ((*neighbours)[i]->getH() == INT_MAX) {
+					//Set H value
+					int H = (*neighbours)[i]->calculateH(this->_mapP->getTilesP()[end->getId()]);
+					(*neighbours)[i]->setH(H);
+
+					if (H == 0) {
+						std::cout << "Found the end! It's " << _mapP->idToRow((*neighbours)[i]->getId()) <<
+							"|" << _mapP->idToColumn((*neighbours)[i]->getId()) << std::endl;
+						pathFound = true;
+					}
+
+					//Add this tile to the vector of analyzed and open tiles
+					analyzedTiles.push_back((*neighbours)[i]);
+					openTiles.push_back((*neighbours)[i]);
+				}
 			}
 		}
 
-		/*
-		//test
-		for (int i = 0; i < analyzedTiles.size(); i++) {
-			std::cout << "Tile " << analyzedTiles[i]->getId() << " was analyzed." << std::endl;
+		/* Test
+		std::cout << "Before sorting:" << std::endl;
+		for (int i = 0; i < openTiles.size(); i++) {
+			std::cout << "openTiles[i] has F " << openTiles[i]->getF() << std::endl;
+		}
+		std::sort(openTiles.begin(), openTiles.end(), compareTilesF);
+		std::cout << "After sorting:" << std::endl;
+		for (int i = 0; i < openTiles.size(); i++) {
+			std::cout << "openTiles[i] has F " << openTiles[i]->getF() << std::endl;
 		}
 		*/
-
-		//TODO: Reset all analyzed tiles
-
-
+		
 		//TODO: Correctly set pathFound to true
-		pathFound = true;
+		//pathFound = true;
+	}
+
+	//Reset all analyzed tiles
+	for (int i = 0; i < analyzedTiles.size(); i++) {
+		analyzedTiles[i]->reset();
 	}
 
 }
 
+//PRIVATE METHODS
+bool Pathfinder::compareTilesF(Tile* a, Tile* b) { 
+	//Sorts pointers to Tile objects based on their F values in descending order
+	return (a->getF() > b->getF());
+}

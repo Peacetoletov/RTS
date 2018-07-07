@@ -12,9 +12,13 @@ Tile::Tile(int id, TerrainAvailability type, Map* mapP) :
 	_type(type),
 	_mapP(mapP)
 {
+	reset();
+
+	/*
 	this->_wasVisited = false;
 	this->_G = INT_MAX;		//Not infinity, but close enough
 	this->_H = INT_MAX;		//Not infinity, but close enough
+	*/
 }
 
 Tile::~Tile() {
@@ -58,6 +62,13 @@ bool Tile::isNeighbourDiagonal(Tile* neighbour) {
 
 	//If the difference in rows and columns is 1, return true. Otherwise return false.
 	return ((rowDiff == 1 && columnDiff == 1) ? true : false);
+}
+
+void Tile::reset() {
+	this->_wasVisited = false;
+	this->_G = INT_MAX;				//Not infinity, but close enough
+	this->_H = INT_MAX;				//Not infinity, but close enough
+	Tile* _parentP = nullptr;
 }
 
 void Tile::setType(TerrainAvailability type) {
