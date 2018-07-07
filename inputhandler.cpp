@@ -45,6 +45,6 @@ void InputHandler::leftMouseButtonPressed() {
 
 		//Test pathfinding
 		Tile* startTile = mapP->getTilesP()[(*mapP->getObjectsP())[0]->getId()];		//It's some kind of elvish, I can't read it	
-		this->_levelP->getPathfinderP()->findPath(startTile, targetTileP);
+		this->_levelP->getPathfinderP()->A_Star(startTile, targetTileP);
 	}
 }

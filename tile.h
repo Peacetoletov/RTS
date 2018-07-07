@@ -44,6 +44,7 @@ public:
 	void setWasChecked(bool wasChecked);
 	void setG(int G);
 	void setH(int H);
+	void setParentP(Tile* parentP);
 
 	//Getters
 	int getId();
@@ -53,6 +54,7 @@ public:
 	int getG();		
 	int getH();			//This one is currently being used for testing
 	int getF();
+	Tile* getParentP();
 
 private:
 	int _id;
@@ -64,6 +66,7 @@ private:
 	int _G;								//Distance from start
 	int _H;								//Minimal distance to end
 	//int _F doesn't have to be stored, as I can get it by summing up _G and _H
+	Tile* _parentP;
 
 };
 

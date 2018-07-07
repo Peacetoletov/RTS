@@ -13,6 +13,8 @@ Tile::Tile(int id, TerrainAvailability type, Map* mapP) :
 	_mapP(mapP)
 {
 	this->_wasChecked = false;
+	this->_G = INT_MAX;		//Not infinity, but close enough
+	this->_H = INT_MAX;		//Not infinity, but close enough
 }
 
 Tile::~Tile() {
@@ -78,6 +80,10 @@ void Tile::setH(int H) {
 	this->_H = H;
 }
 
+void Tile::setParentP(Tile* parentP) {
+	this->_parentP = parentP;
+}
+
 int Tile::getId() {
 	return this->_id;
 }
@@ -104,4 +110,8 @@ int Tile::getH() {
 
 int Tile::getF() {
 	return (this->_G + this->_H);
+}
+
+Tile* Tile::getParentP() {
+	return this->_parentP;
 }

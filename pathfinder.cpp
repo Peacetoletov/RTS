@@ -102,7 +102,15 @@ void Pathfinder::testDrawTiles() {
 	*/
 }
 
-void Pathfinder::findPath(Tile* start, Tile* end) {
+void Pathfinder::A_Star(Tile* start, Tile* end) {
+	/* TODO
+	Change arguments from (Tile* start, Tile* end) to (GameObject* unit, Tile* end).
+	That will allow for more precise checking - right now, the pathfinder will consider both types of
+	obstacles as unpassable. Instead, it should be allowed to move through tiles accessible by air units,
+	if the unit is air-type.
+	The reason why I'm not doing it yet is that this version is easier to test, as it doesn't rely
+	on any units.
+	*/
 	
 	//Set up the start tile
 	start->setG(0);
@@ -118,21 +126,55 @@ void Pathfinder::findPath(Tile* start, Tile* end) {
 
 		std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
 		for (int i = 0; i < neighbours->size(); i++) {
-			//I first need to check if the neighbour tile is diagonal or not.
-			//If it's diagonal, I add 14 to the current G, otherwise 10.
 
-			int G_increase = currentTile->isNeighbourDiagonal((*neighbours)[i]) ? 14 : 10;
+			//If the unit cannot move through the neighbour tile, skip the tile
 
-			(*neighbours)[i]->setG(currentTile->getG() + G_increase);
+			/* TODO: Right now, I skip air unit accessible tiles without checking if the unit
+			is of air type. Add this check.
+			*/
 
-			/* 
-			std::cout << "Tile " << _mapP->idToRow((*neighbours)[i]->getId()) << "|" <<
-				_mapP->idToColumn((*neighbours)[i]->getId()) << " has G " <<
-				(*neighbours)[i]->getG() << std::endl;
+			if ((*neighbours)[i]->getType() == Tile::TerrainAvailability::ALL) {
+
+				//Set H value
+				/*
+				I only need to set the H value once per analyzed tile. Since I'm setting H before G,
+				I can check this by looking at the G value. If it's the base (infinity-like) value,
+				that means G was never changed, therefore H was never set.
 				*/
+				if ((*neighbours)[i]->getG() == INT_MAX) {
+					int H = (*neighbours)[i]->calculateH(this->_mapP->getTilesP()[end->getId()]);
+					(*neighbours)[i]->setH(H);
+				}
+				
+				//Set G value
+				/*
+				I first need to check if the neighbour tile is diagonal or not.
+				If it's diagonal, I would add 14 to the current G, otherwise 10.
+				I only change the G value if the new value would be smaller than
+				the current one.
+				*/
+
+				int G_increase = currentTile->isNeighbourDiagonal((*neighbours)[i]) ? 14 : 10;
+
+				if (currentTile->getG() + G_increase < (*neighbours)[i]->getG()) {
+					(*neighbours)[i]->setG(currentTile->getG() + G_increase);
+
+					/*
+					std::cout << "Tile " << _mapP->idToRow((*neighbours)[i]->getId()) << "|" <<
+					_mapP->idToColumn((*neighbours)[i]->getId()) << " has G " <<
+					(*neighbours)[i]->getG() << std::endl;
+					*/
+
+					//Set the parent
+					//Only if the new G is smaller than the previous G
+					(*neighbours)[i]->setParentP(currentTile);
+
+					//std::cout << "Parent of tile " << (*neighbours)[i]->getId() << " is " << currentTile->getId() << std::endl;
+				}
+			}
 		}
 
-		//MARK THE CURRENT TILE OFF OF THE LIST
+		//MARK THE CURRENT TILE OFF THE LIST
 		currentTile->setWasChecked(true);
 
 		/*
