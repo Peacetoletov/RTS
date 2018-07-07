@@ -41,7 +41,7 @@ public:
 	//Setters
 	void setType(TerrainAvailability type);
 	void setNeighbours(std::vector<Tile*> neighbours);
-	void setWasChecked(bool wasChecked);
+	void setWasVisited(bool wasVisited);
 	void setG(int G);
 	void setH(int H);
 	void setParentP(Tile* parentP);
@@ -50,7 +50,7 @@ public:
 	int getId();
 	TerrainAvailability getType();
 	std::vector<Tile*>* getNeighboursP();
-	bool getWasChecked();
+	bool getWasVisited();
 	int getG();		
 	int getH();			//This one is currently being used for testing
 	int getF();
@@ -62,7 +62,7 @@ private:
 	Map* _mapP;							//Pointer to the map object, allows the use of utility functions
 										//(switching between columns and rows and id)
 	std::vector<Tile*> _neighbours;		//Vector holding pointers to neighbour tiles
-	bool _wasChecked;
+	bool _wasVisited;
 	int _G;								//Distance from start
 	int _H;								//Minimal distance to end
 	//int _F doesn't have to be stored, as I can get it by summing up _G and _H

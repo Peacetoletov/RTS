@@ -12,7 +12,7 @@ Tile::Tile(int id, TerrainAvailability type, Map* mapP) :
 	_type(type),
 	_mapP(mapP)
 {
-	this->_wasChecked = false;
+	this->_wasVisited = false;
 	this->_G = INT_MAX;		//Not infinity, but close enough
 	this->_H = INT_MAX;		//Not infinity, but close enough
 }
@@ -68,8 +68,8 @@ void Tile::setNeighbours(std::vector<Tile*> neighbours) {
 	this->_neighbours = neighbours;
 }
 
-void Tile::setWasChecked(bool wasChecked) {
-	this->_wasChecked = wasChecked;
+void Tile::setWasVisited(bool wasVisited) {
+	this->_wasVisited = wasVisited;
 }
 
 void Tile::setG(int G) {
@@ -96,8 +96,8 @@ std::vector<Tile*>* Tile::getNeighboursP() {
 	return &this->_neighbours;
 }
 
-bool Tile::getWasChecked() {
-	return this->_wasChecked;
+bool Tile::getWasVisited() {
+	return this->_wasVisited;
 }
 
 int Tile::getG() {

@@ -111,40 +111,73 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 	The reason why I'm not doing it yet is that this version is easier to test, as it doesn't rely
 	on any units.
 	*/
-	
+
+	//Create a vector of analyzed tiles
+	//Will be used after the path is found to loop through all the analyzed tiles to reset them.
+	std::vector<Tile*> analyzedTiles;
+
+	/* Difference between visited and analyzed tiles
+	Analyzed tiles haven't been visited yet. They were analyzed as a neighbour to a visited tile.
+	Visited tiles have been previously analyzed and were the best candidates to be visited -
+	they had the lowest F value out of all the analyzed tiles.
+	*/
+
+	//Create a vector of open tiles
+	/*
+	Open tiles are the tiles which are candidates to be visited. 
+	Visited tiles are removed from the vector.
+	*/
+	std::vector<Tile*> openTiles;
+
 	//Set up the start tile
 	start->setG(0);
 	start->setH(start->calculateH(end));
-	
+
+	//Add the start tile openTiles and analyzedTiles
+	analyzedTiles.push_back(start);
+	openTiles.push_back(start);
+
 	//Set the start tile as the current tile, begin the loop
 	Tile* currentTile = start;
 	bool pathFound = false;
 
 	while (!pathFound) {
 
-		//ANALYZE NEIGHBOURS
+		//TODO: Sort open tiles, choose the most suitable tile to visit
+
+
+		//Remove the pointer to the current tile from the openTiles vector, as I'm about to visit the tile
+		openTiles.pop_back();
+
+		//Set the current tile as visited
+		currentTile->setWasVisited(true);
+
+		//Analyze neighbours
 
 		std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
 		for (int i = 0; i < neighbours->size(); i++) {
 
-			//If the unit cannot move through the neighbour tile, skip the tile
+			//If the neighbour tile was already checked, skip it.
+			//If the unit cannot move through the neighbour tile, also skip it.
 
 			/* TODO: Right now, I skip air unit accessible tiles without checking if the unit
 			is of air type. Add this check.
 			*/
 
-			if ((*neighbours)[i]->getType() == Tile::TerrainAvailability::ALL) {
+			if (!(*neighbours)[i]->getWasVisited() && (*neighbours)[i]->getType() == Tile::TerrainAvailability::ALL) {
 
-				//Set H value
-				/*
-				I only need to set the H value once per analyzed tile. Since I'm setting H before G,
-				I can check this by looking at the G value. If it's the base (infinity-like) value,
-				that means G was never changed, therefore H was never set.
-				*/
-				if ((*neighbours)[i]->getG() == INT_MAX) {
+				//This can only happen once per tile
+				if ((*neighbours)[i]->getH() == INT_MAX) {
+					//Set H value
 					int H = (*neighbours)[i]->calculateH(this->_mapP->getTilesP()[end->getId()]);
 					(*neighbours)[i]->setH(H);
+
+					//Add this tile to the vector of analyzed and open tiles
+					analyzedTiles.push_back((*neighbours)[i]);
+					openTiles.push_back((*neighbours)[i]);
 				}
+
+				//This can happen multiple times per tile
 				
 				//Set G value
 				/*
@@ -174,13 +207,17 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 			}
 		}
 
-		//MARK THE CURRENT TILE OFF THE LIST
-		currentTile->setWasChecked(true);
-
 		/*
-		Maybe create a vector of checked tiles?
+		//test
+		for (int i = 0; i < analyzedTiles.size(); i++) {
+			std::cout << "Tile " << analyzedTiles[i]->getId() << " was analyzed." << std::endl;
+		}
 		*/
 
+		//TODO: Reset all analyzed tiles
+
+
+		//TODO: Correctly set pathFound to true
 		pathFound = true;
 	}
 
