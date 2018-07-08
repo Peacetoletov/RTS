@@ -31,7 +31,18 @@ public:
 	*/
 	void A_Star(Tile* start, Tile* end);
 
-	//TODO: Create a goal-based Dijkstra pathfinding algorithm
+	/* TODO: Create a goal-based Dijkstra pathfinding algorithm
+	In case the game starts lagging when using this algorithm on very big maps
+	(let's say twice the size of an edge of the biggest map in the game),
+	I will use breadth first search instead of Dijkstra. It's less precise,
+	meaning sometimes if won't choose the shortest path, but it should be much
+	more efficient because it doesn't need any sorting.
+
+	Nevermind, the goal-based vector field is useless for me because I'm using a
+	dynamic map. Units could get stuck way too easily. Instead, I will use a*
+	for small groups ( < 10 units) individually. For bigger groups, I may
+	need to use some sort of flocking.
+	*/
 
 private:
 	Map* _mapP;
