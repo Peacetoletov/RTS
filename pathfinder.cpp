@@ -158,9 +158,10 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 			break;
 		}
 
-		//Test
+		/* Test
 		std::cout << "Visiting tile " << _mapP->idToRow(currentTile->getId()) <<
 			"|" << _mapP->idToColumn(currentTile->getId()) << std::endl;
+		*/
 
 		//Remove the pointer to the current tile from the openTiles vector, as I'm about to visit the tile
 		openTiles.pop_back();
@@ -217,8 +218,10 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 					(*neighbours)[i]->setH(H);
 
 					if (H == 0) {
+						/*
 						std::cout << "Found the end! It's " << _mapP->idToRow((*neighbours)[i]->getId()) <<
 							"|" << _mapP->idToColumn((*neighbours)[i]->getId()) << std::endl;
+							*/
 						pathFound = true;
 					}
 

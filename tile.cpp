@@ -37,7 +37,7 @@ int Tile::calculateH(Tile* endTile) {
 	//Determine which one is smaller
 	int smaller = std::min(rowDiff, columnDiff);
 
-	//Calculate diagonal distance by taking all units common to both differences (rows and column)
+	//Calculate diagonal distance by taking all units common to both differences (rows and columns)
 	//and translating them into the distance, where 1 diagonal has a distance of 14
 	//(assuming the length of 1 tile is 10, then 14 is an approximation of sqrt(2 * 10))
 	int distance = smaller * 14;
