@@ -17,7 +17,7 @@ The entry point of the program
 int main(int argc, char *args[]) {
 	
 	//std::cout << "kokot" << std::endl;
-
+	
 	//Test test;			//1 of these 2 must be commented out
 	Game game;				//1 of these 2 must be commented out
 

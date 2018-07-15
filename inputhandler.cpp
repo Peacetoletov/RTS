@@ -4,10 +4,7 @@
 #include <iostream>
 
 //test
-#include <vector>
-
-//test
-#include <time.h>
+#include <chrono>
 
 InputHandler::InputHandler() {}
 
@@ -48,26 +45,31 @@ void InputHandler::leftMouseButtonPressed() {
 
 		//Test pathfinding
 		Tile* startTile = mapP->getTilesP()[(*mapP->getObjectsP())[0]->getId()];		//It's some kind of elvish, I can't read it	
+		//this->_levelP->getPathfinderP()->A_Star(startTile, targetTileP);
 
 		//Optimization test
-		time_t timer;
-		struct tm y2k = { 0 };
-		y2k.tm_hour = 0;   y2k.tm_min = 0; y2k.tm_sec = 0;
-		y2k.tm_year = 100; y2k.tm_mon = 0; y2k.tm_mday = 1;
-		time(&timer);  /* get current time; same as: timer = time(NULL)  */
-		double secondsStart = difftime(timer, mktime(&y2k));
-
+		/*
 		std::cout << "Starting search. " << std::endl;
+		double startTime = time(NULL);
+
 		for (int i = 0; i < 100; i++) {		//testing the efficiency
 			this->_levelP->getPathfinderP()->A_Star(startTile, targetTileP);
 		}
 
-		time(&timer);
-		double secondsEnd = difftime(timer, mktime(&y2k));
-		double secondsDiff = (secondsEnd - secondsStart) / 100;
+		double secondsDiff = (time(NULL) - startTime) / 100;
 		std::cout << "Search finished." << secondsDiff << std::endl;
+		*/
 
-		//0.58 seconds per 1 run of a* on a 80x100 map when selecting an unreachable goal WITH sorting.
-		//0.14 without sorting.
+		std::cout << "Starting search. " << std::endl;
+		auto start = std::chrono::system_clock::now();
+
+		this->_levelP->getPathfinderP()->A_Star(startTile, targetTileP);
+
+		auto end = std::chrono::system_clock::now();
+		std::chrono::duration<float> diff = end - start;
+		std::cout << "Search finished. " << floor(diff.count() * 1000) << " milliseconds elapsed." << std::endl;
+		
+
+		//0.2 seconds per 1 run of a* on a 80x100 map when selecting an unreachable goal with analyzed tiles in a vector.
 	}
 }

@@ -2,7 +2,10 @@
 
 #include "graphics.h"
 #include "globals.h"
+#include "comparator.h"
 #include <algorithm>		//std::sort
+#include <queue>			//std::priority_queue
+
 
 #include <iostream>
 
@@ -130,19 +133,12 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 	they had the lowest F value out of all the analyzed tiles.
 	*/
 
-	//Create a vector of open tiles
+	//Create a priority queue of open tiles
 	/*
 	Open tiles are the tiles which are candidates to be visited. 
-	Visited tiles are removed from the vector.
+	Visited tiles are removed from the queue.
 	*/
-
-	/* TODO - OPTIMIZATION
-	Change this from a vector to a priority queue.
-	https://en.cppreference.com/w/cpp/container/priority_queue
-	https://stackoverflow.com/questions/16111337/declaring-a-priority-queue-in-c-with-a-custom-comparator
-	*/
-
-	std::vector<Tile*> openTiles;
+	std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles;
 
 	//Set up the start tile
 	start->setG(0);
@@ -150,7 +146,7 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 
 	//Add the start tile openTiles and analyzedTiles
 	analyzedTiles.push_back(start);
-	openTiles.push_back(start);
+	openTiles.push(start);
 
 	//Begin the loop
 	bool pathFound = false;
@@ -158,31 +154,32 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 
 	while (!pathFound) {
 
-		//Sort open tiles, choose the most suitable tile to visit
+		//Choose the most suitable tile to visit
 		if (openTiles.size() != 0) {
-			std::sort(openTiles.begin(), openTiles.end(), compareTilesF);
-			currentTile = openTiles[openTiles.size() - 1];
+			currentTile = openTiles.top();
 		}
 		else {
 			//std::cout << "Out of tiles! Path not found!" << std::endl;
 			break;
 		}
 
-		/* Test
+		/*
+		//Test
 		std::cout << "Visiting tile " << _mapP->idToRow(currentTile->getId()) <<
-			"|" << _mapP->idToColumn(currentTile->getId()) << std::endl;
-		*/
+			"|" << _mapP->idToColumn(currentTile->getId()) << ". It has F " << 
+			currentTile->getF() << ". Amount of tiles in openTiles: " << 
+			openTiles.size() << std::endl;
+			*/
+		
 
-		//Remove the pointer to the current tile from the openTiles vector, as I'm about to visit the tile
-		openTiles.pop_back();
+		//Remove the pointer to the current tile from the openTiles queue, as I'm about to visit the tile
+		openTiles.pop();
 
 		//Set the current tile as visited
 		currentTile->setWasVisited(true);
 
 		//Analyze neighbours		
-
 		std::vector<Tile*>* neighbours = currentTile->getNeighboursP();		
-
 		for (int i = 0; i < neighbours->size(); i++) {
 
 			//If the neighbour tile was already checked, skip it.
@@ -204,12 +201,16 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 				the current one.
 				*/
 
-				//POSSIBLE OPTIMIZATION:
-				//Instead of checking this all the time, I can assign another vector to each tile
-				//that contains information about each neighbour (whether or not it's diagonal).
-				//I would access this infomation based on the index in the vector.
-				//Is neighbour[i] diagonal? I look at isDiagonal[i] and boom! I don't need to calculate
-				//it over and over again.
+				/* POSSIBLE OPTIMIZATION:
+				Instead of checking this all the time, I can assign another vector to each tile
+				that contains information about each neighbour (whether or not it's diagonal).
+				I would access this infomation based on the index in the vector.
+				Is neighbour[i] diagonal? I look at isDiagonal[i] and boom! I don't need to calculate
+				it over and over again.
+
+				I tested it and found out that this would speed it up by 10 %.
+				*/
+
 				int G_increase = currentTile->isNeighbourDiagonal((*neighbours)[i]) ? 14 : 10;
 
 				if (currentTile->getG() + G_increase < (*neighbours)[i]->getG()) {
@@ -230,6 +231,7 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 
 				//This can only happen once per tile
 				if ((*neighbours)[i]->getH() == INT_MAX) {
+
 					//Set H value
 					int H = (*neighbours)[i]->calculateH(this->_mapP->getTilesP()[end->getId()]);
 					(*neighbours)[i]->setH(H);
@@ -242,9 +244,9 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 						pathFound = true;
 					}
 
-					//Add this tile to the vector of analyzed and open tiles
+					//Add this tile to the vector and queue of analyzed and open tiles
 					analyzedTiles.push_back((*neighbours)[i]);
-					openTiles.push_back((*neighbours)[i]);
+					openTiles.push((*neighbours)[i]);
 				}
 			}
 		}
@@ -255,11 +257,4 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 	for (int i = 0; i < analyzedTiles.size(); i++) {
 		analyzedTiles[i]->reset();
 	}
-
-}
-
-//PRIVATE METHODS
-bool Pathfinder::compareTilesF(Tile* a, Tile* b) { 
-	//Sorts pointers to Tile objects based on their F values in descending order
-	return (a->getF() > b->getF());
 }

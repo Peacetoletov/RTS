@@ -48,9 +48,6 @@ private:
 	Map* _mapP;
 	Graphics* _graphicsP;
 	TTF_Font* _font;
-
-	//Methods
-	static bool compareTilesF(Tile* a, Tile* b);
 };
 
 #endif
