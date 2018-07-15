@@ -49,6 +49,7 @@ void InputHandler::leftMouseButtonPressed() {
 		//Test pathfinding
 		Tile* startTile = mapP->getTilesP()[(*mapP->getObjectsP())[0]->getId()];		//It's some kind of elvish, I can't read it	
 
+		//Optimization test
 		time_t timer;
 		struct tm y2k = { 0 };
 		y2k.tm_hour = 0;   y2k.tm_min = 0; y2k.tm_sec = 0;

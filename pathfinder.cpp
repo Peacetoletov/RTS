@@ -6,6 +6,9 @@
 
 #include <iostream>
 
+//test
+#include <time.h>
+
 
 /* class Pathfinder
 This class deals with pathfinding.
@@ -132,6 +135,13 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 	Open tiles are the tiles which are candidates to be visited. 
 	Visited tiles are removed from the vector.
 	*/
+
+	/* TODO - OPTIMIZATION
+	Change this from a vector to a priority queue.
+	https://en.cppreference.com/w/cpp/container/priority_queue
+	https://stackoverflow.com/questions/16111337/declaring-a-priority-queue-in-c-with-a-custom-comparator
+	*/
+
 	std::vector<Tile*> openTiles;
 
 	//Set up the start tile
@@ -169,9 +179,10 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 		//Set the current tile as visited
 		currentTile->setWasVisited(true);
 
-		//Analyze neighbours
+		//Analyze neighbours		
 
-		std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
+		std::vector<Tile*>* neighbours = currentTile->getNeighboursP();		
+
 		for (int i = 0; i < neighbours->size(); i++) {
 
 			//If the neighbour tile was already checked, skip it.
@@ -182,9 +193,9 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 			*/
 
 			if (!(*neighbours)[i]->getWasVisited() && (*neighbours)[i]->getType() == Tile::TerrainAvailability::ALL) {
-								
+
 				//This can happen multiple times per tile
-				
+
 				//Set G value
 				/*
 				I first need to check if the neighbour tile is diagonal or not.
@@ -193,6 +204,12 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 				the current one.
 				*/
 
+				//POSSIBLE OPTIMIZATION:
+				//Instead of checking this all the time, I can assign another vector to each tile
+				//that contains information about each neighbour (whether or not it's diagonal).
+				//I would access this infomation based on the index in the vector.
+				//Is neighbour[i] diagonal? I look at isDiagonal[i] and boom! I don't need to calculate
+				//it over and over again.
 				int G_increase = currentTile->isNeighbourDiagonal((*neighbours)[i]) ? 14 : 10;
 
 				if (currentTile->getG() + G_increase < (*neighbours)[i]->getG()) {
@@ -231,6 +248,7 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 				}
 			}
 		}
+
 	}
 
 	//Reset all analyzed tiles
