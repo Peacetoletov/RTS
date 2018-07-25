@@ -70,10 +70,12 @@ void InputHandler::leftMouseButtonPressed() {
 		std::cout << "Search finished." << secondsDiff << std::endl;
 		*/
 
-		std::cout << "Notifying!" << std::endl;
+		//std::cout << "Setting the start and end tiles!" << std::endl;
+		_pathfinderP->setTiles(startTile, targetTileP);
+		//std::cout << "Notifying!" << std::endl;
 		_pathfinderP->getCondP()->notify_one();
 
-		
+		/*
 		std::cout << "Starting search * 10. " << std::endl;
 		auto start = std::chrono::system_clock::now();
 
@@ -83,7 +85,7 @@ void InputHandler::leftMouseButtonPressed() {
 		auto end = std::chrono::system_clock::now();
 		std::chrono::duration<float> diff = end - start;
 		std::cout << "Search finished. " << floor(diff.count() * 1000) << " milliseconds elapsed." << std::endl;
-		
+		*/
 
 		//0.2 seconds per 1 run of a* on a 80x100 map when selecting an unreachable goal with analyzed tiles in a vector.
 	}

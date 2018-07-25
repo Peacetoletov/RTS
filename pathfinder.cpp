@@ -109,9 +109,9 @@ void Pathfinder::testDrawTiles() {
 	*/
 }
 
-void Pathfinder::A_Star(Tile* start, Tile* end) {
+void Pathfinder::A_Star(Tile* start, Tile* target) {
 	/* TODO
-	Change arguments from (Tile* start, Tile* end) to (GameObject* unit, Tile* end).
+	Change arguments from (Tile* start, Tile* target) to (GameObject* unit, Tile* target).
 	That will allow for more precise checking - right now, the pathfinder will consider both types of
 	obstacles as unpassable. Instead, it should be allowed to move through tiles accessible by air units,
 	if the unit is air-type.
@@ -142,7 +142,7 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 
 	//Set up the start tile
 	start->setG(0);
-	start->setH(start->calculateH(end));
+	start->setH(start->calculateH(target));
 
 	//Add the start tile openTiles and analyzedTiles
 	analyzedTiles.push_back(start);
@@ -233,7 +233,7 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 				if ((*neighbours)[i]->getH() == INT_MAX) {
 
 					//Set H value
-					int H = (*neighbours)[i]->calculateH(this->_mapP->getTilesP()[end->getId()]);
+					int H = (*neighbours)[i]->calculateH(this->_mapP->getTilesP()[target->getId()]);
 					(*neighbours)[i]->setH(H);
 
 					if (H == 0) {
@@ -260,25 +260,60 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 }
 
 void Pathfinder::threadStart() {
-	//std::cout << "Position of _mapP in memory is " << _mapP << std::endl;
+	/* TODO: Fix the problem that happens if I click too fast and attempt to find another path before the first path
+	is found. Right now, it just sees the locked mutex and gets ignored. Make some kind of a queue.
+	Also, another problem is that even though I use mutex, it only protects the pointers. It doesn't protect the 
+	objects themselves. I need to fix this or somehow get around it.
+	*/
 	while (true) {
-		std::unique_lock<std::mutex> locker(_mu);
+		std::unique_lock<std::mutex> locker(_muWaiter);
 		_cond.wait(locker);
-		std::cout << "This should appear after certain wait time." << std::endl;
+		//std::cout << "This should appear after certain wait time." << std::endl;
+
+
+		//std::cout << "Starting search * 10. " << std::endl;
+		auto start = std::chrono::system_clock::now();
+
+		for (int i = 0; i < 10; i++)
+			A_Star(getStartTileP(), getTargetTileP());
+
+		auto end = std::chrono::system_clock::now();
+		std::chrono::duration<float> diff = end - start;
+		std::cout << "Search finished. " << floor(diff.count() * 1000) << " milliseconds elapsed." << std::endl;
+
 		locker.unlock();
 	}
 	
 	
 }
 
+void Pathfinder::setTiles(Tile* startTileP, Tile* targetTileP) {
+	std::unique_lock<std::mutex> locker(_mu);
+	_startTileP = startTileP;
+	_targetTileP = targetTileP;
+	locker.unlock();
+}
+
 Map* Pathfinder::getMapP() {
 	return _mapP;
 }
 
+/*
 std::mutex* Pathfinder::getMuP() {
 	return &_mu;
 }
+*/
 
 std::condition_variable* Pathfinder::getCondP() {
 	return &_cond;
+}
+
+Tile* Pathfinder::getStartTileP() {
+	std::unique_lock<std::mutex> locker(_mu);
+	return _startTileP;
+}
+
+Tile* Pathfinder::getTargetTileP() {
+	std::unique_lock<std::mutex> locker(_mu);
+	return _targetTileP;
 }
