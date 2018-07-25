@@ -3,6 +3,7 @@
 #include "graphics.h"
 #include "globals.h"
 #include "comparator.h"
+#include "pathparameters.h"
 #include <algorithm>		//std::sort
 #include <queue>			//std::priority_queue
 
@@ -264,18 +265,31 @@ void Pathfinder::threadStart() {
 	is found. Right now, it just sees the locked mutex and gets ignored. Make some kind of a queue.
 	Also, another problem is that even though I use mutex, it only protects the pointers. It doesn't protect the 
 	objects themselves. I need to fix this or somehow get around it.
+
+	Actually, these 2 problems have a solution that fixes both of them - creating a queue.
+	*/
+
+	/* I will create a new class. Instances of this class will be put in the queue.
+	The objects will contain information about the search algorithm (A* or Dijkstra), the target tile
+	and all units in the group if Dijkstra.
 	*/
 	while (true) {
 		std::unique_lock<std::mutex> locker(_muWaiter);
-		_cond.wait(locker);
+		if (_pathParametersQueue.size() == 0) {
+			_cond.wait(locker);
+		}
+		
 		//std::cout << "This should appear after certain wait time." << std::endl;
 
 
 		//std::cout << "Starting search * 10. " << std::endl;
 		auto start = std::chrono::system_clock::now();
 
-		for (int i = 0; i < 10; i++)
-			A_Star(getStartTileP(), getTargetTileP());
+		for (int i = 0; i < 10; i++) {
+			//TODO: Create an implementation of PathParameters class and use it here to get the startTileP and targetTileP
+			//TODO: Instead of a targetTileP, I will pass the unit pointer itself as the parameter
+			//A_Star(getStartTileP(), getTargetTileP());
+		}
 
 		auto end = std::chrono::system_clock::now();
 		std::chrono::duration<float> diff = end - start;
@@ -287,27 +301,41 @@ void Pathfinder::threadStart() {
 	
 }
 
+/*
 void Pathfinder::setTiles(Tile* startTileP, Tile* targetTileP) {
 	std::unique_lock<std::mutex> locker(_mu);
 	_startTileP = startTileP;
 	_targetTileP = targetTileP;
 	locker.unlock();
 }
+*/
+
+void Pathfinder::pushPathParameters(PathParameters* parameters) {
+	std::unique_lock<std::mutex> locker(_mu);
+	_pathParametersQueue.push(parameters);
+	locker.unlock();
+}
+
+void Pathfinder::popPathParameters() {
+	std::unique_lock<std::mutex> locker(_mu);
+	_pathParametersQueue.pop();
+	locker.unlock();
+}
+
+PathParameters* Pathfinder::getFrontPathParameters() {
+	std::unique_lock<std::mutex> locker(_mu);
+	return _pathParametersQueue.front();
+}
 
 Map* Pathfinder::getMapP() {
 	return _mapP;
 }
 
-/*
-std::mutex* Pathfinder::getMuP() {
-	return &_mu;
-}
-*/
-
 std::condition_variable* Pathfinder::getCondP() {
 	return &_cond;
 }
 
+/*
 Tile* Pathfinder::getStartTileP() {
 	std::unique_lock<std::mutex> locker(_mu);
 	return _startTileP;
@@ -317,3 +345,4 @@ Tile* Pathfinder::getTargetTileP() {
 	std::unique_lock<std::mutex> locker(_mu);
 	return _targetTileP;
 }
+*/

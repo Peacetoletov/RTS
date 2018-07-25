@@ -6,13 +6,15 @@
 
 #include <mutex>
 #include <condition_variable>
+#include <queue>
 
 /* class Pathfinder
 This class deals with pathfinding.
 */
 
 class Graphics;
-class Tile;
+//class Tile;
+class PathParameters;
 
 /* TODO
 Create a goal-based pathfinding algorithm that can be used for navigating large groups of units (10+ units in a group).
@@ -39,15 +41,18 @@ public:
 	*/
 	void threadStart();
 
-	//Sets _startTileP and _targetTileP
-	void setTiles(Tile* startTileP, Tile* targetTileP);
+	//_pathParametersQueue functions using mutex
+	void pushPathParameters(PathParameters* parameters);
+	void popPathParameters();
+	PathParameters* getFrontPathParameters();
 
 	//Getters
 	Map* getMapP();
-	//std::mutex* getMuP();
 	std::condition_variable* getCondP();
+	/*
 	Tile* getStartTileP();
 	Tile* getTargetTileP();
+	*/
 
 private:
 	Map* _mapP;
@@ -57,10 +62,9 @@ private:
 	std::mutex _muWaiter;
 	std::mutex _mu;
 	std::condition_variable _cond;
-
-	//These Tile* pointers are shared between 2 threads and need to be accessed only using mutex
-	Tile* _startTileP;
-	Tile* _targetTileP;
+	
+	//This queue is shared between 2 threads and needs to be accessed only using mutex
+	std::queue<PathParameters*> _pathParametersQueue;
 
 };
 
