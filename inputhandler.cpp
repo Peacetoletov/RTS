@@ -8,9 +8,18 @@
 
 InputHandler::InputHandler() {}
 
+/*
 InputHandler::InputHandler(Input* inputP, Level* levelP) :
 	_inputP(inputP),
 	_levelP(levelP)
+{
+
+}
+*/
+
+InputHandler::InputHandler(Input* inputP, Pathfinder* pathfinderP) :
+	_inputP(inputP),
+	_pathfinderP(pathfinderP)
 {
 
 }
@@ -32,10 +41,11 @@ void InputHandler::leftMouseButtonPressed() {
 	//Check if mouse if within the borders of the map (terrain)
 	int mouseX = this->_inputP->getMouseX();
 	int mouseY = this->_inputP->getMouseY();
-	if ((mouseX > 0 && mouseX < this->_levelP->getMapP()->getColumns() * globals::TILE_SIZE) &&
-		(mouseY > 0 && mouseY < this->_levelP->getMapP()->getRows() * globals::TILE_SIZE)) {
+	Map* mapP = _pathfinderP->getMapP();
+	if ((mouseX > 0 && mouseX < mapP->getColumns() * globals::TILE_SIZE) &&
+		(mouseY > 0 && mouseY < mapP->getRows() * globals::TILE_SIZE)) {
 		//std::cout << "Mouse clicked within the borders! Good boy." << std::endl;
-		Map* mapP = this->_levelP->getMapP();
+		
 		//mapP->getObjectsP[0]->setTargetTileP(mapP->getTilesP[mapP->positionToId(mouseY / globals::TILE_SIZE, mouseX / globals::TILE_SIZE)]);
 		
 		Tile* targetTileP = mapP->getTilesP()[mapP->positionToId(mouseY / globals::TILE_SIZE, mouseX / globals::TILE_SIZE)];
@@ -60,10 +70,15 @@ void InputHandler::leftMouseButtonPressed() {
 		std::cout << "Search finished." << secondsDiff << std::endl;
 		*/
 
-		std::cout << "Starting search. " << std::endl;
+		std::cout << "Notifying!" << std::endl;
+		_pathfinderP->getCondP()->notify_one();
+
+		
+		std::cout << "Starting search * 10. " << std::endl;
 		auto start = std::chrono::system_clock::now();
 
-		this->_levelP->getPathfinderP()->A_Star(startTile, targetTileP);
+		for (int i = 0; i < 10; i++)
+			this->_pathfinderP->A_Star(startTile, targetTileP);
 
 		auto end = std::chrono::system_clock::now();
 		std::chrono::duration<float> diff = end - start;

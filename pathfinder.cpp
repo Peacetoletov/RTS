@@ -258,3 +258,27 @@ void Pathfinder::A_Star(Tile* start, Tile* end) {
 		analyzedTiles[i]->reset();
 	}
 }
+
+void Pathfinder::threadStart() {
+	//std::cout << "Position of _mapP in memory is " << _mapP << std::endl;
+	while (true) {
+		std::unique_lock<std::mutex> locker(_mu);
+		_cond.wait(locker);
+		std::cout << "This should appear after certain wait time." << std::endl;
+		locker.unlock();
+	}
+	
+	
+}
+
+Map* Pathfinder::getMapP() {
+	return _mapP;
+}
+
+std::mutex* Pathfinder::getMuP() {
+	return &_mu;
+}
+
+std::condition_variable* Pathfinder::getCondP() {
+	return &_cond;
+}

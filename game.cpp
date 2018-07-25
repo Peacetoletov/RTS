@@ -2,19 +2,20 @@
 #include <SDL.h>
 #include <algorithm>﻿		//std::min
 #include <SDL_ttf.h>		//fonts, drwaing text
+#include <thread>			//std::thread
 
 #include "game.h"
 #include "graphics.h"
 #include "input.h"
 #include "inputhandler.h"
 #include "globals.h"		//TILE_SIZE
+#include "pathfinder.h"
 
 #include <iostream>
 
 /* Game class
 This class holds information for the main game loop
 */
-
 
 namespace {
 	const int FPS = 50;
@@ -37,19 +38,31 @@ void Game::gameLoop() {
 	Input input;
 	SDL_Event event;
 	
-	this->_levelP = new Level("level 1", 10, 10, &graphics);		
+	this->_levelP = new Level("level 1", 10, 10, &graphics);	
 
-	/*
-	cout << "The value of tile [0][0] is " << (*this->_level->getMapP()->getTerrainP())[0][0] << endl;
-	this->_level->getMapP()->setTerrainTile(0, 0, Map::NONE);
-	cout << "The value of tile [0][0] after modifying it is " << (*this->_level->getMapP()->getTerrainP())[0][0] << endl;
+	//TODO: Create a Pathfinder thread
+	/* TODO: Fix the problem that a pathfinder needs a map (that can change with each level) as a constructuor parameter.
+	The thread obviously can't be created more than once. This can be easily done by removing the parameters from 
+	the constructor and creating a method named initMap in the Pathfinder object.
 	*/
+	Pathfinder* pathfinderP = new Pathfinder(_levelP->getMapP(), &graphics);
+	std::thread pathfinderThread(&Pathfinder::threadStart, pathfinderP);
+	pathfinderThread.detach();		//Make the threads run independently
+	//TODO: Delete pathfinderP
 
-	InputHandler inputHandler(&input, this->_levelP);
+	//InputHandler inputHandler(&input, this->_levelP);
+	InputHandler inputHandler(&input, pathfinderP);
+
+	int test = 0; //test
 		
 	int LAST_UPDATE_TIME = SDL_GetTicks();
 	//Start the game loop
 	while (true) {
+
+		if (test % 100 == 0)
+			std::cout << "Test int: " << test << std::endl;		//test
+		test++;
+
 		//Register input
 		input.beginNewFrame();
 		if (SDL_PollEvent(&event)) {

@@ -5,6 +5,9 @@
 #include "tile.h"
 #include <SDL_ttf.h>
 
+#include <mutex>
+#include <condition_variable>
+
 /* class Pathfinder
 This class deals with pathfinding.
 */
@@ -31,23 +34,23 @@ public:
 	*/
 	void A_Star(Tile* start, Tile* end);
 
-	/* TODO: Create a goal-based Dijkstra pathfinding algorithm
-	In case the game starts lagging when using this algorithm on very big maps
-	(let's say twice the size of an edge of the biggest map in the game),
-	I will use breadth first search instead of Dijkstra. It's less precise,
-	meaning sometimes if won't choose the shortest path, but it should be much
-	more efficient because it doesn't need any sorting.
-
-	Nevermind, the goal-based vector field is useless for me because I'm using a
-	dynamic map. Units could get stuck way too easily. Instead, I will use a*
-	for small groups ( < 10 units) individually. For bigger groups, I may
-	need to use some sort of flocking.
+	/* void threadStart
+	This is where a new thread starts.
 	*/
+	void threadStart();
+
+	//Getters
+	Map* getMapP();
+	std::mutex* getMuP();
+	std::condition_variable* getCondP();
 
 private:
 	Map* _mapP;
 	Graphics* _graphicsP;
 	TTF_Font* _font;
+
+	std::mutex _mu;
+	std::condition_variable _cond;
 };
 
 #endif

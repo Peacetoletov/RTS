@@ -13,13 +13,15 @@ public:
 	If the amount of objects possibly influenced by input gets too high, I might group
 	them all into a struct or a new type of object and pass that as only 1 argument.
 	*/
-	InputHandler(Input* inputP, Level* levelP);
+	//InputHandler(Input* inputP, Level* levelP);
+	InputHandler(Input* inputP, Pathfinder* pathfinderP);
 
 	void handleInput();
 
 private:
 	Input* _inputP;
-	Level* _levelP;
+	//Level* _levelP;
+	Pathfinder* _pathfinderP;
 
 	void leftMouseButtonPressed();
 };
