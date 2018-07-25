@@ -1,4 +1,5 @@
 #include "map.h"
+#include "unit.h"
 
 #include <iostream>
 
@@ -30,10 +31,12 @@ Map::Map(int rows, int columns) :
 }
 
 Map::~Map() {
-	//Delete GameObjects in _objects
-	for (int i = 0; i < this->_objects.size(); i++) {
-		delete this->_objects[i];
+	//Delete Units in _units
+	for (int i = 0; i < this->_units.size(); i++) {
+		delete this->_units[i];
 	}
+
+	//TODO: delete Building in _buildings
 
 	//Delete contents of array _tiles and the array itself
 	int tilesAmount = _rows * _columns;
@@ -181,9 +184,9 @@ void Map::loadTestMap() {
 	
 }
 
-void Map::loadTestObject(int row, int column) {
-	GameObject* unit = new GameObject(positionToId(row, column), this->_tiles[0]);
-	this->_objects.push_back(unit);
+void Map::loadTestUnit(int row, int column) {
+	Unit* unit = new Unit(positionToId(row, column));
+	_units.push_back(unit);
 }
 
 int Map::idToRow(int id) {
@@ -206,8 +209,8 @@ int Map::getColumns() {
 	return this->_columns;
 }
 
-std::vector<GameObject*>* Map::getObjectsP() {
-	return &this->_objects;
+std::vector<Unit*>* Map::getUnitsP() {
+	return &this->_units;
 }
 
 Tile** Map::getTilesP() {

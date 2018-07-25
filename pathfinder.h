@@ -1,7 +1,6 @@
 #ifndef PATHFINDER_H
 #define PATHFINDER_H
 
-#include "map.h"
 #include <SDL_ttf.h>
 
 #include <mutex>
@@ -13,8 +12,9 @@ This class deals with pathfinding.
 */
 
 class Graphics;
-//class Tile;
+class Tile;
 class PathParameters;
+class Map;
 
 /* TODO
 Create a goal-based pathfinding algorithm that can be used for navigating large groups of units (10+ units in a group).

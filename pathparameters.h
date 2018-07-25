@@ -18,10 +18,19 @@ public:
 		Dijkstra
 	};
 
+	PathParameters();		//Won't be used
+
+	PathParameters(Algorithm algorithm, Tile* _targetP, std::vector<Unit*> _units);
+
+	//Getters
+	Algorithm getAlgorithm();
+	Tile* getTargetP();
+	std::vector<Unit*>* getUnitsP();
+
 private:
 	Algorithm _algorithm;
 	Tile* _targetP;
-	std::vector<Unit*> _unitsP;		//Vector of pointers to units
+	std::vector<Unit*> _units;		//Vector of pointers to units
 };
 
 #endif

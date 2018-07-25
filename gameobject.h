@@ -15,11 +15,6 @@ public:
 	*/
 	GameObject(int id);
 
-	/* GameObject(int id, Tile* targetTileP)
-	Used for testing
-	*/
-	GameObject(int id, Tile* targetTileP);
-
 	~GameObject();		//test purpose only (for now)
 
 	//Setters
@@ -27,11 +22,9 @@ public:
 
 	//Getters
 	int getId();
-	Tile* getTargetTileP();
 
 private:
 	int _id;
-	Tile* _targetTileP;
 };
 
 #endif

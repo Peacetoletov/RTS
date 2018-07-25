@@ -5,6 +5,8 @@
 #include "gameobject.h"
 #include "tile.h"
 
+class Unit;
+
 /* class Map
 This class contains information about the tiles on the map.
 */
@@ -32,7 +34,7 @@ public:
 	/* void loadTestObjects 
 	Creates an instance of GameObject in _objects at the specified position to test the pathfinder
 	*/
-	void loadTestObject(int row, int column);
+	void loadTestUnit(int row, int column);
 
 	/* int idToRow
 	Returns the row based on the id
@@ -52,7 +54,7 @@ public:
 	//Getters
 	int getRows();
 	int getColumns();
-	std::vector<GameObject*>* getObjectsP();
+	std::vector<Unit*>* getUnitsP();
 	Tile** getTilesP();
 
 private:
@@ -60,11 +62,14 @@ private:
 	int _rows;
 	int _columns;
 
-	/* _objects
-	Contains information about units and building on the map.
-	*/
+	/*
+	//_objects: Contains information about units and building on the map.
 	std::vector<GameObject*> _objects;		//Alternatively, this can be divided into 2 separate vectors,
 										//1 containing  units and the other one buildings.
+	*/
+	std::vector<Unit*> _units;		
+	//std::vector<Building*> _buildings;
+
 	/* Tile** _tiles
 	Pointer to an array of pointers to instances of Tile object.
 	_tiles[i] points to a tile with id i.

@@ -4,6 +4,9 @@
 #include "globals.h"
 #include "comparator.h"
 #include "pathparameters.h"
+#include "tile.h"
+#include "map.h"
+#include "unit.h"
 #include <algorithm>		//std::sort
 #include <queue>			//std::priority_queue
 
@@ -83,7 +86,7 @@ void Pathfinder::testDrawTiles() {
 	Land units are GREEN.		//for now, all units are land (and green)
 	Air units are BLUE.
 	*/
-	std::vector<GameObject*> *units = this->_mapP->getObjectsP();
+	std::vector<Unit*> *units = this->_mapP->getUnitsP();
 	for (int i = 0; i < units->size(); i++) {
 		SDL_Rect rect;
 		rect.x = this->_mapP->idToColumn((*units)[i]->getId()) * tileSize;
@@ -234,7 +237,7 @@ void Pathfinder::A_Star(Tile* start, Tile* target) {
 				if ((*neighbours)[i]->getH() == INT_MAX) {
 
 					//Set H value
-					int H = (*neighbours)[i]->calculateH(this->_mapP->getTilesP()[target->getId()]);
+					int H = (*neighbours)[i]->calculateH(_mapP->getTilesP()[target->getId()]);
 					(*neighbours)[i]->setH(H);
 
 					if (H == 0) {
@@ -288,12 +291,28 @@ void Pathfinder::threadStart() {
 		for (int i = 0; i < 10; i++) {
 			//TODO: Create an implementation of PathParameters class and use it here to get the startTileP and targetTileP
 			//TODO: Instead of a targetTileP, I will pass the unit pointer itself as the parameter
-			//A_Star(getStartTileP(), getTargetTileP());
+			PathParameters* parameters = getFrontPathParameters();
+
+			if (parameters->getAlgorithm() == PathParameters::Algorithm::A_Star) {
+				//A_Star(getStartTileP(), getTargetTileP());
+
+				//(*(parameters->getUnitsP)[0])->getId();
+				//Unit* unitP = 
+				//Unit unit = *(*(parameters->getUnitsP()))[0];
+				//int id = unit.getId();
+
+				Tile* startTile = _mapP->getTilesP()[(*(parameters->getUnitsP()))[0]->getId()];	
+				A_Star(startTile, parameters->getTargetP());
+				
+			}
+			
 		}
 
 		auto end = std::chrono::system_clock::now();
 		std::chrono::duration<float> diff = end - start;
 		std::cout << "Search finished. " << floor(diff.count() * 1000) << " milliseconds elapsed." << std::endl;
+
+		popPathParameters();
 
 		locker.unlock();
 	}

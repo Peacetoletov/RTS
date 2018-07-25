@@ -17,7 +17,7 @@ Level::Level(std::string levelName, int rows, int columns, Graphics* graphicsP) 
 {
 	this->_mapP = new Map(80, 100);
 	this->_mapP->loadTestMap();
-	this->_mapP->loadTestObject(1, 1);
+	this->_mapP->loadTestUnit(1, 1);
 	this->_pathfinderP = new Pathfinder(this->_mapP, graphicsP);
 
 	//this->loadMap(mapName, graphics);
