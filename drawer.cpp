@@ -37,13 +37,13 @@ void Drawer::drawBackground() {
 
 	Tile** tiles = this->_mapP->getTilesP();
 	for (int id = 0; id < (rows * columns); id++) {
-		if (tiles[id]->getType() == Tile::ALL) {
+		if (tiles[id]->getTerrainType() == Tile::TerrainAvailability::ALL) {
 			continue;
 		}
-		else if (tiles[id]->getType() == Tile::AIR) {
+		else if (tiles[id]->getTerrainType() == Tile::TerrainAvailability::AIR) {
 			SDL_SetRenderDrawColor(renderer, 127, 127, 127, SDL_ALPHA_OPAQUE);
 		}
-		else if (tiles[id]->getType() == Tile::NONE) {
+		else if (tiles[id]->getTerrainType() == Tile::TerrainAvailability::NONE) {
 			SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 		}
 

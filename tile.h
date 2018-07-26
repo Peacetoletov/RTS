@@ -8,16 +8,16 @@ class Map;
 class Tile {
 public:
 	//Which units can stand on this tile
-	enum TerrainAvailability {
+	enum class TerrainAvailability {
 		ALL,
 		AIR,
 		NONE
 	};
 
 	//Which units are currently standing on this tile
-	enum Occupancy {
+	enum class Occupancy {
 		LAND,
-		AIR,
+		AIR,		
 		LAND_AND_AIR,
 		NONE
 	};
@@ -67,7 +67,7 @@ public:
 private:
 	int _id;
 	TerrainAvailability _type;
-	Occupancy _occupancy;
+	Occupancy _occupancy = Occupancy::NONE;
 	Map* _mapP;							//Pointer to the map object, allows the use of utility functions
 										//(switching between columns and rows and id)
 	std::vector<Tile*> _neighbours;		//Vector holding pointers to neighbour tiles

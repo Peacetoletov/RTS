@@ -18,11 +18,7 @@ public:
 
 	~Unit();		//Not used yet
 
-	/* TODO
-	I need to fix an issue that happens when 2 units cross their paths and one unit needs to wait for the other one.
-	I will create bool variables "wantsToMove" and "waiting".
-	*/
-	void move();
+	void update();
 
 	//Getters
 	Type getType();
@@ -31,6 +27,7 @@ public:
 	bool getWantsToMove();
 	bool getMoving();
 	int getDistance();
+	//int getCurrentDistance();		//probably not needed
 
 	//Setters
 	//void setCurrentTileP(int id);			//is this even needed?		//I'm pretty sure it is now
@@ -38,6 +35,7 @@ public:
 	void setWantsToMove(bool wantsToMove);
 	void setMoving(bool moving);
 	void setDistance(int distance);
+	//void setCurrentDistance(int distance);	//probably not needed
 
 private:
 	Type _type;
@@ -51,7 +49,19 @@ private:
 	and the tile where the unit wants to travel.
 	*/
 	int _distance;
-	//I'll also implement int currentDistance
+
+	/* _currentDistance represents how close to the tile that the unit is moving onto is.
+	It is always less than _distance and once it overflows, it gets reset back to 0.
+	At that moment, the unit is fully on the new tile and if it's not at the end of
+	the path yet, it moves onto the next tile in the _path stack.
+
+	I can also look at this variable as the distance from the previous tile.
+	*/
+	int _currentDistance;
+
+	//METHODS
+	void setThisAndNextOccupancies();
+	void move();
 };
 
 #endif

@@ -58,11 +58,11 @@ void InputHandler::leftMouseButtonPressed() {
 		std::vector<Unit*> units;
 		units.push_back((*mapP->getUnitsP())[0]);
 
-		std::cout << "Setting the start and end tiles!" << std::endl;
+		//std::cout << "Setting the start and end tiles!" << std::endl;
 		PathParameters* parameters = new PathParameters(PathParameters::A_Star, targetTileP, units);
 		_pathfinderP->pushPathParameters(parameters);
 
-		std::cout << "Notifying!" << std::endl;
+		//std::cout << "Notifying!" << std::endl;
 		_pathfinderP->getCondP()->notify_one();
 
 	}

@@ -35,13 +35,15 @@ Pathfinder::~Pathfinder() {
 	TTF_CloseFont(this->_font);
 }
 
+//Deprecated
 void Pathfinder::testDrawTiles() {
-
+	/*
 	SDL_Renderer* renderer = this->_graphicsP->getRenderer();
 	int tileSize = globals::TILE_SIZE;
 
 	int rows = this->_mapP->getRows();
 	int columns = this->_mapP->getColumns();
+	*/
 
 	//DRAW TERRAIN
 	/* Legend
@@ -50,15 +52,16 @@ void Pathfinder::testDrawTiles() {
 	Tiles accessible by no units are WHITE.
 	*/
 
+	/*
 	Tile** tiles = this->_mapP->getTilesP();
 	for (int id = 0; id < (rows * columns); id++) {
-		if (tiles[id]->getType() == Tile::ALL) {
+		if (tiles[id]->getTerrainType() == Tile::ALL) {
 			continue;
 		}
-		else if (tiles[id]->getType() == Tile::AIR) {
+		else if (tiles[id]->getTerrainType() == Tile::AIR) {
 			SDL_SetRenderDrawColor(renderer, 127, 127, 127, SDL_ALPHA_OPAQUE);
 		}
-		else if (tiles[id]->getType() == Tile::NONE) {
+		else if (tiles[id]->getTerrainType() == Tile::NONE) {
 			SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 		}
 
@@ -81,12 +84,14 @@ void Pathfinder::testDrawTiles() {
 	for (int column = 0; column < (columns + 1); column++) {
 		SDL_RenderDrawLine(renderer, (column * tileSize), 0, (column * tileSize), (rows * tileSize));
 	}
+	*/
 
 	//DRAW UNITS
 	/* Legend
 	Land units are GREEN.		//for now, all units are land (and green)
 	Air units are BLUE.
 	*/
+	/*
 	std::vector<Unit*> *units = this->_mapP->getUnitsP();
 	for (int i = 0; i < units->size(); i++) {
 		SDL_Rect rect;
@@ -97,10 +102,15 @@ void Pathfinder::testDrawTiles() {
 		SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
 		SDL_RenderFillRect(renderer, &rect);
 	}
-
+	*/
 }
 
 std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
+
+	/* HIGH PRIORITY TODO:
+	If I select a long, almost straight path (only 1 tile above or below a straight line), it doesn't 
+	find the best path.
+	*/
 
 	//Create a vector of analyzed tiles
 	//Will be used after the path is found to loop through all the analyzed tiles to reset them.
@@ -163,7 +173,7 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 			is of air type. Add this check.
 			*/
 
-			if (!(*neighbours)[i]->getWasVisited() && (*neighbours)[i]->getType() == Tile::TerrainAvailability::ALL) {
+			if (!(*neighbours)[i]->getWasVisited() && (*neighbours)[i]->getTerrainType() == Tile::TerrainAvailability::ALL) {
 
 				//This can happen multiple times per tile
 
@@ -264,8 +274,11 @@ void Pathfinder::threadStart() {
 			Unit* unit = (*(parameters->getUnitsP()))[0];
 			Tile* startTile = _mapP->getTilesP()[unit->getCurrentTileP()->getId()];
 			std::stack<Tile*> path = A_Star(startTile, parameters->getTargetP(), false);
-			unit->setPath(path);
-			unit->setWantsToMove(true);
+
+			if (path.size() != 0) {
+				unit->setPath(path);
+				unit->setWantsToMove(true);
+			}			
 		}
 
 
