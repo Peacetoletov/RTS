@@ -51,6 +51,8 @@ public:
 	*/
 	int positionToId(int row, int column);
 
+	void update();
+
 	//Getters
 	int getRows();
 	int getColumns();

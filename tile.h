@@ -7,29 +7,32 @@ class Map;
 
 class Tile {
 public:
+	//Which units can stand on this tile
 	enum TerrainAvailability {
 		ALL,
 		AIR,
 		NONE
 	};
 
+	//Which units are currently standing on this tile
+	enum Occupancy {
+		LAND,
+		AIR,
+		LAND_AND_AIR,
+		NONE
+	};
+
 	Tile();			//Won't be used
 
-	/* Tile
-	Creates the object and initializes _id, _type, _mapP.
-	*/
+	//Creates the object and initializes _id, _type, _mapP.
 	Tile(int id, TerrainAvailability type, Map* mapP);
 
-	/* ~Tile
-	Test purpose only (for now)
-	*/
+	//Test purpose only (for now)
 	~Tile();
 
 	void test();		//Test purpose only
 
-	/* int calculateH
-	Calculates H (the distance between this tile and the end tile).
-	*/
+	//Calculates H (the distance between this tile and the end tile).
 	int calculateH(Tile* endTile);
 
 	/* bool isNeighbourDiagonal
@@ -38,13 +41,12 @@ public:
 	*/
 	bool isNeighbourDiagonal(Tile* neighbour);
 
-	/* void reset
-	Resets all member variables to their default state.
-	*/
+	//Resets all member variables to their default state.
 	void reset();
 
 	//Setters
-	void setType(TerrainAvailability type);
+	void setTerrainType(TerrainAvailability type);
+	void setOccupancy(Occupancy occupancy);
 	void setNeighbours(std::vector<Tile*> neighbours);
 	void setWasVisited(bool wasVisited);
 	void setG(int G);
@@ -53,7 +55,8 @@ public:
 
 	//Getters
 	int getId();
-	TerrainAvailability getType();
+	TerrainAvailability getTerrainType();
+	Occupancy getOccupancy();
 	std::vector<Tile*>* getNeighboursP();
 	bool getWasVisited();
 	int getG();		
@@ -64,6 +67,7 @@ public:
 private:
 	int _id;
 	TerrainAvailability _type;
+	Occupancy _occupancy;
 	Map* _mapP;							//Pointer to the map object, allows the use of utility functions
 										//(switching between columns and rows and id)
 	std::vector<Tile*> _neighbours;		//Vector holding pointers to neighbour tiles

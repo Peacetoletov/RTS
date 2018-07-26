@@ -10,6 +10,8 @@
 #include "inputhandler.h"
 #include "globals.h"		//TILE_SIZE
 #include "pathfinder.h"
+#include "level.h"
+#include "drawer.h"
 
 #include <iostream>
 
@@ -29,7 +31,8 @@ Game::Game() {
 	TTF_Init();							
 	this->gameLoop();					
 
-	delete this->_levelP;		
+	delete this->_levelP;	
+	delete this->_pathfinderP;
 }
 
 void Game::gameLoop() {
@@ -38,20 +41,24 @@ void Game::gameLoop() {
 	Input input;
 	SDL_Event event;
 	
-	this->_levelP = new Level("level 1", 10, 10, &graphics);	
+	_levelP = new Level("level 1", 10, 10, &graphics);	
 
-	//TODO: Create a Pathfinder thread
+	Drawer drawer(&graphics, _levelP->getMapP());		//Needs to be created after the level
+
 	/* TODO: Fix the problem that a pathfinder needs a map (that can change with each level) as a constructuor parameter.
 	The thread obviously can't be created more than once. This can be easily done by removing the parameters from 
 	the constructor and creating a method named initMap in the Pathfinder object.
 	*/
-	Pathfinder* pathfinderP = new Pathfinder(_levelP->getMapP(), &graphics);
-	std::thread pathfinderThread(&Pathfinder::threadStart, pathfinderP);
-	pathfinderThread.detach();		//Make the threads run independently
-	//TODO: Delete pathfinderP
 
-	//InputHandler inputHandler(&input, this->_levelP);
-	InputHandler inputHandler(&input, pathfinderP);
+	/* The thread pathfinderThread is causing a minor memory leak (8 bytes) because of the function it uses.
+	There's an infinite loop in it and that causes a memory leak for some reason. When I commented the loop out,
+	the leak disappeared. It's small enough that I don't need to worry about it.
+	*/
+	_pathfinderP = new Pathfinder(_levelP->getMapP(), &graphics);
+	std::thread pathfinderThread(&Pathfinder::threadStart, _pathfinderP);		//Memory leak here
+	pathfinderThread.detach();		//Make the threads run independently
+
+	InputHandler inputHandler(&input, _pathfinderP);		
 
 	int test = 0; //test
 		
@@ -60,7 +67,7 @@ void Game::gameLoop() {
 	while (true) {
 
 		if (test % 100 == 0)
-			std::cout << "Test int: " << test << std::endl;		//test
+			//std::cout << "Test int: " << test << std::endl;		//test
 		test++;
 
 		//Register input
@@ -100,20 +107,20 @@ void Game::gameLoop() {
 		LAST_UPDATE_TIME = CURRENT_TIME_MS;
 
 		//Draw
-		this->draw(graphics);
+		this->draw(graphics, drawer);
 	}
 }
 
 
-void Game::draw(Graphics &graphics) {
+void Game::draw(Graphics &graphics, Drawer drawer) {
 	graphics.clear();
 
-	//this->_level.draw(graphics);
-	this->_levelP->getPathfinderP()->testDrawTiles();		
+	//this->_levelP->getPathfinderP()->testDrawTiles();		
+	drawer.draw();
 
 	graphics.flip();
 }
 
 void Game::update(int elapsedTime) {
-	//this->_level.update(elapsedTime);
+	this->_levelP->update(elapsedTime);
 }

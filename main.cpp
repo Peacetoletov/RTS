@@ -7,6 +7,7 @@ The entry point of the program
 
 #include <iostream>		
 #include <Windows.h>
+#include <string>
 
 //Detecting memory leaks
 #define _CRTDBG_MAP_ALLOC

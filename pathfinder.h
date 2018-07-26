@@ -6,6 +6,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
+#include <stack>
 
 /* class Pathfinder
 This class deals with pathfinding.
@@ -34,7 +35,7 @@ public:
 	A* pathfinding algorithm
 	TODO: all the TODOs defined in the function implementation
 	*/
-	void A_Star(Tile* start, Tile* target);
+	std::stack<Tile*> A_Star(Tile* start, Tile* target, bool canFly);
 
 	/* void threadStart
 	This is where a new thread starts.

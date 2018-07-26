@@ -18,14 +18,14 @@ Level::Level(std::string levelName, int rows, int columns, Graphics* graphicsP) 
 	this->_mapP = new Map(40, 50);
 	this->_mapP->loadTestMap();
 	this->_mapP->loadTestUnit(1, 1);
-	this->_pathfinderP = new Pathfinder(this->_mapP, graphicsP);
+	//this->_pathfinderP = new Pathfinder(this->_mapP, graphicsP);
 
 	//this->loadMap(mapName, graphics);
 }
 
 Level::~Level() {
 	delete this->_mapP;
-	delete this->_pathfinderP;
+	//delete this->_pathfinderP;
 	std::cout << "Destryoing level!" << std::endl;
 }
 
@@ -39,7 +39,13 @@ void Level::loadMap(std::string mapName, Graphics &graphics) {
 */
 
 void Level::update(int elapsedTime) {
-
+	//This might cause omtimization problems. If that proves to be the case, I need to redesign it.
+	for (int i = 0; i < elapsedTime; i++) {		//Is this a good way of doing this?
+		
+		//Update map
+		_mapP->update();
+		
+	}
 }
 
 void Level::draw(Graphics &graphics) {
@@ -60,9 +66,11 @@ void Level::draw(Graphics &graphics) {
 	
 }
 
+/*
 Pathfinder * Level::getPathfinderP() {
 	return this->_pathfinderP;
 }
+*/
 
 Map * Level::getMapP() {
 	return this->_mapP;

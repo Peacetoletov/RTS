@@ -17,14 +17,14 @@ public:
 	~Level();
 	void update(int elapsedTime);
 	void draw(Graphics &graphics);
-	Pathfinder * getPathfinderP();
+	//Pathfinder * getPathfinderP();
 	Map * getMapP();
 
 private:
 	std::string _levelName;
 	SDL_Texture * _backgroundTexture;
 	Map * _mapP;
-	Pathfinder * _pathfinderP;
+	//Pathfinder * _pathfinderP;
 
 	/* void loadMap
 	Loads a map.

@@ -71,8 +71,12 @@ void Tile::reset() {
 	Tile* _parentP = nullptr;
 }
 
-void Tile::setType(TerrainAvailability type) {
+void Tile::setTerrainType(TerrainAvailability type) {
 	this->_type = type;
+}
+
+void Tile::setOccupancy(Occupancy occupancy) {
+	_occupancy = occupancy;
 }
 
 void Tile::setNeighbours(std::vector<Tile*> neighbours) {
@@ -99,8 +103,12 @@ int Tile::getId() {
 	return this->_id;
 }
 
-Tile::TerrainAvailability Tile::getType() {
+Tile::TerrainAvailability Tile::getTerrainType() {
 	return this->_type;
+}
+
+Tile::Occupancy Tile::getOccupancy() {
+	return _occupancy;
 }
 
 std::vector<Tile*>* Tile::getNeighboursP() {

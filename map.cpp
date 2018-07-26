@@ -1,5 +1,6 @@
 #include "map.h"
 #include "unit.h"
+#include "globals.h"
 
 #include <iostream>
 
@@ -186,7 +187,7 @@ void Map::loadTestMap() {
 		"##################################################",
 		"##################################################",
 		"##################################################",
-		"x#xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+		"x#xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx#",
 		"##################################################",
 		"##################################################",
 		"##################################################",
@@ -207,14 +208,14 @@ void Map::loadTestMap() {
 
 	for (int id = 0; id < (_rows * _columns); id++) {
 		if (mapVector[idToRow(id)][idToColumn(id)] == '#') {
-			this->_tiles[id]->setType(Tile::ALL);
+			this->_tiles[id]->setTerrainType(Tile::TerrainAvailability::ALL);
 		}
 		else if (mapVector[idToRow(id)][idToColumn(id)] == 'y') {
 			//cout << "Setting air tile to row " << idToRow(id) << " and column " << idToColumn(id) << endl;
-			this->_tiles[id]->setType(Tile::AIR);
+			this->_tiles[id]->setTerrainType(Tile::TerrainAvailability::AIR);
 		}
 		else if (mapVector[idToRow(id)][idToColumn(id)] == 'x') {
-			this->_tiles[id]->setType(Tile::NONE);
+			this->_tiles[id]->setTerrainType(Tile::TerrainAvailability::NONE);
 		}
 		else {
 			std::cout << "Error in creating a map" << std::endl;
@@ -230,7 +231,9 @@ void Map::loadTestMap() {
 }
 
 void Map::loadTestUnit(int row, int column) {
-	Unit* unit = new Unit(positionToId(row, column));
+	Tile* tile = _tiles[positionToId(row, column)];
+	Unit* unit = new Unit(tile, Unit::Type::LAND);
+	tile->setOccupancy(Tile::Occupancy::LAND);
 	_units.push_back(unit);
 }
 
@@ -244,6 +247,56 @@ int Map::idToColumn(int id) {
 
 int Map::positionToId(int row, int column) {
 	return (column + (row * this->_columns));
+}
+
+void Map::update() {
+	//UNITS
+	/* Whenever I'm moving a unit, I need to change the occupancy of both the tile it left, and the tile it's now on.
+	If a stationary unit gets a command to move, it first changes its wantsToMove variable to true.
+	Then it check the next tile on the path. If the unit can move there, its variable moving is set to true.
+	Once it gets to the target location, wantsToMove and moving get set to false.
+	If it encounters a moving obstacle and needs to stop because of that, moving is set to false but
+	wantsToMove still remains true.
+	*/
+
+	/* If this gets too inefficient, I can make it so that I only check every 5th frame or something like this.
+	*/
+	for (int i = 0; i < _units.size(); i++) {
+		Unit* unit = _units[i];
+
+		/* If the unit wants to move and isn't moving yet, set moving to true (if it's possible) and 
+		calculate the distance it needs to travel (diagonal distance is longer).
+		*/
+		if (unit->getWantsToMove() && !unit->getMoving()) {
+
+			//Check whether the next tile is occupied by a unit of the same type
+			Unit::Type unitType = unit->getType();
+			Tile::Occupancy occupancy = unit->getPathP()->top()->getOccupancy();
+			if ((unitType == Unit::Type::LAND && occupancy == Tile::Occupancy::LAND) ||
+					(unitType == Unit::Type::LAND && occupancy == Tile::Occupancy::LAND_AND_AIR) ||
+					(unitType == Unit::Type::AIR && occupancy == Tile::Occupancy::AIR) ||
+					(unitType == Unit::Type::AIR && occupancy == Tile::Occupancy::LAND_AND_AIR)) {
+
+				//Desired tile is occupied, unit cannot move.
+				unit->setMoving(false);
+			}
+			else {
+				//Desired tile isn't occupied, unit can move.
+				unit->setMoving(true);
+
+				//Set distance
+				int distance = unit->getCurrentTileP->isNeighbourDiagonal(unit->getPathP()->top()) ?
+					globals::TILE_DIAGONAL_DISTANCE : globals::TILE_STRAIGHT_DISTANCE;
+				unit->setDistance(distance);
+
+			}
+		}
+
+		/* If the unit is moving, increment its internal clock (currentDistance) - how close it is to reaching the
+		total distance. Once it reaches the total distance, it is now fully on the new tile andcan move to another one.
+		*/
+		//TODO: Continue here
+	}
 }
 
 int Map::getRows() {

@@ -9,12 +9,13 @@
 #include "unit.h"
 #include <algorithm>		//std::sort
 #include <queue>			//std::priority_queue
+#include <stack>			//std::stack
 
 
 #include <iostream>
 
 //test
-#include <time.h>
+//#include <time.h>
 
 
 /* class Pathfinder
@@ -89,43 +90,17 @@ void Pathfinder::testDrawTiles() {
 	std::vector<Unit*> *units = this->_mapP->getUnitsP();
 	for (int i = 0; i < units->size(); i++) {
 		SDL_Rect rect;
-		rect.x = this->_mapP->idToColumn((*units)[i]->getId()) * tileSize;
-		rect.y = this->_mapP->idToRow((*units)[i]->getId()) * tileSize;
+		rect.x = this->_mapP->idToColumn((*units)[i]->getCurrentTileP()->getId()) * tileSize;
+		rect.y = this->_mapP->idToRow((*units)[i]->getCurrentTileP()->getId()) * tileSize;
 		rect.w = tileSize;
 		rect.h = tileSize;
 		SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
 		SDL_RenderFillRect(renderer, &rect);
 	}
 
-	//TEST: Draw the H value for each tile, end tile is 4|1
-	/*
-	SDL_Color color = { 200, 200, 200 };
-	
-	for (int id = 0; id < (rows * columns); id++) {
-		int targetTileId = (*this->_mapP->getObjectsP())[0]->getTargetTileP()->getId();
-		tiles[id]->setH(tiles[id]->calculateH(tiles[targetTileId]));		//sets H
-		int row = this->_mapP->idToRow(id);
-		int column = this->_mapP->idToColumn(id);
-		int x = 3 + column * tileSize;
-		int y = (tileSize - 20) + row * tileSize;
-		_graphicsP->drawText(std::to_string(tiles[id]->getH()), x, y, this->_font, color);
-	}
-	*/
 }
 
-void Pathfinder::A_Star(Tile* start, Tile* target) {
-	/* TODO
-	Change arguments from (Tile* start, Tile* target) to (GameObject* unit, Tile* target).
-	That will allow for more precise checking - right now, the pathfinder will consider both types of
-	obstacles as unpassable. Instead, it should be allowed to move through tiles accessible by air units,
-	if the unit is air-type.
-	The reason why I'm not doing it yet is that this version is easier to test, as it doesn't rely
-	on any units.
-	*/
-
-	/* TODO
-	Put all the tiles that are included in the path to a vector and pass the vector to the unit.
-	*/
+std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 
 	//Create a vector of analyzed tiles
 	//Will be used after the path is found to loop through all the analyzed tiles to reset them.
@@ -143,6 +118,9 @@ void Pathfinder::A_Star(Tile* start, Tile* target) {
 	Visited tiles are removed from the queue.
 	*/
 	std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles;
+
+	//The final path will be stored in this stack
+	std::stack<Tile*> finalPath;
 
 	//Set up the start tile
 	start->setG(0);
@@ -163,18 +141,10 @@ void Pathfinder::A_Star(Tile* start, Tile* target) {
 			currentTile = openTiles.top();
 		}
 		else {
-			//std::cout << "Out of tiles! Path not found!" << std::endl;
+			//Out of open tiles, path not found
 			break;
+			//return finalPath;		//This will return an enmpty stack
 		}
-
-		/*
-		//Test
-		std::cout << "Visiting tile " << _mapP->idToRow(currentTile->getId()) <<
-			"|" << _mapP->idToColumn(currentTile->getId()) << ". It has F " << 
-			currentTile->getF() << ". Amount of tiles in openTiles: " << 
-			openTiles.size() << std::endl;
-			*/
-		
 
 		//Remove the pointer to the current tile from the openTiles queue, as I'm about to visit the tile
 		openTiles.pop();
@@ -257,63 +227,56 @@ void Pathfinder::A_Star(Tile* start, Tile* target) {
 
 	}
 
+	/* Put all the tiles that are included in the path to a stack and pass the stack to the unit.
+	If the path wasn't found, it will return an empty stack.
+	*/
+	if (pathFound) {
+		currentTile = target;
+		while (currentTile->getId() != start->getId()) {
+			finalPath.push(currentTile);
+			currentTile = currentTile->getParentP();
+		}
+	}
+
 	//Reset all analyzed tiles
 	for (int i = 0; i < analyzedTiles.size(); i++) {
 		analyzedTiles[i]->reset();
 	}
+
+	return finalPath;
 }
 
 void Pathfinder::threadStart() {
-	/* TODO: Fix the problem that happens if I click too fast and attempt to find another path before the first path
-	is found. Right now, it just sees the locked mutex and gets ignored. Make some kind of a queue.
-	Also, another problem is that even though I use mutex, it only protects the pointers. It doesn't protect the 
-	objects themselves. I need to fix this or somehow get around it.
 
-	Actually, these 2 problems have a solution that fixes both of them - creating a queue.
-	*/
-
-	/* I will create a new class. Instances of this class will be put in the queue.
-	The objects will contain information about the search algorithm (A* or Dijkstra), the target tile
-	and all units in the group if Dijkstra.
-	*/
 	while (true) {
 		std::unique_lock<std::mutex> locker(_muWaiter);
 		if (_pathParametersQueue.size() == 0) {
 			_cond.wait(locker);
 		}
 		
-		//std::cout << "This should appear after certain wait time." << std::endl;
-
-
-		//std::cout << "Starting search * 10. " << std::endl;
+		/*
+		std::cout << "Starting search * 10. " << std::endl;
 		auto start = std::chrono::system_clock::now();
+		*/
 
-		for (int i = 0; i < 10; i++) {
-			//TODO: Create an implementation of PathParameters class and use it here to get the startTileP and targetTileP
-			//TODO: Instead of a targetTileP, I will pass the unit pointer itself as the parameter
-			PathParameters* parameters = getFrontPathParameters();
-
-			if (parameters->getAlgorithm() == PathParameters::Algorithm::A_Star) {
-				//A_Star(getStartTileP(), getTargetTileP());
-
-				//(*(parameters->getUnitsP)[0])->getId();
-				//Unit* unitP = 
-				//Unit unit = *(*(parameters->getUnitsP()))[0];
-				//int id = unit.getId();
-
-				Tile* startTile = _mapP->getTilesP()[(*(parameters->getUnitsP()))[0]->getId()];	
-				A_Star(startTile, parameters->getTargetP());
-				
-			}
-			
+		PathParameters* parameters = getFrontPathParameters();
+		if (parameters->getAlgorithm() == PathParameters::Algorithm::A_Star) {
+			Unit* unit = (*(parameters->getUnitsP()))[0];
+			Tile* startTile = _mapP->getTilesP()[unit->getCurrentTileP()->getId()];
+			std::stack<Tile*> path = A_Star(startTile, parameters->getTargetP(), false);
+			unit->setPath(path);
+			unit->setWantsToMove(true);
 		}
 
+
+		/*
 		auto end = std::chrono::system_clock::now();
 		std::chrono::duration<float> diff = end - start;
 		std::cout << "Search finished. " << floor(diff.count() * 1000) << " milliseconds elapsed." << std::endl;
+		*/
 
+		delete parameters;
 		popPathParameters();
-
 		locker.unlock();
 	}
 	

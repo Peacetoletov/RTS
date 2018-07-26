@@ -1,10 +1,10 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "level.h"
-#include "pathfinder.h"
-
 class Graphics;
+class Level;
+class Pathfinder;
+class Drawer;
 
 class Game {
 public:
@@ -12,11 +12,11 @@ public:
 	~Game();
 private:
 	void gameLoop();
-	void draw(Graphics &graphics);
+	void draw(Graphics &graphics, Drawer drawer);
 	void update(int elapsedTime);
 
 	Level* _levelP;
-	//Pathfinder _pathfinder;
+	Pathfinder* _pathfinderP;
 };
 
 #endif
