@@ -7,7 +7,7 @@ namespace globals {
 
 	const float SPRITE_SCALE = 2.0f;
 
-	const int TILE_SIZE = 8;
+	const int TILE_SIZE = 16;
 }
 
 /*
