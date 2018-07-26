@@ -26,6 +26,7 @@ private:
 
 	void drawBackground();
 	void drawUnits();
+	void drawTest();
 };
 
 #endif

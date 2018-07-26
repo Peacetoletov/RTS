@@ -248,10 +248,13 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 		}
 	}
 
+	//TEST - NOT RESETTING
+	/*
 	//Reset all analyzed tiles
 	for (int i = 0; i < analyzedTiles.size(); i++) {
 		analyzedTiles[i]->reset();
 	}
+	*/
 
 	return finalPath;
 }
@@ -275,10 +278,13 @@ void Pathfinder::threadStart() {
 			Tile* startTile = _mapP->getTilesP()[unit->getCurrentTileP()->getId()];
 			std::stack<Tile*> path = A_Star(startTile, parameters->getTargetP(), false);
 
+			//TESTING - THIS SHOULD NOT NORMALLY BE COMMENTED OUT!
+			
 			if (path.size() != 0) {
 				unit->setPath(path);
 				unit->setWantsToMove(true);
-			}			
+			}
+			
 		}
 
 

@@ -19,6 +19,9 @@ void Drawer::draw() {
 
 	//Draw units
 	drawUnits();
+
+	//Draw test
+	drawTest();
 }
 
 void Drawer::drawBackground() {
@@ -88,5 +91,25 @@ void Drawer::drawUnits() {
 		rect.h = tileSize;
 		SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
 		SDL_RenderFillRect(renderer, &rect);
+	}
+}
+
+void Drawer::drawTest() {
+	TTF_Font* font = TTF_OpenFont("arial.ttf", 10);
+	SDL_Color color = { 200, 200, 200 };
+
+	for (int i = 0; i < _mapP->getColumns() * _mapP->getRows(); i++) {
+		Tile* tile = _mapP->getTilesP()[i];
+		if (tile->getG() != INT_MAX) {
+			//This tile was analyzed
+			int F = tile->getF();
+			int x = _mapP->idToColumn(tile->getId()) * globals::TILE_SIZE + 5;
+			int y = _mapP->idToRow(tile->getId()) * globals::TILE_SIZE + 5;
+
+			
+			//graphicsP->drawText(std::to_string(tiles[id]->getH()), x, y, this->_font, color);
+			
+			_graphicsP->drawText(std::to_string(F), x, y, font, color);
+		}
 	}
 }

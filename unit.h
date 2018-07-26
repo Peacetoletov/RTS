@@ -40,7 +40,7 @@ public:
 private:
 	Type _type;
 	Tile* _currentTileP;
-	float _speed = 1;
+	float _speed = 0.25f;
 	std::stack<Tile*> _path;
 	bool _wantsToMove = false;
 	bool _moving = false;
@@ -48,7 +48,7 @@ private:
 	/* This represents the imaginary distance (NOT in pixels) between the current tile 
 	and the tile where the unit wants to travel.
 	*/
-	int _distance;
+	float _distance;
 
 	/* _currentDistance represents how close to the tile that the unit is moving onto is.
 	It is always less than _distance and once it overflows, it gets reset back to 0.
@@ -57,7 +57,7 @@ private:
 
 	I can also look at this variable as the distance from the previous tile.
 	*/
-	int _currentDistance;
+	float _currentDistance;
 
 	//METHODS
 	void setThisAndNextOccupancies();

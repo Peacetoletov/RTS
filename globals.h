@@ -7,7 +7,7 @@ namespace globals {
 
 	const float SPRITE_SCALE = 2.0f;
 
-	const int TILE_SIZE = 16;
+	const int TILE_SIZE = 24;	//16
 
 	/* These 2 constant TILE_STRAIGHT_DISTANCE and TILE_DIAGONAL_DISTANCE are used to determine how fast
 	a unit travels between 2 tiles. Their values aren't represented by pixels. The values are completely
