@@ -110,6 +110,9 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 	/* HIGH PRIORITY TODO:
 	If I select a long, almost straight path (only 1 tile above or below a straight line), it doesn't 
 	find the best path.
+
+	Found the cause of the problem. It's in the sorting of the priority queue. For some reason, the priority queue
+	is not reliable.
 	*/
 
 	//Create a vector of analyzed tiles
@@ -162,6 +165,14 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 		//Set the current tile as visited
 		currentTile->setWasVisited(true);
 
+		/*
+		//TEST
+		std::cout << "Current tile is on row " << _mapP->idToRow(currentTile->getId()) << " and column " <<
+			_mapP->idToColumn(currentTile->getId()) << ". G = " << currentTile->getG() << 
+			"; H = " << currentTile->getH() << "; F = " << currentTile->getF() << std::endl;
+		//std::cout << "Analyzing neighbours." << std::endl;
+		*/
+
 		//Analyze neighbours		
 		std::vector<Tile*>* neighbours = currentTile->getNeighboursP();		
 		for (int i = 0; i < neighbours->size(); i++) {
@@ -195,10 +206,17 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 				I tested it and found out that this would speed it up by 10 %.
 				*/
 
+				/*
+				std::cout << "Analyzing neighbour tile on row " << _mapP->idToRow((*neighbours)[i]->getId()) <<
+					" and column " << _mapP->idToColumn((*neighbours)[i]->getId()) << ". Current G is " << 
+					(*neighbours)[i]->getG() << std::endl;
+					*/
+
 				int G_increase = currentTile->isNeighbourDiagonal((*neighbours)[i]) ? 14 : 10;
 
 				if (currentTile->getG() + G_increase < (*neighbours)[i]->getG()) {
-					(*neighbours)[i]->setG(currentTile->getG() + G_increase);
+
+					(*neighbours)[i]->setG(currentTile->getG() + G_increase); 
 
 					/*
 					std::cout << "Tile " << _mapP->idToRow((*neighbours)[i]->getId()) << "|" <<
@@ -211,6 +229,9 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 					(*neighbours)[i]->setParentP(currentTile);
 
 					//std::cout << "Parent of tile " << (*neighbours)[i]->getId() << " is " << currentTile->getId() << std::endl;
+
+
+					
 				}
 
 				//This can only happen once per tile
@@ -229,11 +250,40 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 					}
 
 					//Add this tile to the vector and queue of analyzed and open tiles
+					/*
+					if (_mapP->idToRow((*neighbours)[i]->getId()) == 2 && _mapP->idToColumn((*neighbours)[i]->getId()) == 22) {
+						std::cout << "Size before pushing: " << openTiles.size() << std::endl;
+						std::cout << "PUSHING THE TILE 2|21 TO THE FUCKING OPENLIST" << std::endl;
+						std::cout << "2|21 has F " << (*neighbours)[i]->getF() << std::endl;
+					}
+					*/
+
 					analyzedTiles.push_back((*neighbours)[i]);
 					openTiles.push((*neighbours)[i]);
+
+					/*
+					if (_mapP->idToRow((*neighbours)[i]->getId()) == 2 && _mapP->idToColumn((*neighbours)[i]->getId()) == 22) {
+						std::cout << "Size after pushing: " << openTiles.size() << std::endl;
+					}
+					*/
 				}
 			}
 		}
+
+		//TEST 
+		/*
+		if (_mapP->idToRow(currentTile->getId()) == 2 && _mapP->idToColumn(currentTile->getId()) == 21) {
+			//This is the crucial tile
+			while (openTiles.size() != 0) {
+				Tile* bestTile = openTiles.top();
+				std::cout << "The top tile in openTiles is on row " << _mapP->idToRow(bestTile->getId()) <<
+					"and column " << _mapP->idToColumn(bestTile->getId()) << ". Its F = " << bestTile->getF() << std::endl;
+				openTiles.pop();
+			}
+
+			break;
+		}
+		*/
 
 	}
 
@@ -249,12 +299,12 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 	}
 
 	//TEST - NOT RESETTING
-	/*
+	
 	//Reset all analyzed tiles
 	for (int i = 0; i < analyzedTiles.size(); i++) {
 		analyzedTiles[i]->reset();
 	}
-	*/
+	
 
 	return finalPath;
 }

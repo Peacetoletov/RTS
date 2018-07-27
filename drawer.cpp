@@ -21,7 +21,7 @@ void Drawer::draw() {
 	drawUnits();
 
 	//Draw test
-	drawTest();
+	//drawTest();
 }
 
 void Drawer::drawBackground() {
