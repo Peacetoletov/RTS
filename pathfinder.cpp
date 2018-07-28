@@ -38,30 +38,6 @@ Pathfinder::~Pathfinder() {
 
 std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 
-	/* HIGH PRIORITY TODO:
-	If I select a long, almost straight path (only 1 tile above or below a straight line), it doesn't 
-	find the best path.
-
-	Found the cause of the problem. It's in the sorting of the priority queue. For some reason, the priority queue
-	is not reliable.
-
-	REAL LÖSUNG:
-	I will use vector instead of priority queue to store the openTiles in. I will not sort it. Instead, whenever I insert
-	an element into the vector (using the method insert), I will place it on the place where it belongs. I will use my
-	awesome method of repeated splitting of the vector into halves until I end up between 2 values, left one being smaller or equal,
-	and right one being bigger or equal. Once I find this place, I will insert the tile in there. 
-	When I change a value, I will find it in the vector (O(n)), delete it using std::vector::erase and insert it again.
-
-	Comparison with the old version of sorting the vector using std::sort after each time I add an element or change 
-	an element's value:
-	I have no idea how complex my awesome method of repeated splitting is but it must be more efficient than brute-force
-	comparison with all possible tiles, so that means it must be less than O(n). The original sort was O(n log(n)).
-	Finding the tile I'm looking to erase is O(n)
-	By testing, I learned that the complexity of functions insert and erase is so small that I can safely ignore it.
-
-	Whatever, this is extremely confusing. I guess I'll just try it and it will either work or it won't.
-	*/
-
 	//TODO: Remove the Comparator files
 
 	//Create a vector of analyzed tiles
@@ -152,21 +128,19 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 				if (currentTile->getG() + G_increase < (*neighbours)[i]->getG()) {
 
 					//If I update the G (therefore F as well), I need to update the position of the tile in openList
+					bool update = false;
 					if ((*neighbours)[i]->getG() != INT_MAX) {
-						//TODO: This
-
+						//This gets called if this tile already is in the openTiles vector. This needs to be before setting the G.
+						update = true;
 					}
 
 					(*neighbours)[i]->setG(currentTile->getG() + G_increase); 
 
-					/*
-					std::cout << "Tile " << _mapP->idToRow((*neighbours)[i]->getId()) << "|" <<
-					_mapP->idToColumn((*neighbours)[i]->getId()) << " has F " <<
-					(*neighbours)[i]->getF() << std::endl;
-					*/
+					if (update) {
+						updateTileInVector(openTiles, (*neighbours)[i]->getId());
+					}
 
-					//Set the parent
-					//Only if the new G is smaller than the previous G
+					//Set the parent (only if the new G is smaller than the previous G)
 					(*neighbours)[i]->setParentP(currentTile);
 
 				}
@@ -219,6 +193,17 @@ void Pathfinder::threadStart() {
 			_cond.wait(locker);
 		}
 		
+		/* TODO - fix a bug
+		Sometimes, when I click too fast on one place, I get a message saying that the next tile is occupied. 
+		I think this happens because the unit is in one place, I send a request for another path, and before the
+		path is calculated, the unit moves. The first tile on the newly calculated path is the one that the unit
+		is standing on right now. That's why it says it cannot move because the next tile is occupied.
+
+		This is also the reason why when I send a new path request that's opposite of the path the unit is taking
+		right now, it sometimes "jumps" a few tiles.
+
+		Temporary (?) solution: When I select a new path, the unit will stop moving.
+		*/
 		
 		std::cout << "Starting search. " << std::endl;
 		auto start = std::chrono::system_clock::now();
@@ -336,67 +321,25 @@ void Pathfinder::sortedTileInsert(std::vector<Tile*>& openTiles, Tile* tile) {
 	
 }
 
-//TESTING
-void Pathfinder::testSortedTileInsert(std::vector<int>& myVector, int myInt) {
-	int currentPos = myVector.size() / 2;		//this is what position I'm currently looking at
-	int portion = myVector.size() / 2;			//this can be 1/2, 1/4, 1/8, 1/16... of the size
-	while (true) {
-
-		//Edge case #1: myVector.size() = 1
-		//In thise case, currentPos is always 0 and the int will be inserted at the front, no matter its value
-		if (myVector.size() == 1) {
-			if (myInt > myVector[0]) {
-				myVector.insert(myVector.begin(), myInt);
-			}
-			else {
-				myVector.push_back(myInt);
-			}
+void Pathfinder::updateTileInVector(std::vector<Tile*>& openTiles, int tileId) {
+	//Find the tile I want to update in the vector
+	Tile* tileP = nullptr;
+	int pos;
+	for (int i = 0; i < openTiles.size(); i++) {
+		if (openTiles[i]->getId() == tileId) {
+			tileP = openTiles[i];
+			pos = i;
 			break;
 		}
-
-		//Edge case #2: myInt is bigger than anything else
-		if (currentPos == 0) {
-			//std::cout << "myInt is bigger than anything else!" << std::endl;
-			myVector.insert(myVector.begin(), myInt);
-			break;
-		}
-
-		//Edge case #3: myInt is smaller than anything else
-		if (currentPos == myVector.size()) {
-			//std::cout << "myInt is smaller than anything else!" << std::endl;
-			myVector.push_back(myInt);
-			break;
-		}
-		
-		//Is this the right place?
-		//Is the left one bigger or equal to my int and the right one smaller or equal to my int?
-		if (myVector[currentPos - 1] >= myInt && myVector[currentPos] <= myInt) {		//might go out of bounds
-			myVector.insert(myVector.begin() + currentPos, myInt);
-			break;
-		}
-
-		//Split this half into 2 halves. If it would become 0, make it 1 instead.
-		portion = (portion / 2) == 0 ? 1 : portion / 2;
-
-		//Check which way to go
-		if (myInt < myVector[currentPos]) {
-			//Go right
-			//Add the portion to the current position
-			currentPos += portion;
-		}
-		else if (myInt > myVector[currentPos]) {
-			//Go left
-			//Subtract the portion from the current position
-			currentPos -= portion;
-		}
-		else {
-			std::cout << "Error when checking which way to go" << std::endl;
-		}
-
+	}
+	if (tileP == nullptr) {
+		std::cout << "Error! Couldn't find the tile with id " << tileId << " in the vector." << std::endl;
+		return;
 	}
 
-	for (int i = 0; i < myVector.size(); i++) {
-		std::cout << "myVector[" << i << "]= " << myVector[i] << std::endl;
-	}
-	std::cout << "\n";
+	//Erase it from the vector
+	openTiles.erase(openTiles.begin() + pos);
+
+	//Insert it on the right position
+	sortedTileInsert(openTiles, tileP);
 }

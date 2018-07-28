@@ -65,7 +65,10 @@ private:
 	sorted after the insertion. Basically just puts in into the right place.
 	*/
 	void sortedTileInsert(std::vector<Tile*>& openTiles, Tile* tile);		
-	void testSortedTileInsert(std::vector<int>& myVector, int myInt);
+
+	// After updating tile's G, I call this function to update its position in the openTiles vector
+	void updateTileInVector(std::vector<Tile*>& openTiles, int tileId);
+
 };
 
 #endif
