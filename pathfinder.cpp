@@ -11,6 +11,7 @@
 #include <queue>			//std::priority_queue
 #include <stack>			//std::stack
 
+#include <vector>
 
 #include <iostream>
 
@@ -113,6 +114,29 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 
 	Found the cause of the problem. It's in the sorting of the priority queue. For some reason, the priority queue
 	is not reliable.
+
+	DEPRECATED
+	Lösung: After the G values gets updated, I need to create a vector to temporarily store all the values that I will
+	pop from the priority queue and once the queue is empoty, push them all back.
+	This should solve half of the problem. I have no fucking idea how to solve the other half because I don't even know
+	why it happens. If fixing the first half doesn't magically fix the other one as well, I will spend some time trying
+	to replicate the issue and post it on stack overflow.
+
+	REAL LÖSUNG:
+	I will use vector instead of priority queue to store the openTiles in. I will not sort it. Instead, whenever I insert
+	an element into the vector (using the method insert), I will place it on the place where it belongs. I will use my
+	awesome method of repeated splitting of the vector into halves until I end up between 2 values, left one being smaller or equal,
+	and right one being bigger or equal. Once I find this place, I will insert the tile in there. 
+	When I change a value, I will find it in the vector (O(n)), delete it using std::vector::erase and insert it again.
+
+	Comparison with the old version of sorting the vector using std::sort after each time I add an element or change 
+	an element's value:
+	I have no idea how complex my awesome method of repeated splitting is but it must be more efficient than brute-force
+	comparison with all possible tiles, so that means it must be less than O(n). The original sort was O(n log(n)).
+	Finding the tile I'm looking to erase is O(n)
+	By testing, I learned that the complexity of functions insert and erase is so small that I can safely ignore it.
+
+	Whatever, this is extremely confusing. I guess I'll just try it and it will either work or it won't.
 	*/
 
 	//Create a vector of analyzed tiles
@@ -216,6 +240,36 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 
 				if (currentTile->getG() + G_increase < (*neighbours)[i]->getG()) {
 
+					/* Test
+					If the tile already had a G value and a parent but now it's changing, I need to take it out of the queue
+					and put it back in. Because I can't directly pop a certain element, I need to take all elements before the
+					desired element out, store them in a temporary vector/queue and then push them back in.
+					*/
+					if ((*neighbours)[i]->getG() != INT_MAX) {
+						/*
+						std::cout << "Old g = " << (*neighbours)[i]->getG() << "; new g = " <<
+						currentTile->getG() + G_increase << std::endl;
+						*/
+
+						/*
+						OK! NICE! THIS WORKS!
+						*/
+						
+						std::vector<Tile*> temp;
+						while (openTiles.top()->getId() != (*neighbours)[i]->getId()) {
+							temp.push_back(openTiles.top());
+							openTiles.pop();
+						}
+						temp.push_back(openTiles.top());
+						openTiles.pop();
+						for (int k = 0; k < temp.size(); k++) {
+							openTiles.push(temp[k]);
+						}
+						
+
+
+					}
+
 					(*neighbours)[i]->setG(currentTile->getG() + G_increase); 
 
 					/*
@@ -228,9 +282,7 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 					//Only if the new G is smaller than the previous G
 					(*neighbours)[i]->setParentP(currentTile);
 
-					//std::cout << "Parent of tile " << (*neighbours)[i]->getId() << " is " << currentTile->getId() << std::endl;
-
-
+					
 					
 				}
 
@@ -317,10 +369,10 @@ void Pathfinder::threadStart() {
 			_cond.wait(locker);
 		}
 		
-		/*
-		std::cout << "Starting search * 10. " << std::endl;
+		
+		std::cout << "Starting search. " << std::endl;
 		auto start = std::chrono::system_clock::now();
-		*/
+		
 
 		PathParameters* parameters = getFrontPathParameters();
 		if (parameters->getAlgorithm() == PathParameters::Algorithm::A_Star) {
@@ -328,8 +380,6 @@ void Pathfinder::threadStart() {
 			Tile* startTile = _mapP->getTilesP()[unit->getCurrentTileP()->getId()];
 			std::stack<Tile*> path = A_Star(startTile, parameters->getTargetP(), false);
 
-			//TESTING - THIS SHOULD NOT NORMALLY BE COMMENTED OUT!
-			
 			if (path.size() != 0) {
 				unit->setPath(path);
 				unit->setWantsToMove(true);
@@ -338,11 +388,11 @@ void Pathfinder::threadStart() {
 		}
 
 
-		/*
+		
 		auto end = std::chrono::system_clock::now();
 		std::chrono::duration<float> diff = end - start;
 		std::cout << "Search finished. " << floor(diff.count() * 1000) << " milliseconds elapsed." << std::endl;
-		*/
+		
 
 		delete parameters;
 		popPathParameters();
