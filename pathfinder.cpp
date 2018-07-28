@@ -29,81 +29,11 @@ Pathfinder::Pathfinder(Map* mapP, Graphics* graphicsP) :
 	_mapP(mapP),
 	_graphicsP(graphicsP)
 {
-	this->_font = TTF_OpenFont("arial.ttf", 15);
+	
 }
 
 Pathfinder::~Pathfinder() {
-	TTF_CloseFont(this->_font);
-}
-
-//Deprecated
-void Pathfinder::testDrawTiles() {
-	/*
-	SDL_Renderer* renderer = this->_graphicsP->getRenderer();
-	int tileSize = globals::TILE_SIZE;
-
-	int rows = this->_mapP->getRows();
-	int columns = this->_mapP->getColumns();
-	*/
-
-	//DRAW TERRAIN
-	/* Legend
-	Tiles accessible by all units are BLACK.
-	Tiles accessible by air units are GREY.
-	Tiles accessible by no units are WHITE.
-	*/
-
-	/*
-	Tile** tiles = this->_mapP->getTilesP();
-	for (int id = 0; id < (rows * columns); id++) {
-		if (tiles[id]->getTerrainType() == Tile::ALL) {
-			continue;
-		}
-		else if (tiles[id]->getTerrainType() == Tile::AIR) {
-			SDL_SetRenderDrawColor(renderer, 127, 127, 127, SDL_ALPHA_OPAQUE);
-		}
-		else if (tiles[id]->getTerrainType() == Tile::NONE) {
-			SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-		}
-
-		SDL_Rect rect;
-		rect.x = this->_mapP->idToColumn(id) * tileSize;
-		rect.y = this->_mapP->idToRow(id) * tileSize;
-		rect.w = tileSize;
-		rect.h = tileSize;
-		SDL_RenderFillRect(renderer, &rect);
-	}
-
-	//DRAW LINES
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-
-	//Draw rows
-	for (int row = 0; row < (rows + 1); row++) {
-		SDL_RenderDrawLine(renderer, 0, (row * tileSize), (columns * tileSize), (row * tileSize));
-	}
-	//Draw columns
-	for (int column = 0; column < (columns + 1); column++) {
-		SDL_RenderDrawLine(renderer, (column * tileSize), 0, (column * tileSize), (rows * tileSize));
-	}
-	*/
-
-	//DRAW UNITS
-	/* Legend
-	Land units are GREEN.		//for now, all units are land (and green)
-	Air units are BLUE.
-	*/
-	/*
-	std::vector<Unit*> *units = this->_mapP->getUnitsP();
-	for (int i = 0; i < units->size(); i++) {
-		SDL_Rect rect;
-		rect.x = this->_mapP->idToColumn((*units)[i]->getCurrentTileP()->getId()) * tileSize;
-		rect.y = this->_mapP->idToRow((*units)[i]->getCurrentTileP()->getId()) * tileSize;
-		rect.w = tileSize;
-		rect.h = tileSize;
-		SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
-		SDL_RenderFillRect(renderer, &rect);
-	}
-	*/
+	
 }
 
 std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
@@ -114,13 +44,6 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 
 	Found the cause of the problem. It's in the sorting of the priority queue. For some reason, the priority queue
 	is not reliable.
-
-	DEPRECATED
-	Lösung: After the G values gets updated, I need to create a vector to temporarily store all the values that I will
-	pop from the priority queue and once the queue is empoty, push them all back.
-	This should solve half of the problem. I have no fucking idea how to solve the other half because I don't even know
-	why it happens. If fixing the first half doesn't magically fix the other one as well, I will spend some time trying
-	to replicate the issue and post it on stack overflow.
 
 	REAL LÖSUNG:
 	I will use vector instead of priority queue to store the openTiles in. I will not sort it. Instead, whenever I insert
@@ -139,6 +62,8 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 	Whatever, this is extremely confusing. I guess I'll just try it and it will either work or it won't.
 	*/
 
+	//TODO: Remove the Comparator files
+
 	//Create a vector of analyzed tiles
 	//Will be used after the path is found to loop through all the analyzed tiles to reset them.
 	std::vector<Tile*> analyzedTiles;
@@ -149,12 +74,12 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 	they had the lowest F value out of all the analyzed tiles.
 	*/
 
-	//Create a priority queue of open tiles
+	//Create a vector of open tiles
 	/*
 	Open tiles are the tiles which are candidates to be visited. 
 	Visited tiles are removed from the queue.
 	*/
-	std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles;
+	std::vector<Tile*> openTiles;
 
 	//The final path will be stored in this stack
 	std::stack<Tile*> finalPath;
@@ -165,7 +90,7 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 
 	//Add the start tile openTiles and analyzedTiles
 	analyzedTiles.push_back(start);
-	openTiles.push(start);
+	openTiles.push_back(start);
 
 	//Begin the loop
 	bool pathFound = false;
@@ -175,27 +100,19 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 
 		//Choose the most suitable tile to visit
 		if (openTiles.size() != 0) {
-			currentTile = openTiles.top();
+			//Lowest F value tiles (most suitable) will be at the end of the vector;
+			currentTile = openTiles.back();
 		}
 		else {
-			//Out of open tiles, path not found
+			//Out of open tiles, path not found. This will return an empty stack
 			break;
-			//return finalPath;		//This will return an enmpty stack
 		}
 
-		//Remove the pointer to the current tile from the openTiles queue, as I'm about to visit the tile
-		openTiles.pop();
+		//Remove the pointer to the current tile from the openTiles vector, as I'm about to visit the tile
+		openTiles.pop_back();
 
 		//Set the current tile as visited
 		currentTile->setWasVisited(true);
-
-		/*
-		//TEST
-		std::cout << "Current tile is on row " << _mapP->idToRow(currentTile->getId()) << " and column " <<
-			_mapP->idToColumn(currentTile->getId()) << ". G = " << currentTile->getG() << 
-			"; H = " << currentTile->getH() << "; F = " << currentTile->getF() << std::endl;
-		//std::cout << "Analyzing neighbours." << std::endl;
-		*/
 
 		//Analyze neighbours		
 		std::vector<Tile*>* neighbours = currentTile->getNeighboursP();		
@@ -230,43 +147,13 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 				I tested it and found out that this would speed it up by 10 %.
 				*/
 
-				/*
-				std::cout << "Analyzing neighbour tile on row " << _mapP->idToRow((*neighbours)[i]->getId()) <<
-					" and column " << _mapP->idToColumn((*neighbours)[i]->getId()) << ". Current G is " << 
-					(*neighbours)[i]->getG() << std::endl;
-					*/
-
 				int G_increase = currentTile->isNeighbourDiagonal((*neighbours)[i]) ? 14 : 10;
 
 				if (currentTile->getG() + G_increase < (*neighbours)[i]->getG()) {
 
-					/* Test
-					If the tile already had a G value and a parent but now it's changing, I need to take it out of the queue
-					and put it back in. Because I can't directly pop a certain element, I need to take all elements before the
-					desired element out, store them in a temporary vector/queue and then push them back in.
-					*/
+					//If I update the G (therefore F as well), I need to update the position of the tile in openList
 					if ((*neighbours)[i]->getG() != INT_MAX) {
-						/*
-						std::cout << "Old g = " << (*neighbours)[i]->getG() << "; new g = " <<
-						currentTile->getG() + G_increase << std::endl;
-						*/
-
-						/*
-						OK! NICE! THIS WORKS!
-						*/
-						
-						std::vector<Tile*> temp;
-						while (openTiles.top()->getId() != (*neighbours)[i]->getId()) {
-							temp.push_back(openTiles.top());
-							openTiles.pop();
-						}
-						temp.push_back(openTiles.top());
-						openTiles.pop();
-						for (int k = 0; k < temp.size(); k++) {
-							openTiles.push(temp[k]);
-						}
-						
-
+						//TODO: This
 
 					}
 
@@ -282,8 +169,6 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 					//Only if the new G is smaller than the previous G
 					(*neighbours)[i]->setParentP(currentTile);
 
-					
-					
 				}
 
 				//This can only happen once per tile
@@ -293,49 +178,17 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 					int H = (*neighbours)[i]->calculateH(_mapP->getTilesP()[target->getId()]);
 					(*neighbours)[i]->setH(H);
 
+					//If H == 0, we found the path and can break the loop.
 					if (H == 0) {
-						/*
-						std::cout << "Found the end! It's " << _mapP->idToRow((*neighbours)[i]->getId()) <<
-							"|" << _mapP->idToColumn((*neighbours)[i]->getId()) << std::endl;
-							*/
 						pathFound = true;
 					}
 
-					//Add this tile to the vector and queue of analyzed and open tiles
-					/*
-					if (_mapP->idToRow((*neighbours)[i]->getId()) == 2 && _mapP->idToColumn((*neighbours)[i]->getId()) == 22) {
-						std::cout << "Size before pushing: " << openTiles.size() << std::endl;
-						std::cout << "PUSHING THE TILE 2|21 TO THE FUCKING OPENLIST" << std::endl;
-						std::cout << "2|21 has F " << (*neighbours)[i]->getF() << std::endl;
-					}
-					*/
-
+					//Add this tile to the vector of analyzed and open tiles
 					analyzedTiles.push_back((*neighbours)[i]);
-					openTiles.push((*neighbours)[i]);
-
-					/*
-					if (_mapP->idToRow((*neighbours)[i]->getId()) == 2 && _mapP->idToColumn((*neighbours)[i]->getId()) == 22) {
-						std::cout << "Size after pushing: " << openTiles.size() << std::endl;
-					}
-					*/
+					sortedTileInsert(openTiles, (*neighbours)[i]);
 				}
 			}
 		}
-
-		//TEST 
-		/*
-		if (_mapP->idToRow(currentTile->getId()) == 2 && _mapP->idToColumn(currentTile->getId()) == 21) {
-			//This is the crucial tile
-			while (openTiles.size() != 0) {
-				Tile* bestTile = openTiles.top();
-				std::cout << "The top tile in openTiles is on row " << _mapP->idToRow(bestTile->getId()) <<
-					"and column " << _mapP->idToColumn(bestTile->getId()) << ". Its F = " << bestTile->getF() << std::endl;
-				openTiles.pop();
-			}
-
-			break;
-		}
-		*/
 
 	}
 
@@ -350,13 +203,10 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 		}
 	}
 
-	//TEST - NOT RESETTING
-	
 	//Reset all analyzed tiles
 	for (int i = 0; i < analyzedTiles.size(); i++) {
 		analyzedTiles[i]->reset();
 	}
-	
 
 	return finalPath;
 }
@@ -402,15 +252,6 @@ void Pathfinder::threadStart() {
 	
 }
 
-/*
-void Pathfinder::setTiles(Tile* startTileP, Tile* targetTileP) {
-	std::unique_lock<std::mutex> locker(_mu);
-	_startTileP = startTileP;
-	_targetTileP = targetTileP;
-	locker.unlock();
-}
-*/
-
 void Pathfinder::pushPathParameters(PathParameters* parameters) {
 	std::unique_lock<std::mutex> locker(_mu);
 	_pathParametersQueue.push(parameters);
@@ -436,14 +277,126 @@ std::condition_variable* Pathfinder::getCondP() {
 	return &_cond;
 }
 
-/*
-Tile* Pathfinder::getStartTileP() {
-	std::unique_lock<std::mutex> locker(_mu);
-	return _startTileP;
+//PRIVATE
+void Pathfinder::sortedTileInsert(std::vector<Tile*>& openTiles, Tile* tile) {
+	
+	int currentPos = openTiles.size() / 2;		//this is what position I'm currently looking at
+	int portion = openTiles.size() / 2;			//this can be 1/2, 1/4, 1/8, 1/16... of the size
+	while (true) {
+
+		//Edge case #1: myVector.size() = 1
+		//In this case, currentPos is always 0 and the tile will be inserted at the front, no matter its F value
+		if (openTiles.size() == 1) {
+			if (tile->getF() > openTiles[0]->getF()) {
+				openTiles.insert(openTiles.begin(), tile);
+			}
+			else {
+				openTiles.push_back(tile);
+			}
+			break;
+		}
+
+		//Edge case #2: new F is bigger than anything else
+		if (currentPos == 0) {
+			//std::cout << "new F is bigger than anything else!" << std::endl;
+			openTiles.insert(openTiles.begin(), tile);
+			break;
+		}
+
+		//Edge case #2: new F is smaller than anything else
+		if (currentPos == openTiles.size()) {
+			//std::cout << "new F is smaller than anything else!" << std::endl;
+			openTiles.push_back(tile);
+			break;
+		}
+
+		//Is this the right place?
+		//Is the left F bigger or equal to new F and the right F smaller or equal to new F?
+		if (openTiles[currentPos - 1]->getF() >= tile->getF() && openTiles[currentPos]->getF() <= tile->getF()) {
+			openTiles.insert(openTiles.begin() + currentPos, tile);
+			break;
+		}
+
+		//Split this half into 2 halves. If it would become 0, make it 1 instead.
+		portion = (portion / 2) == 0 ? 1 : portion / 2;
+
+		//Check which way to go
+		if (tile->getF() < openTiles[currentPos]->getF()) {
+			//Go right
+			//Add the portion to the current position
+			currentPos += portion;
+		}
+		else {
+			//Go left
+			//Subtract the portion from the current position
+			currentPos -= portion;
+		}
+
+	}
+	
 }
 
-Tile* Pathfinder::getTargetTileP() {
-	std::unique_lock<std::mutex> locker(_mu);
-	return _targetTileP;
+//TESTING
+void Pathfinder::testSortedTileInsert(std::vector<int>& myVector, int myInt) {
+	int currentPos = myVector.size() / 2;		//this is what position I'm currently looking at
+	int portion = myVector.size() / 2;			//this can be 1/2, 1/4, 1/8, 1/16... of the size
+	while (true) {
+
+		//Edge case #1: myVector.size() = 1
+		//In thise case, currentPos is always 0 and the int will be inserted at the front, no matter its value
+		if (myVector.size() == 1) {
+			if (myInt > myVector[0]) {
+				myVector.insert(myVector.begin(), myInt);
+			}
+			else {
+				myVector.push_back(myInt);
+			}
+			break;
+		}
+
+		//Edge case #2: myInt is bigger than anything else
+		if (currentPos == 0) {
+			//std::cout << "myInt is bigger than anything else!" << std::endl;
+			myVector.insert(myVector.begin(), myInt);
+			break;
+		}
+
+		//Edge case #3: myInt is smaller than anything else
+		if (currentPos == myVector.size()) {
+			//std::cout << "myInt is smaller than anything else!" << std::endl;
+			myVector.push_back(myInt);
+			break;
+		}
+		
+		//Is this the right place?
+		//Is the left one bigger or equal to my int and the right one smaller or equal to my int?
+		if (myVector[currentPos - 1] >= myInt && myVector[currentPos] <= myInt) {		//might go out of bounds
+			myVector.insert(myVector.begin() + currentPos, myInt);
+			break;
+		}
+
+		//Split this half into 2 halves. If it would become 0, make it 1 instead.
+		portion = (portion / 2) == 0 ? 1 : portion / 2;
+
+		//Check which way to go
+		if (myInt < myVector[currentPos]) {
+			//Go right
+			//Add the portion to the current position
+			currentPos += portion;
+		}
+		else if (myInt > myVector[currentPos]) {
+			//Go left
+			//Subtract the portion from the current position
+			currentPos -= portion;
+		}
+		else {
+			std::cout << "Error when checking which way to go" << std::endl;
+		}
+
+	}
+
+	for (int i = 0; i < myVector.size(); i++) {
+		std::cout << "myVector[" << i << "]= " << myVector[i] << std::endl;
+	}
+	std::cout << "\n";
 }
-*/

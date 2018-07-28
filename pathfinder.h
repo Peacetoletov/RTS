@@ -29,8 +29,6 @@ public:
 
 	~Pathfinder();
 
-	void testDrawTiles();
-
 	/* void A_Star
 	A* pathfinding algorithm
 	TODO: all the TODOs defined in the function implementation
@@ -50,15 +48,10 @@ public:
 	//Getters
 	Map* getMapP();
 	std::condition_variable* getCondP();
-	/*
-	Tile* getStartTileP();
-	Tile* getTargetTileP();
-	*/
 
 private:
 	Map* _mapP;
 	Graphics* _graphicsP;
-	TTF_Font* _font;
 
 	std::mutex _muWaiter;
 	std::mutex _mu;
@@ -67,6 +60,12 @@ private:
 	//This queue is shared between 2 threads and needs to be accessed only using mutex
 	std::queue<PathParameters*> _pathParametersQueue;
 
+	//METHODS
+	/* Takes a Tile* and inserts it into an already sorted vector of Tile*s (sorted by F) so that the vector remains 
+	sorted after the insertion. Basically just puts in into the right place.
+	*/
+	void sortedTileInsert(std::vector<Tile*>& openTiles, Tile* tile);		
+	void testSortedTileInsert(std::vector<int>& myVector, int myInt);
 };
 
 #endif
