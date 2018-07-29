@@ -29,15 +29,15 @@ public:
 
 	~Pathfinder();
 
-	/* void A_Star
-	A* pathfinding algorithm
+	//TODO: Implement bidirectional Dijkstra pathfinding algortihm
+	std::stack<Tile*> bidirectionalDijkstra(Tile* start, Tile* target, bool canFly);
+
+	/* A* pathfinding algorithm
 	TODO: all the TODOs defined in the function implementation
 	*/
 	std::stack<Tile*> A_Star(Tile* start, Tile* target, bool canFly);
 
-	/* void threadStart
-	This is where a new thread starts.
-	*/
+	//This is where the pathfinder thread starts.
 	void threadStart();
 
 	//_pathParametersQueue functions using mutex

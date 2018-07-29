@@ -36,12 +36,42 @@ Pathfinder::~Pathfinder() {
 	
 }
 
+std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, bool canFly) {
+
+	/* Create a vector of analyzed tiles
+	Will be used after the path is found to loop through all the analyzed tiles to reset them.
+	*/
+	std::vector<Tile*> analyzedTiles;
+
+	/* Difference between visited and analyzed tiles
+	Analyzed tiles haven't been visited yet. They were analyzed as a neighbour to a visited tile.
+	Visited tiles have been previously analyzed and were the best candidates to be visited -
+	they had the lowest F value out of all the analyzed tiles.
+	*/
+
+	/* Create 2 priority queues of open tiles, one for each direction
+	Open tiles are the tiles which are candidates to be visited.
+	Visited tiles are removed from the vector.
+	*/
+	std::vector<Tile*> openTiles1;			//From start		//TODO: change this to a priority queue
+	std::vector<Tile*> openTiles2;			//From start
+
+	//The final path will be stored in this stack
+	std::stack<Tile*> finalPath;
+
+	//Set up the start tiles
+	start->setG(0);
+	start->setH(start->calculateH(target));
+
+
+	return finalPath;
+}
+
 std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 
-	//TODO: Remove the Comparator files
-
-	//Create a vector of analyzed tiles
-	//Will be used after the path is found to loop through all the analyzed tiles to reset them.
+	/* Create a vector of analyzed tiles
+	Will be used after the path is found to loop through all the analyzed tiles to reset them.
+	*/
 	std::vector<Tile*> analyzedTiles;
 
 	/* Difference between visited and analyzed tiles
@@ -53,7 +83,7 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 	//Create a vector of open tiles
 	/*
 	Open tiles are the tiles which are candidates to be visited. 
-	Visited tiles are removed from the queue.
+	Visited tiles are removed from the vector.
 	*/
 	std::vector<Tile*> openTiles;
 
@@ -213,7 +243,8 @@ void Pathfinder::threadStart() {
 		if (parameters->getAlgorithm() == PathParameters::Algorithm::A_Star) {
 			Unit* unit = (*(parameters->getUnitsP()))[0];
 			Tile* startTile = _mapP->getTilesP()[unit->getCurrentTileP()->getId()];
-			std::stack<Tile*> path = A_Star(startTile, parameters->getTargetP(), false);
+			//std::stack<Tile*> path = A_Star(startTile, parameters->getTargetP(), false);
+			std::stack<Tile*> path = bidirectionalDijkstra(startTile, parameters->getTargetP(), false);
 
 			if (path.size() != 0) {
 				unit->setPath(path);
