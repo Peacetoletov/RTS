@@ -38,8 +38,9 @@ Pathfinder::~Pathfinder() {
 
 std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, bool canFly) {
 
-	/* Create a vector of analyzed tiles
+	/* Create a vector of analyzed tiles.
 	Will be used after the path is found to loop through all the analyzed tiles to reset them.
+	This is common to both directions.
 	*/
 	std::vector<Tile*> analyzedTiles;
 
@@ -50,19 +51,146 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, b
 	*/
 
 	/* Create 2 priority queues of open tiles, one for each direction
-	Open tiles are the tiles which are candidates to be visited.
+	Open tiles are candidates to be visited.
 	Visited tiles are removed from the vector.
 	*/
-	std::vector<Tile*> openTiles1;			//From start		//TODO: change this to a priority queue
-	std::vector<Tile*> openTiles2;			//From start
+	std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles1;			//From start		
+	std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles2;			//From target
 
 	//The final path will be stored in this stack
 	std::stack<Tile*> finalPath;
 
 	//Set up the start tiles
 	start->setG(0);
-	start->setH(start->calculateH(target));
+	target->setG(0);
 
+	//Add the start tiles to openTiles and analyzedTiles
+	analyzedTiles.push_back(start);
+	analyzedTiles.push_back(target);
+	openTiles1.push(start);
+	openTiles2.push(target);
+
+	//Begin the loop
+	bool pathFound = false;
+	Tile* currentTile = nullptr;
+	bool dirStart = true;				//True when the direction is from the start, false when from the target
+
+	while (!pathFound) {
+
+		//Switch the direction
+		dirStart = !dirStart;
+
+		/* Choose the most suitable tile to visit and remove the pointer to the current 
+		tile from the openTiles vector, as I'm about to visit the tile.
+		*/
+		if (dirStart) {
+			if (openTiles1.size() != 0) {
+				currentTile = openTiles1.top();
+				openTiles1.pop();
+			}
+			else {
+				//Out of open tiles, path not found. This will return an empty stack
+				break;
+			}
+		}
+		else {
+			if (openTiles2.size() != 0) {
+				currentTile = openTiles2.top();
+				openTiles2.pop();
+			}
+			else {
+				//Out of open tiles, path not found. This will return an empty stack
+				break;
+			}
+		}
+
+		//Set the current tile as visited
+		currentTile->setWasVisited(true);
+
+		std::cout << "Current tile c|r " << _mapP->idToColumn(currentTile->getId()) <<
+			"|" << _mapP->idToRow(currentTile->getId()) << std::endl;
+		
+		//Analyze neighbours		
+		std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
+		for (int i = 0; i < neighbours->size(); i++) {
+
+			/* If the neighbour tile was already checked in this direction, skip it.
+			If the neighbour tile was checked in the other direction, the path has been found.
+			If the unit cannot move through the neighbour tile, also skip it.
+			*/
+
+			/* TODO: Right now, I skip air unit accessible tiles without checking if the unit
+			is of air type. Add this check.
+			*/
+
+			//Check if the directions intersect, therefore path has been found
+			if ((*neighbours)[i]->getWasVisited()) {
+				if (dirStart && (*neighbours)[i]->getDirection() == Tile::Direction::TARGET) {
+					pathFound = true;
+					//TODO: Join the directions together (reverse the pointers to parents of one direction)
+					break;
+				}
+				else if (!dirStart && (*neighbours)[i]->getDirection() == Tile::Direction::START) {
+					pathFound = true;
+					//TODO: Join the directions together (reverse the pointers to parents of one direction)
+					break;
+				}
+			}
+			//This neighbour tile hasn't been visited. If it wasn't analyzed and is accessible, set its G
+			else if ((*neighbours)[i]->getTerrainType() == Tile::TerrainAvailability::ALL &&
+				(*neighbours)[i]->getG() == INT_MAX) {
+
+				//Set G value
+				/*
+				I first need to check if the neighbour tile is diagonal or not.
+				If it's diagonal, I would add 14 to the current G, otherwise 10.
+				I only change the G value if the new value would be smaller than
+				the current one.
+				*/
+				/* POSSIBLE OPTIMIZATION:
+				Instead of checking this all the time, I can assign another vector to each tile
+				that contains information about each neighbour (whether or not it's diagonal).
+				I would access this infomation based on the index in the vector.
+				Is neighbour[i] diagonal? I look at isDiagonal[i] and boom! I don't need to calculate
+				it over and over again.
+				I tested it and found out that this would speed it up by 10 %.
+				*/
+
+				int G_increase = currentTile->isNeighbourDiagonal((*neighbours)[i]) ? 14 : 10;
+				(*neighbours)[i]->setG(currentTile->getG() + G_increase);
+
+				//Set the parent
+				(*neighbours)[i]->setParentP(currentTile);
+
+				/* TODO
+				Currently, it's not guaranteed to find the best path because it breaks the first time it finds a possible path.
+
+				I could probably fix this by not stopping there, only putting it as the best path so far. Then, I would look
+				at all the remaining tiles in openTiles of that particular direction
+				*/
+
+				/* TODO
+				Currently, if I select the target right next to the start, it will probably fail to find the path.
+				*/
+
+				//Add this tile to the vector of analyzed and open tiles
+				analyzedTiles.push_back((*neighbours)[i]);
+				if (dirStart) {
+					openTiles1.push((*neighbours)[i]);
+
+					std::cout << "Pushing a tile to openList1! It has G = " << (*neighbours)[i]->getG() << std::endl;
+				}
+				else {
+					openTiles2.push((*neighbours)[i]);
+
+					std::cout << "Pushing a tile c|r " << _mapP->idToColumn((*neighbours)[i]->getId()) << 
+						"|" << _mapP->idToRow((*neighbours)[i]->getId()) << " to openList2! It has G = " << 
+						(*neighbours)[i]->getG() << std::endl;
+				}
+			}
+		}
+		
+	}
 
 	return finalPath;
 }
@@ -94,7 +222,7 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 	start->setG(0);
 	start->setH(start->calculateH(target));
 
-	//Add the start tile openTiles and analyzedTiles
+	//Add the start tile to openTiles and analyzedTiles
 	analyzedTiles.push_back(start);
 	openTiles.push_back(start);
 

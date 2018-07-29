@@ -12,5 +12,5 @@ bool Comparator::operator() (Tile* a, Tile* b) {
 	*/
 
 	//Not sure which order this is - descending or ascending 
-	return (a->getF() > b->getF());
+	return (a->getG() > b->getG());
 }

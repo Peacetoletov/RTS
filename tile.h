@@ -22,6 +22,15 @@ public:
 		NONE
 	};
 
+	/* This is used in the bidirectional Dijkstra pathfinding algortihm.
+	I have 2 directions so this is used to distinct which direction the tile belongs to.
+	*/
+	enum class Direction {
+		START,
+		TARGET,
+		NONE
+	};
+
 	Tile();			//Won't be used
 
 	//Creates the object and initializes _id, _type, _mapP.
@@ -47,6 +56,7 @@ public:
 	//Setters
 	void setTerrainType(TerrainAvailability type);
 	void setOccupancy(Occupancy occupancy);
+	void setDirection(Direction direction);
 	void setNeighbours(std::vector<Tile*> neighbours);
 	void setWasVisited(bool wasVisited);
 	void setG(int G);
@@ -57,6 +67,7 @@ public:
 	int getId();
 	TerrainAvailability getTerrainType();
 	Occupancy getOccupancy();
+	Direction getDirection();
 	std::vector<Tile*>* getNeighboursP();
 	bool getWasVisited();
 	int getG();		
@@ -68,6 +79,7 @@ private:
 	int _id;
 	TerrainAvailability _type;
 	Occupancy _occupancy = Occupancy::NONE;
+	Direction _direction;
 	Map* _mapP;							//Pointer to the map object, allows the use of utility functions
 										//(switching between columns and rows and id)
 	std::vector<Tile*> _neighbours;		//Vector holding pointers to neighbour tiles

@@ -65,10 +65,11 @@ bool Tile::isNeighbourDiagonal(Tile* neighbour) {
 }
 
 void Tile::reset() {
-	this->_wasVisited = false;
-	this->_G = INT_MAX;				//Not infinity, but close enough
-	this->_H = INT_MAX;				//Not infinity, but close enough
-	Tile* _parentP = nullptr;
+	_wasVisited = false;
+	_G = INT_MAX;				//Not infinity, but close enough
+	_H = INT_MAX;				//Not infinity, but close enough
+	_parentP = nullptr;
+	_direction = Direction::NONE;
 }
 
 void Tile::setTerrainType(TerrainAvailability type) {
@@ -77,6 +78,10 @@ void Tile::setTerrainType(TerrainAvailability type) {
 
 void Tile::setOccupancy(Occupancy occupancy) {
 	_occupancy = occupancy;
+}
+
+void Tile::setDirection(Direction direction) {
+	_direction = direction;
 }
 
 void Tile::setNeighbours(std::vector<Tile*> neighbours) {
@@ -109,6 +114,10 @@ Tile::TerrainAvailability Tile::getTerrainType() {
 
 Tile::Occupancy Tile::getOccupancy() {
 	return _occupancy;
+}
+
+Tile::Direction Tile::getDirection() {
+	return _direction;
 }
 
 std::vector<Tile*>* Tile::getNeighboursP() {
