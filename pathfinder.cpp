@@ -57,6 +57,13 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, b
 	std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles1;			//From start		
 	std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles2;			//From target
 
+	/* struct PossiblePath has 3 variables: total length of the path(total G), end tile of one direction,
+	end tile of the other direction(the 2 end tiles are next to each other, because that's where the directions intersect).
+	Whenever I find a new path, it's compared with this path's G to determine which one is better.
+	*/
+	PossiblePath currentBestPath;
+	currentBestPath.totalG = INT_MAX;
+
 	//The final path will be stored in this stack
 	std::stack<Tile*> finalPath;
 
@@ -75,6 +82,7 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, b
 	Tile* currentTile = nullptr;
 	bool dirStart = true;				//True when the direction is from the start, false when from the target
 
+	//Attempt to find a path (not necessarily the best path)
 	while (!pathFound) {
 
 		//Switch the direction
@@ -107,8 +115,10 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, b
 		//Set the current tile as visited
 		currentTile->setWasVisited(true);
 
+		
 		std::cout << "Current tile c|r " << _mapP->idToColumn(currentTile->getId()) <<
 			"|" << _mapP->idToRow(currentTile->getId()) << std::endl;
+			
 		
 		//Analyze neighbours		
 		std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
@@ -125,18 +135,40 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, b
 
 			//Check if the directions intersect, therefore path has been found
 			if ((*neighbours)[i]->getWasVisited()) {
+				/* Here, I need to keep checking all the neighbour tiles around this one to check if they aren't better
+				in terms of path length. I can't break here after finding 1 path. After I check all the neighbours,
+				I can finally leave this while loop and check all the other open tiles.
+				*/
+
+				//For some reason, it doesn't fullfil the condition below even in times when it should
 				if (dirStart && (*neighbours)[i]->getDirection() == Tile::Direction::TARGET) {
+					std::cout << "Found a path! 1" << std::endl;
+					//If this path is better than the current one (the first path found always is), update it to the new path.
+					int G_increase = currentTile->isNeighbourDiagonal((*neighbours)[i]) ? 14 : 10;
+					int totalG = currentTile->getG() + (*neighbours)[i]->getG() + G_increase;
+					if (totalG < currentBestPath.totalG) {
+						currentBestPath.totalG = totalG;
+						currentBestPath.path1End = currentTile;
+						currentBestPath.path2End = (*neighbours)[i];
+					}
 					pathFound = true;
-					//TODO: Join the directions together (reverse the pointers to parents of one direction)
-					break;
 				}
 				else if (!dirStart && (*neighbours)[i]->getDirection() == Tile::Direction::START) {
+					std::cout << "Found a path! 2" << std::endl;
+					//If this path is better than the current one (the first path found always is), update it to the new path.
+					int G_increase = currentTile->isNeighbourDiagonal((*neighbours)[i]) ? 14 : 10;
+					int totalG = currentTile->getG() + (*neighbours)[i]->getG() + G_increase;
+					if (totalG < currentBestPath.totalG) {
+						currentBestPath.totalG = totalG;
+						currentBestPath.path1End = (*neighbours)[i];
+						currentBestPath.path2End = currentTile;
+					}
 					pathFound = true;
-					//TODO: Join the directions together (reverse the pointers to parents of one direction)
-					break;
 				}
 			}
-			//This neighbour tile hasn't been visited. If it wasn't analyzed and is accessible, set its G
+			/* This neighbour tile hasn't been visited. If it wasn't analyzed and is accessible, set its variables
+			(G, parent, direction) and push it to the corresponding openList queue.
+			*/
 			else if ((*neighbours)[i]->getTerrainType() == Tile::TerrainAvailability::ALL &&
 				(*neighbours)[i]->getG() == INT_MAX) {
 
@@ -173,24 +205,58 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, b
 				Currently, if I select the target right next to the start, it will probably fail to find the path.
 				*/
 
-				//Add this tile to the vector of analyzed and open tiles
+				//Add this tile to the vector of analyzed and open tiles, set the direction
 				analyzedTiles.push_back((*neighbours)[i]);
 				if (dirStart) {
 					openTiles1.push((*neighbours)[i]);
+					(*neighbours)[i]->setDirection(Tile::Direction::START);
 
-					std::cout << "Pushing a tile to openList1! It has G = " << (*neighbours)[i]->getG() << std::endl;
+					/*
+					std::cout << "Pushing a tile c|r " << _mapP->idToColumn((*neighbours)[i]->getId()) <<
+						"|" << _mapP->idToRow((*neighbours)[i]->getId()) << " to openList1! It has G = " <<
+						(*neighbours)[i]->getG() << std::endl;
+						*/
 				}
 				else {
 					openTiles2.push((*neighbours)[i]);
+					(*neighbours)[i]->setDirection(Tile::Direction::TARGET);
 
+					/*
 					std::cout << "Pushing a tile c|r " << _mapP->idToColumn((*neighbours)[i]->getId()) << 
 						"|" << _mapP->idToRow((*neighbours)[i]->getId()) << " to openList2! It has G = " << 
 						(*neighbours)[i]->getG() << std::endl;
+						*/
+						
 				}
 			}
 		}
 		
 	}
+
+	//Test
+	std::cout << "If there are no more messages, no path has been found. pathFound = " << pathFound << std::endl;
+	if (pathFound) {
+		std::cout << "A path has been found! It goes from middle to the start like this: " << std::endl;
+		Tile* currentTileTest = currentBestPath.path1End;
+		while (currentTileTest->getId() != start->getId()) {
+			std::cout << "Column|Row: " << _mapP->idToColumn(currentTileTest->getId()) << "|" <<
+				_mapP->idToRow(currentTileTest->getId()) << std::endl;
+			currentTileTest = currentTileTest->getParentP();
+		}
+		std::cout << "And it goes from middle to target like this: " << std::endl;
+		currentTileTest = currentBestPath.path2End;
+		while (currentTileTest->getId() != target->getId()) {
+			std::cout << "Column|Row: " << _mapP->idToColumn(currentTileTest->getId()) << "|" <<
+				_mapP->idToRow(currentTileTest->getId()) << std::endl;
+			currentTileTest = currentTileTest->getParentP();
+		}
+
+		std::cout << "This is the whole path." << std::endl;
+	}
+
+	//TODO: Check all the open tiles of the direction that found a path. If I find a better path, replace the current one.
+
+	//TODO: Join the directions together (reverse the pointers to parents of one direction)
 
 	return finalPath;
 }

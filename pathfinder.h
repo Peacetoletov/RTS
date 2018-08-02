@@ -32,6 +32,13 @@ public:
 	//TODO: Implement bidirectional Dijkstra pathfinding algortihm
 	std::stack<Tile*> bidirectionalDijkstra(Tile* start, Tile* target, bool canFly);
 
+	//struct PossiblePath is used in bidirectionalDijkstra
+	struct PossiblePath {
+		int totalG;
+		Tile* path1End;
+		Tile* path2End;
+	};
+
 	/* A* pathfinding algorithm
 	TODO: all the TODOs defined in the function implementation
 	*/
