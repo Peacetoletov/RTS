@@ -68,8 +68,8 @@ private:
 	std::queue<PathParameters*> _pathParametersQueue;
 
 	//METHODS
-	/* Used in bidirectional Dijkstra. Checks if a new path is better than the current one. If yes, it updates
-	the current one to the new one.
+	/* Used in bidirectional Dijkstra. Checks if a new path is better than the current one. If yes, it replaces
+	the current one with the new one.
 	*/
 	void updatePathIfBetter(Tile* currentTile, Tile* neighbour, PossiblePath& currentBestPath, bool dirStart);
 
