@@ -38,10 +38,7 @@ Pathfinder::~Pathfinder() {
 
 std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, bool canFly) {
 
-	/* TODO - fix a runtime error that happens when I select an impossible path.
 	
-	*/
-
 	/* Create a vector of analyzed tiles.
 	Will be used after the path is found to loop through all the analyzed tiles to reset them.
 	This is common to both directions.
@@ -426,28 +423,19 @@ void Pathfinder::threadStart() {
 			_cond.wait(locker);
 		}
 		
-		/* TODO - fix a bug
-		Sometimes, when I click too fast on one place, I get a message saying that the next tile is occupied. 
-		I think this happens because the unit is in one place, I send a request for another path, and before the
-		path is calculated, the unit moves. The first tile on the newly calculated path is the one that the unit
-		is standing on right now. That's why it says it cannot move because the next tile is occupied.
-
-		This is also the reason why when I send a new path request that's opposite of the path the unit is taking
-		right now, it sometimes "jumps" a few tiles.
-
-		Temporary (?) solution: When I select a new path, the unit will stop moving.
-
-		Easy way to replicate this bug: on the current map, send the unit to the bottom left corner and select the target
-		in the top left corner.
-		*/
-		
 		std::cout << "Starting search. " << std::endl;
 		auto start = std::chrono::system_clock::now();
 		
-
+		/* Stop the unit before calculating path to avoid problems.
+		If I don't stop the unit, it might move to another tile. If that tile happens to be the first tile to visit
+		on the newly calculated path, the unit wouldn't move because the tile is occupied (by itself).
+		*/
 		PathParameters* parameters = getFrontPathParameters();
+		Unit* unit = (*(parameters->getUnitsP()))[0];
+		unit->setWantsToMove(false);
+		
 		if (parameters->getAlgorithm() == PathParameters::Algorithm::A_Star) {
-			Unit* unit = (*(parameters->getUnitsP()))[0];
+			
 			Tile* startTile = _mapP->getTilesP()[unit->getCurrentTileP()->getId()];
 			//std::stack<Tile*> path = A_Star(startTile, parameters->getTargetP(), false);
 			std::stack<Tile*> path = bidirectionalDijkstra(startTile, parameters->getTargetP(), false);
@@ -456,7 +444,6 @@ void Pathfinder::threadStart() {
 				unit->setPath(path);
 				unit->setWantsToMove(true);
 			}
-			
 		}
 
 
