@@ -2,10 +2,9 @@
 #define MAP_H
 
 #include <vector>
-#include "gameobject.h"
-#include "tile.h"
+#include "unit.h"			//This is necessary because of Unit::Type enum
 
-class Unit;
+class Tile;
 
 /* class Map
 This class contains information about the tiles on the map.
@@ -29,12 +28,12 @@ public:
 	/* void loadTestMap
 	Changes values of _terrain to new values defined in this function.
 	*/
-	void loadTestMap();
+	void loadTestMap(); 
 
 	/* void loadTestObjects 
-	Creates an instance of GameObject in _objects at the specified position to test the pathfinder
+	Creates units to test pathfinder and other functionalities
 	*/
-	void loadTestUnit(int row, int column);
+	void loadTestUnits(int amount, int row[], int column[], Unit::Type type[]);
 
 	/* int idToRow
 	Returns the row based on the id

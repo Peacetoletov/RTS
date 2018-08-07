@@ -8,6 +8,8 @@
 #include <queue>
 #include <stack>
 
+#include "unit.h"			//necessary because of Unit::Type enum
+
 /* class Pathfinder
 This class deals with pathfinding.
 */
@@ -30,7 +32,7 @@ public:
 	~Pathfinder();
 
 	//TODO: Implement bidirectional Dijkstra pathfinding algortihm
-	std::stack<Tile*> bidirectionalDijkstra(Tile* start, Tile* target, bool canFly);
+	std::stack<Tile*> bidirectionalDijkstra(Tile* start, Tile* target, Unit::Type type);
 
 	//struct PossiblePath is used in bidirectionalDijkstra
 	struct PossiblePath {

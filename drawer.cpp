@@ -2,6 +2,7 @@
 #include "unit.h"
 #include "graphics.h"
 #include "globals.h"		//tileSize
+#include "tile.h"
 #include "map.h"
 
 Drawer::Drawer() {}
@@ -44,7 +45,7 @@ void Drawer::drawBackground() {
 			continue;
 		}
 		else if (tiles[id]->getTerrainType() == Tile::TerrainAvailability::AIR) {
-			SDL_SetRenderDrawColor(renderer, 127, 127, 127, SDL_ALPHA_OPAQUE);
+			SDL_SetRenderDrawColor(renderer, 150, 150, 150, SDL_ALPHA_OPAQUE);
 		}
 		else if (tiles[id]->getTerrainType() == Tile::TerrainAvailability::NONE) {
 			SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
@@ -89,7 +90,12 @@ void Drawer::drawUnits() {
 		rect.y = this->_mapP->idToRow((*units)[i]->getCurrentTileP()->getId()) * tileSize;
 		rect.w = tileSize;
 		rect.h = tileSize;
-		SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
+		if ((*units)[i]->getType() == Unit::Type::LAND) {
+			SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
+		}
+		else {
+			SDL_SetRenderDrawColor(renderer, 50, 150, 255, SDL_ALPHA_OPAQUE);
+		}		
 		SDL_RenderFillRect(renderer, &rect);
 	}
 }

@@ -1,9 +1,10 @@
 #include "level.h"
 #include "graphics.h"
+#include "unit.h"
 
 #include <SDL.h>
 
-#include <math.h>
+//#include <math.h>
 #include <iostream>
 
 /*
@@ -17,7 +18,13 @@ Level::Level(std::string levelName, int rows, int columns, Graphics* graphicsP) 
 {
 	this->_mapP = new Map(80, 100);
 	this->_mapP->loadTestMap();
-	this->_mapP->loadTestUnit(1, 1);
+
+	const int unitsAmount = 2;
+	int row[unitsAmount] = { 1, 1 };
+	int column[unitsAmount] = { 1, 50 };
+	Unit::Type type[unitsAmount] = { Unit::Type::AIR, Unit::Type::LAND };
+
+	this->_mapP->loadTestUnits(unitsAmount, row, column, type);
 	//this->_pathfinderP = new Pathfinder(this->_mapP, graphicsP);
 
 	//this->loadMap(mapName, graphics);

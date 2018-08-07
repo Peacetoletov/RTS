@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "unit.h"			//necessary because of Unit::Type
+
 class Map;
 
 class Tile {
@@ -33,8 +35,8 @@ public:
 
 	Tile();			//Won't be used
 
-	//Creates the object and initializes _id, _type, _mapP.
-	Tile(int id, TerrainAvailability type, Map* mapP);
+	//Creates the object and initializes _id, _terrainType, _mapP.
+	Tile(int id, TerrainAvailability terrainType, Map* mapP);
 
 	//Test purpose only (for now)
 	~Tile();
@@ -53,8 +55,13 @@ public:
 	//Resets all member variables to their default state.
 	void reset();
 
+	/* Determines (based on TerrainAvailability and Occupancy) whether this tile is available 
+	for a unit of the specified type.
+	*/
+	bool isAvailable(Unit::Type unitType);
+
 	//Setters
-	void setTerrainType(TerrainAvailability type);
+	void setTerrainType(TerrainAvailability terrainType);
 	void setOccupancy(Occupancy occupancy);
 	void setDirection(Direction direction);
 	void setNeighbours(std::vector<Tile*> neighbours);
@@ -77,7 +84,7 @@ public:
 
 private:
 	int _id;
-	TerrainAvailability _type;
+	TerrainAvailability _terrainType;
 	Occupancy _occupancy = Occupancy::NONE;
 	Direction _direction;
 	Map* _mapP;							//Pointer to the map object, allows the use of utility functions

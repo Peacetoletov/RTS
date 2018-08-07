@@ -36,9 +36,8 @@ Pathfinder::~Pathfinder() {
 	
 }
 
-std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, bool canFly) {
-
-	
+std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, Unit::Type type) {
+		
 	/* Create a vector of analyzed tiles.
 	Will be used after the path is found to loop through all the analyzed tiles to reset them.
 	This is common to both directions.
@@ -136,10 +135,6 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, b
 			If the neighbour tile was checked in the other direction, the path has been found.
 			*/
 
-			/* TODO: Right now, I skip air unit accessible tiles without checking if the unit
-			is of air type. Add this check.
-			*/
-
 			//Check if the directions intersect, therefore path has been found
 			if ((*neighbours)[i]->getG() != INT_MAX) {		
 				/* Here, I need to keep checking all the neighbour tiles around this one to check if they aren't better
@@ -163,7 +158,7 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, b
 			/* This neighbour tile hasn't been analyzed. If it is accessible, set its variables
 			(G, parent, direction) and push it to the corresponding openList queue.
 			*/
-			else if ((*neighbours)[i]->getTerrainType() == Tile::TerrainAvailability::ALL) {
+			else if ((*neighbours)[i]->isAvailable(type)) {
 
 				//Set G value
 				/*
@@ -267,7 +262,15 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, b
 	return finalPath;
 }
 
+//Deprecated
 std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
+
+	/* IMPORTANT
+	As I'm currently not planning on using the A* pathfinding algorithm at all, this function is outdated
+	and it's possible it doesn't work anymore, or it might behave unexpectedly!
+	*/
+
+	std::cout << "WARNING: Use of A*" << std::endl;
 
 	/* Create a vector of analyzed tiles
 	Will be used after the path is found to loop through all the analyzed tiles to reset them.
@@ -438,7 +441,7 @@ void Pathfinder::threadStart() {
 			
 			Tile* startTile = _mapP->getTilesP()[unit->getCurrentTileP()->getId()];
 			//std::stack<Tile*> path = A_Star(startTile, parameters->getTargetP(), false);
-			std::stack<Tile*> path = bidirectionalDijkstra(startTile, parameters->getTargetP(), false);
+			std::stack<Tile*> path = bidirectionalDijkstra(startTile, parameters->getTargetP(), unit->getType());
 
 			if (path.size() != 0) {
 				unit->setPath(path);

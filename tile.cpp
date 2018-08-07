@@ -7,9 +7,9 @@
 
 Tile::Tile() {}
 
-Tile::Tile(int id, TerrainAvailability type, Map* mapP) : 
+Tile::Tile(int id, TerrainAvailability terrainType, Map* mapP) :
 	_id(id),
-	_type(type),
+	_terrainType(terrainType),
 	_mapP(mapP)
 {
 	reset();
@@ -72,8 +72,30 @@ void Tile::reset() {
 	_direction = Direction::NONE;
 }
 
-void Tile::setTerrainType(TerrainAvailability type) {
-	this->_type = type;
+bool Tile::isAvailable(Unit::Type unitType) {
+	//Land
+	if (unitType == Unit::Type::LAND) {
+		if (_terrainType == TerrainAvailability::ALL) {
+			if (_occupancy == Occupancy::NONE ||
+					_occupancy == Occupancy::AIR) {
+				return true;
+			}
+		}	
+	}
+	//Air
+	else {
+		if (_terrainType == TerrainAvailability::ALL || _terrainType == TerrainAvailability::AIR) {
+			if (_occupancy == Occupancy::NONE ||
+					_occupancy == Occupancy::LAND) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void Tile::setTerrainType(TerrainAvailability terrainType) {
+	_terrainType = terrainType;
 }
 
 void Tile::setOccupancy(Occupancy occupancy) {
@@ -109,7 +131,7 @@ int Tile::getId() {
 }
 
 Tile::TerrainAvailability Tile::getTerrainType() {
-	return this->_type;
+	return _terrainType;
 }
 
 Tile::Occupancy Tile::getOccupancy() {
