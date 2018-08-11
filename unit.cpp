@@ -172,11 +172,9 @@ int Unit::getDistance() {
 	return _distance;
 }
 
-/*
-int Unit::getCurrentDistance() {
-	return _currentDistance;
+bool Unit::getHovered() {
+	return _hovered;
 }
-*/
 
 void Unit::setWantsToMove(bool wantsToMove) {
 	_wantsToMove = wantsToMove;
@@ -194,8 +192,6 @@ void Unit::setDistance(int distance) {
 	_distance = distance;
 }
 
-/*
-void Unit::setCurrentDistance(int distance) {
-	_currentDistance = distance;
+void Unit::setHovered(bool hovered) {
+	_hovered = hovered;
 }
-*/

@@ -91,10 +91,20 @@ void Drawer::drawUnits() {
 		rect.w = tileSize;
 		rect.h = tileSize;
 		if ((*units)[i]->getType() == Unit::Type::LAND) {
-			SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
+			if ((*units)[i]->getHovered()) {
+				SDL_SetRenderDrawColor(renderer, 0, 150, 0, SDL_ALPHA_OPAQUE);
+			}
+			else {
+				SDL_SetRenderDrawColor(renderer, 0, 255, 0, SDL_ALPHA_OPAQUE);
+			}
 		}
 		else {
-			SDL_SetRenderDrawColor(renderer, 50, 150, 255, SDL_ALPHA_OPAQUE);
+			if ((*units)[i]->getHovered()) {
+				SDL_SetRenderDrawColor(renderer, 0, 100, 150, SDL_ALPHA_OPAQUE);
+			}
+			else {
+				SDL_SetRenderDrawColor(renderer, 50, 150, 255, SDL_ALPHA_OPAQUE);
+			}
 		}		
 		SDL_RenderFillRect(renderer, &rect);
 	}

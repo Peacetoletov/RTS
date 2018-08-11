@@ -24,6 +24,7 @@ public:
 	bool isMouseButtonHeld(Uint8 button);
 
 	//Getters
+	bool didMouseMove();
 	int getMouseX();
 	int getMouseY();
 
@@ -36,6 +37,7 @@ private:
 	std::map<Uint8, bool> _pressedMouseButtons;
 	std::map<Uint8, bool> _releasedMouseButtons;
 	
+	bool _mouseMoved;
 	int _mouseX;
 	int _mouseY;
 };

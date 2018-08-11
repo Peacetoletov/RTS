@@ -27,15 +27,15 @@ public:
 	bool getWantsToMove();
 	bool getMoving();
 	int getDistance();
-	//int getCurrentDistance();		//probably not needed
+	bool getHovered();
 
 	//Setters
-	//void setCurrentTileP(int id);			//is this even needed?		//I'm pretty sure it is now
+	//void setCurrentTileP(int id);			//is this even needed?		//I'm pretty sure it is now		//is it though?
 	void setPath(std::stack<Tile*> path);
 	void setWantsToMove(bool wantsToMove);
 	void setMoving(bool moving);
 	void setDistance(int distance);
-	//void setCurrentDistance(int distance);	//probably not needed
+	void setHovered(bool hovered);
 
 private:
 	Type _type;
@@ -44,12 +44,10 @@ private:
 	std::stack<Tile*> _path;
 	bool _wantsToMove = false;
 	bool _moving = false;
-
 	/* This represents the imaginary distance (NOT in pixels) between the current tile 
 	and the tile where the unit wants to travel.
 	*/
 	float _distance;
-
 	/* _currentDistance represents how close to the tile that the unit is moving onto is.
 	It is always less than _distance and once it overflows, it gets reset back to 0.
 	At that moment, the unit is fully on the new tile and if it's not at the end of
@@ -58,6 +56,8 @@ private:
 	I can also look at this variable as the distance from the previous tile.
 	*/
 	float _currentDistance;
+
+	bool _hovered = false;
 
 	//METHODS
 	void setThisAndNextOccupancies();

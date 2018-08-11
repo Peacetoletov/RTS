@@ -1,8 +1,9 @@
 #ifndef INPUTHANDLER_H
 #define INPUTHANDLER_H
 
-#include "input.h"
-#include "level.h"
+class Input;
+class Level;
+class Pathfinder;
 
 class InputHandler {
 public:
@@ -14,13 +15,17 @@ public:
 	them all into a struct or a new type of object and pass that as only 1 argument.
 	*/
 	//InputHandler(Input* inputP, Level* levelP);
-	InputHandler(Input* inputP, Pathfinder* pathfinderP);
+	InputHandler(Input* inputP, Level* levelP, Pathfinder* pathfinderP);
 
-	void handleInput();
+	//The return value determines whether the program should ends
+	bool handleInput();
+
+	//This update function covers everything that requires mouse position
+	void update();
 
 private:
 	Input* _inputP;
-	//Level* _levelP;
+	Level* _levelP;
 	Pathfinder* _pathfinderP;
 
 	void leftMouseButtonPressed();

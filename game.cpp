@@ -58,7 +58,7 @@ void Game::gameLoop() {
 	std::thread pathfinderThread(&Pathfinder::threadStart, _pathfinderP);		//Memory leak here
 	pathfinderThread.detach();		//Make the threads run independently
 
-	InputHandler inputHandler(&input, _pathfinderP);		
+	InputHandler inputHandler(&input, _levelP, _pathfinderP);		
 
 	int test = 0; //test
 		
@@ -98,19 +98,21 @@ void Game::gameLoop() {
 		}
 
 		//Handle the input
-		inputHandler.handleInput();
+		bool quit = inputHandler.handleInput();
+		if (quit) {
+			return;
+		}
 
 		//Some kind of magic
 		const int CURRENT_TIME_MS = SDL_GetTicks();
 		int ELAPSED_TIME_MS = CURRENT_TIME_MS - LAST_UPDATE_TIME;
-		this->update(std::min(ELAPSED_TIME_MS, MAX_FRAME_TIME));
+		this->update(std::min(ELAPSED_TIME_MS, MAX_FRAME_TIME), inputHandler);
 		LAST_UPDATE_TIME = CURRENT_TIME_MS;
 
 		//Draw
 		this->draw(graphics, drawer);
 	}
 }
-
 
 void Game::draw(Graphics &graphics, Drawer drawer) {
 	graphics.clear();
@@ -121,6 +123,11 @@ void Game::draw(Graphics &graphics, Drawer drawer) {
 	graphics.flip();
 }
 
-void Game::update(int elapsedTime) {
-	this->_levelP->update(elapsedTime);
+void Game::update(int elapsedTime, InputHandler inputHandler) {
+	inputHandler.update();
+	_levelP->update(elapsedTime);
+}
+
+Level* Game::getLevelP() {
+	return _levelP;
 }
