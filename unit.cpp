@@ -176,6 +176,10 @@ bool Unit::getHovered() {
 	return _hovered;
 }
 
+bool Unit::getSelected() {
+	return _selected;
+}
+
 void Unit::setWantsToMove(bool wantsToMove) {
 	_wantsToMove = wantsToMove;
 }
@@ -194,4 +198,8 @@ void Unit::setDistance(int distance) {
 
 void Unit::setHovered(bool hovered) {
 	_hovered = hovered;
+}
+
+void Unit::setSelected(bool selected) {
+	_selected = selected;
 }

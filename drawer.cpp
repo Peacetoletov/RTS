@@ -91,7 +91,7 @@ void Drawer::drawUnits() {
 		rect.w = tileSize;
 		rect.h = tileSize;
 		if ((*units)[i]->getType() == Unit::Type::LAND) {
-			if ((*units)[i]->getHovered()) {
+			if ((*units)[i]->getHovered() || (*units)[i]->getSelected()) {
 				SDL_SetRenderDrawColor(renderer, 0, 150, 0, SDL_ALPHA_OPAQUE);
 			}
 			else {
@@ -99,7 +99,7 @@ void Drawer::drawUnits() {
 			}
 		}
 		else {
-			if ((*units)[i]->getHovered()) {
+			if ((*units)[i]->getHovered() || (*units)[i]->getSelected()) {
 				SDL_SetRenderDrawColor(renderer, 0, 100, 150, SDL_ALPHA_OPAQUE);
 			}
 			else {

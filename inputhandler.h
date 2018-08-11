@@ -29,6 +29,7 @@ private:
 	Pathfinder* _pathfinderP;
 
 	void leftMouseButtonPressed();
+	void rightMouseButtonPressed();
 };
 
 #endif

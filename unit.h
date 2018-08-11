@@ -28,6 +28,7 @@ public:
 	bool getMoving();
 	int getDistance();
 	bool getHovered();
+	bool getSelected();
 
 	//Setters
 	//void setCurrentTileP(int id);			//is this even needed?		//I'm pretty sure it is now		//is it though?
@@ -36,6 +37,7 @@ public:
 	void setMoving(bool moving);
 	void setDistance(int distance);
 	void setHovered(bool hovered);
+	void setSelected(bool selected);
 
 private:
 	Type _type;
@@ -58,6 +60,7 @@ private:
 	float _currentDistance;
 
 	bool _hovered = false;
+	bool _selected = false;
 
 	//METHODS
 	void setThisAndNextOccupancies();
