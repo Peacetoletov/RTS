@@ -42,7 +42,7 @@ public:
 private:
 	Type _type;
 	Tile* _currentTileP;
-	float _speed = 1.0f;
+	float _speed = 0.25f;
 	std::stack<Tile*> _path;
 	bool _wantsToMove = false;
 	bool _moving = false;

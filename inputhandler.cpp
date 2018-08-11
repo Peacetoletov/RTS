@@ -103,27 +103,45 @@ void InputHandler::rightMouseButtonPressed() {
 	/* TODO: Fix a bug
 	If I select the target in a thin wall, the unit will enter the wall.
 	*/
-	Map* mapP = _levelP->getMapP();
-	int mouseX = _inputP->getMouseX();
-	int mouseY = _inputP->getMouseY();
-	Tile* targetTileP = mapP->getTilesP()[mapP->positionToId(mouseY / globals::TILE_SIZE, mouseX / globals::TILE_SIZE)];
 
 	//Right now, I only test the pathfinding of 1 unit.
 	std::vector<Unit*>* unitsP = _levelP->getMapP()->getUnitsP();		//All units
 	std::vector<Unit*> unitsToMove;
 	for (int i = 0; i < unitsP->size(); i++) {
-	if ((*unitsP)[i]->getSelected()) {
-		unitsToMove.push_back((*unitsP)[i]);
+		if ((*unitsP)[i]->getSelected()) {
+			unitsToMove.push_back((*unitsP)[i]);
+			//Once I implement group selection, I need to make sure to only enable grouping units of the same type
 		}
 	}
 
-	//If there are selected units, set their path
+	//Select the target
 	if (!unitsToMove.empty()) {
-	PathParameters* parameters = new PathParameters(PathParameters::A_Star, targetTileP, unitsToMove);
-	_pathfinderP->pushPathParameters(parameters);
+		Map* mapP = _levelP->getMapP();
+		int mouseX = _inputP->getMouseX();
+		int mouseY = _inputP->getMouseY();
+		Tile* targetTileP = mapP->getTilesP()[mapP->positionToId(mouseY / globals::TILE_SIZE, mouseX / globals::TILE_SIZE)];
 
-	//Notify the other thread
-	_pathfinderP->getCondP()->notify_one();
+		bool canMove = false;
+		if (unitsToMove[0]->getType() == Unit::Type::LAND) {		//unitsToMove[0]->getType() works because all the units in the vector are of the same type
+			if (targetTileP->getTerrainType() == Tile::TerrainAvailability::ALL) {
+				canMove = true;
+			}
+		}
+		else {
+			if (targetTileP->getTerrainType() == Tile::TerrainAvailability::ALL ||
+				targetTileP->getTerrainType() == Tile::TerrainAvailability::AIR) {
+				canMove = true;
+			}
+		}
+
+		//Set path of the selected unit(s)
+		if (canMove) {
+			PathParameters* parameters = new PathParameters(PathParameters::A_Star, targetTileP, unitsToMove);
+			_pathfinderP->pushPathParameters(parameters);
+
+			//Notify the other thread
+			_pathfinderP->getCondP()->notify_one();
+		}
 	}
 
 }
