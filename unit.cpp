@@ -32,11 +32,7 @@ void Unit::update() {
 	if (_wantsToMove && !_moving) {
 
 		//Check whether the next tile is occupied by a unit of the same type
-		Tile::Occupancy occupancy = _path.top()->getOccupancy();
-		if ((_type == Unit::Type::LAND && occupancy == Tile::Occupancy::LAND) ||
-			(_type == Unit::Type::LAND && occupancy == Tile::Occupancy::LAND_AND_AIR) ||
-			(_type == Unit::Type::AIR && occupancy == Tile::Occupancy::AIR) ||
-			(_type == Unit::Type::AIR && occupancy == Tile::Occupancy::LAND_AND_AIR)) {
+		if (!_path.top()->isAvailable(_type)) {
 
 			//Desired tile is occupied, unit cannot move.
 			//_moving = false;		//unnecessary
@@ -55,8 +51,8 @@ void Unit::update() {
 			_distance = _currentTileP->isNeighbourDiagonal(_path.top()) ?
 				globals::TILE_DIAGONAL_DISTANCE : globals::TILE_STRAIGHT_DISTANCE;
 
-			//Set the occupancy of the tile that this unit is leaving and the tile the unit is moving onto
-			setThisAndNextOccupancies();
+			//Set pointers to this unit in the current tile and the next tile
+			setPointersToThisUnit();
 
 			//Set the current tile to the tile the unit is moving onto
 			_currentTileP = _path.top();
@@ -118,56 +114,21 @@ void Unit::avoidOppositeUnit() {
 	}
 }
 
-void Unit::setThisAndNextOccupancies() {
+void Unit::setPointersToThisUnit() {
 	//This tile
-	Tile::Occupancy thisOccupancy = _currentTileP->getOccupancy();
 	if (_type == Unit::Type::LAND) {
-		if (thisOccupancy == Tile::Occupancy::LAND) {
-			_currentTileP->setOccupancy(Tile::Occupancy::NONE);
-		}
-		else if (thisOccupancy == Tile::Occupancy::LAND_AND_AIR) {
-			_currentTileP->setOccupancy(Tile::Occupancy::AIR);
-		}
-		else {
-			//FIX THIS!		//is it already fixed?
-			std::cout << "Error when setting the occupancy 1 in unit.cpp" << std::endl;
-		}
+		_currentTileP->setLandUnitP(nullptr);
 	}
 	else {
-		if (thisOccupancy == Tile::Occupancy::AIR) {
-			_currentTileP->setOccupancy(Tile::Occupancy::NONE);
-		}
-		else if (thisOccupancy == Tile::Occupancy::LAND_AND_AIR) {
-			_currentTileP->setOccupancy(Tile::Occupancy::LAND);
-		}
-		else {
-			std::cout << "Error when setting the occupancy 2 in unit.cpp" << std::endl;
-		}
+		_currentTileP->setAirUnitP(nullptr);
 	}
 
 	//Next tile
-	Tile::Occupancy nextOccupancy = _path.top()->getOccupancy();
 	if (_type == Unit::Type::LAND) {
-		if (nextOccupancy == Tile::Occupancy::NONE) {
-			_path.top()->setOccupancy(Tile::Occupancy::LAND);
-		}
-		else if (nextOccupancy == Tile::Occupancy::AIR) {
-			_path.top()->setOccupancy(Tile::Occupancy::LAND_AND_AIR);
-		}
-		else {
-			std::cout << "Error when setting the occupancy 3 in unit.cpp" << std::endl;
-		}
+		_path.top()->setLandUnitP(this);
 	}
 	else {
-		if (nextOccupancy == Tile::Occupancy::NONE) {
-			_path.top()->setOccupancy(Tile::Occupancy::AIR);
-		}
-		else if (nextOccupancy == Tile::Occupancy::LAND) {
-			_path.top()->setOccupancy(Tile::Occupancy::LAND_AND_AIR);
-		}
-		else {
-			std::cout << "Error when setting the occupancy 4 in unit.cpp" << std::endl;
-		}
+		_path.top()->setAirUnitP(this);
 	}
 }
 

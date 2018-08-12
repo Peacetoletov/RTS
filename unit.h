@@ -65,7 +65,7 @@ private:
 	bool _selected = false;
 
 	//METHODS
-	void setThisAndNextOccupancies();
+	void setPointersToThisUnit();
 	void move();
 	void avoidOppositeUnit();
 };

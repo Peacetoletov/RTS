@@ -268,10 +268,10 @@ void Map::loadTestUnits(const int amount, int row[], int column[], Unit::Type ty
 		Tile* tile = _tiles[positionToId(row[i], column[i])];
 		Unit* unit = new Unit(tile, type[i], &_units);
 		if (type[i] == Unit::Type::LAND) {
-			tile->setOccupancy(Tile::Occupancy::LAND);
+			tile->setLandUnitP(unit);
 		}
 		else {
-			tile->setOccupancy(Tile::Occupancy::AIR);
+			tile->setAirUnitP(unit);
 		}
 		_units.push_back(unit);
 	}

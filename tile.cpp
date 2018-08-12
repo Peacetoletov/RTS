@@ -76,6 +76,25 @@ bool Tile::isAvailable(Unit::Type unitType) {
 	//Land
 	if (unitType == Unit::Type::LAND) {
 		if (_terrainType == TerrainAvailability::ALL) {
+			if (_landUnitP == nullptr) {
+				return true;
+			}
+		}
+	}
+	//Air
+	else {
+		if (_terrainType == TerrainAvailability::ALL || _terrainType == TerrainAvailability::AIR) {
+			if (_airUnitP == nullptr) {
+				return true;
+			}
+		}
+	}
+	return false;
+
+	/*
+	//Land
+	if (unitType == Unit::Type::LAND) {
+		if (_terrainType == TerrainAvailability::ALL) {
 			if (_occupancy == Occupancy::NONE ||
 					_occupancy == Occupancy::AIR) {
 				return true;
@@ -92,18 +111,41 @@ bool Tile::isAvailable(Unit::Type unitType) {
 		}
 	}
 	return false;
+	*/
+}
+
+bool Tile::isAvailableForPathfinding(Unit::Type unitType) {
+	//Check if the unit is moving
+
+
+	/*
+	if (!isAvailable(unitType)) {
+		
+	}
+	*/
+	return false;
 }
 
 void Tile::setTerrainType(TerrainAvailability terrainType) {
 	_terrainType = terrainType;
 }
 
+/*
 void Tile::setOccupancy(Occupancy occupancy) {
 	_occupancy = occupancy;
 }
+*/
 
 void Tile::setDirection(Direction direction) {
 	_direction = direction;
+}
+
+void Tile::setLandUnitP(Unit* unit) {
+	_landUnitP = unit;
+}
+
+void Tile::setAirUnitP(Unit* unit) {
+	_airUnitP = unit;
 }
 
 void Tile::setNeighbours(std::vector<Tile*> neighbours) {
@@ -134,12 +176,22 @@ Tile::TerrainAvailability Tile::getTerrainType() {
 	return _terrainType;
 }
 
+/*
 Tile::Occupancy Tile::getOccupancy() {
 	return _occupancy;
 }
+*/
 
 Tile::Direction Tile::getDirection() {
 	return _direction;
+}
+
+Unit* Tile::getLandUnitP() {
+	return _landUnitP;
+}
+
+Unit* Tile::getAirUnitP() {
+	return _airUnitP;
 }
 
 std::vector<Tile*>* Tile::getNeighboursP() {
