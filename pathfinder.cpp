@@ -158,6 +158,13 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, U
 			/* This neighbour tile hasn't been analyzed. If it is accessible, set its variables
 			(G, parent, direction) and push it to the corresponding openList queue.
 			*/
+
+			/* TODO: Modify this!
+			Right now, I'm using a function Tile::isAvailable(Unit::Type unitType). This function returns false if the given
+			tile is occupied by a unit. However, I only want to return false if it is occupied by a unit that is NOT moving.
+			If it is moving, I want to return true.
+			*/
+
 			else if ((*neighbours)[i]->isAvailable(type)) {
 
 				//Set G value

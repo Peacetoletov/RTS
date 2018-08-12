@@ -2,6 +2,7 @@
 #define UNIT_H
 
 #include <stack>
+#include <vector>
 
 class Tile;
 
@@ -14,7 +15,7 @@ public:
 
 	Unit();		//Won't be used
 
-	Unit(Tile* currentTile, Type type);
+	Unit(Tile* currentTile, Type type, std::vector<Unit*>* unitsP);
 
 	~Unit();		//Not used yet
 
@@ -40,8 +41,9 @@ public:
 	void setSelected(bool selected);
 
 private:
-	Type _type;
 	Tile* _currentTileP;
+	Type _type;
+	std::vector<Unit*>* _unitsP;			//vector of all units on the map
 	float _speed = 0.25f;
 	std::stack<Tile*> _path;
 	bool _wantsToMove = false;
@@ -65,6 +67,7 @@ private:
 	//METHODS
 	void setThisAndNextOccupancies();
 	void move();
+	void avoidOppositeUnit();
 };
 
 #endif

@@ -6,9 +6,10 @@
 
 Unit::Unit() {}
 
-Unit::Unit(Tile* currentTileP, Unit::Type type) :
+Unit::Unit(Tile* currentTileP, Unit::Type type, std::vector<Unit*>* unitsP) :
 	_currentTileP(currentTileP),
-	_type(type)
+	_type(type),
+	_unitsP(unitsP)
 {
 
 }
@@ -39,10 +40,15 @@ void Unit::update() {
 
 			//Desired tile is occupied, unit cannot move.
 			//_moving = false;		//unnecessary
-			std::cout << "Next tile is occupied!" << std::endl;
+			//std::cout << "Next tile is occupied!" << std::endl;
+
+			/* When 2 units are moving towards each other from opposite directions, they would get stuck.
+			This makes one unit get out of the way, let the other unit pass and then move back and continue.
+			*/
+			avoidOppositeUnit();
 		}
 		else {
-			//Desired tile isn't occupied, unit can move.
+			//Desired tile isn't occupied, unit can start moving.
 			_moving = true;
 
 			//Set distance
@@ -73,6 +79,45 @@ void Unit::update() {
 	
 }
 
+void Unit::avoidOppositeUnit() {
+	//Select the unit that's in the way
+	Unit* oppositeUnit = nullptr;
+	for (int i = 0; i < _unitsP->size(); i++) {
+		if ((*_unitsP)[i]->getCurrentTileP()->getId() == _path.top()->getId()) {
+			oppositeUnit = (*_unitsP)[i];
+			break;
+		}
+	}
+
+	if (oppositeUnit == nullptr) {
+		std::cout << "Error in Unit::avoidOppositeUnit()" << std::endl;
+		return;
+	}
+
+	//Check if the opposite unit intends to move to the tile that this unit currently stands on
+	if (oppositeUnit->getPathP()->top()->getId() == _currentTileP->getId()) {
+		//Units are blocking each other
+		/*Loop through neighbours of this tile until I find one that is available. If I don't find any (extremely uunlikely),
+		stop both units.
+		*/
+		Tile* availableTile = nullptr;
+		std::vector<Tile*>* neighbours = _currentTileP->getNeighboursP();
+		for (int i = 0; i < neighbours->size(); i++) {
+			if ((*neighbours)[i]->isAvailable(_type)) {
+				availableTile = (*neighbours)[i];
+			}
+		}
+		if (availableTile == nullptr) {
+			//Stop both units
+			_wantsToMove = false;
+			oppositeUnit->setWantsToMove(false);
+		}
+		//Add the current tile to the _path stack, then add the available neighbour tile
+		_path.push(_currentTileP);
+		_path.push(availableTile);
+	}
+}
+
 void Unit::setThisAndNextOccupancies() {
 	//This tile
 	Tile::Occupancy thisOccupancy = _currentTileP->getOccupancy();
@@ -84,7 +129,7 @@ void Unit::setThisAndNextOccupancies() {
 			_currentTileP->setOccupancy(Tile::Occupancy::AIR);
 		}
 		else {
-			//FIX THIS!
+			//FIX THIS!		//is it already fixed?
 			std::cout << "Error when setting the occupancy 1 in unit.cpp" << std::endl;
 		}
 	}
@@ -104,7 +149,6 @@ void Unit::setThisAndNextOccupancies() {
 	Tile::Occupancy nextOccupancy = _path.top()->getOccupancy();
 	if (_type == Unit::Type::LAND) {
 		if (nextOccupancy == Tile::Occupancy::NONE) {
-			//std::cout << "Setting the next tile to be occupied by land." << std::endl;
 			_path.top()->setOccupancy(Tile::Occupancy::LAND);
 		}
 		else if (nextOccupancy == Tile::Occupancy::AIR) {

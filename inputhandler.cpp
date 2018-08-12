@@ -100,10 +100,6 @@ void InputHandler::leftMouseButtonPressed() {
 
 void InputHandler::rightMouseButtonPressed() {
 	//Test pathfinding
-	/* TODO: Fix a bug
-	If I select the target in a thin wall, the unit will enter the wall.
-	*/
-
 	//Right now, I only test the pathfinding of 1 unit.
 	std::vector<Unit*>* unitsP = _levelP->getMapP()->getUnitsP();		//All units
 	std::vector<Unit*> unitsToMove;
