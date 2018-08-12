@@ -40,24 +40,20 @@ void Game::gameLoop() {
 	Graphics graphics;
 	Input input;
 	SDL_Event event;
-	
-	_levelP = new Level("level 1", 10, 10, &graphics);	
-
-	Drawer drawer(&graphics, _levelP->getMapP());		//Needs to be created after the level
-
-	/* TODO: Fix the problem that a pathfinder needs a map (that can change with each level) as a constructuor parameter.
-	The thread obviously can't be created more than once. This can be easily done by removing the parameters from 
-	the constructor and creating a method named initMap in the Pathfinder object.
-	*/
 
 	/* The thread pathfinderThread is causing a minor memory leak (8 bytes) because of the function it uses.
 	There's an infinite loop in it and that causes a memory leak for some reason. When I commented the loop out,
 	the leak disappeared. It's small enough that I don't need to worry about it.
 	*/
-	_pathfinderP = new Pathfinder(_levelP->getMapP(), &graphics);
+	_pathfinderP = new Pathfinder();
 	std::thread pathfinderThread(&Pathfinder::threadStart, _pathfinderP);		//Memory leak here
 	pathfinderThread.detach();		//Make the threads run independently
+	
+	_levelP = new Level("level 1", 10, 10, &graphics, _pathfinderP);	
 
+	_pathfinderP->initMap(_levelP->getMapP());
+
+	Drawer drawer(&graphics, _levelP->getMapP());		//Needs to be created after the level
 	InputHandler inputHandler(&input, _levelP, _pathfinderP);		
 
 	int test = 0; //test

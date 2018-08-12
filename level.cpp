@@ -1,6 +1,7 @@
 #include "level.h"
 #include "graphics.h"
 #include "unit.h"
+#include "pathfinder.h"
 
 #include <SDL.h>
 
@@ -13,18 +14,18 @@ Needs to be modified to work with an RTS.
 
 Level::Level() {}
 
-Level::Level(std::string levelName, int rows, int columns, Graphics* graphicsP) :
+Level::Level(std::string levelName, int rows, int columns, Graphics* graphicsP, Pathfinder* pathfinderP) :
 		_levelName(levelName)
 {
-	this->_mapP = new Map(80, 100);
-	this->_mapP->loadTestMap();
+	_mapP = new Map(80, 100, pathfinderP);
+	_mapP->loadTestMap();
 
 	const int unitsAmount = 4;
 	int row[unitsAmount] = { 1, 1, 1, 1 };
 	int column[unitsAmount] = { 1, 2, 50, 54 };
 	Unit::Type type[unitsAmount] = { Unit::Type::AIR, Unit::Type::AIR, Unit::Type::LAND, Unit::Type::AIR };
 
-	this->_mapP->loadTestUnits(unitsAmount, row, column, type);
+	_mapP->loadTestUnits(unitsAmount, row, column, type);
 	//this->_pathfinderP = new Pathfinder(this->_mapP, graphicsP);
 
 	//this->loadMap(mapName, graphics);

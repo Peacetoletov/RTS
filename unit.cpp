@@ -1,15 +1,18 @@
 #include "unit.h"
 #include "tile.h"
 #include "globals.h"
+#include "pathfinder.h"
+#include "pathparameters.h"
 
 #include <iostream>
 
 Unit::Unit() {}
 
-Unit::Unit(Tile* currentTileP, Unit::Type type, std::vector<Unit*>* unitsP) :
+Unit::Unit(Tile* currentTileP, Unit::Type type, std::vector<Unit*>* unitsP, Pathfinder* pathfinderP) :
 	_currentTileP(currentTileP),
 	_type(type),
-	_unitsP(unitsP)
+	_unitsP(unitsP),
+	_pathfinderP(pathfinderP)
 {
 
 }
@@ -41,7 +44,8 @@ void Unit::update() {
 			/* When 2 units are moving towards each other from opposite directions, they would get stuck.
 			This makes one unit get out of the way, let the other unit pass and then move back and continue.
 			*/
-			avoidOppositeUnit();
+			
+			avoidOppositeUnit();		
 		}
 		else {
 			//Desired tile isn't occupied, unit can start moving.
@@ -89,28 +93,58 @@ void Unit::avoidOppositeUnit() {
 		std::cout << "Error in Unit::avoidOppositeUnit()" << std::endl;
 		return;
 	}
-
-	//Check if the opposite unit intends to move to the tile that this unit currently stands on
-	if (oppositeUnit->getPathP()->top()->getId() == _currentTileP->getId()) {
-		//Units are blocking each other
-		/*Loop through neighbours of this tile until I find one that is available. If I don't find any (extremely uunlikely),
-		stop both units.
-		*/
-		Tile* availableTile = nullptr;
-		std::vector<Tile*>* neighbours = _currentTileP->getNeighboursP();
-		for (int i = 0; i < neighbours->size(); i++) {
-			if ((*neighbours)[i]->isAvailable(_type)) {
-				availableTile = (*neighbours)[i];
+	
+	//Check if the opposite unit hasn't finished its path yet
+	if (!oppositeUnit->getPathP()->empty()) {
+		//Check if the opposite unit intends to move to the tile that this unit currently stands on
+		if (oppositeUnit->getPathP()->top()->getId() == _currentTileP->getId()) {
+			//Units are blocking each other
+			/*Loop through neighbours of this tile until I find one that is available. If I don't find any (extremely uunlikely),
+			stop both units.
+			*/
+			Tile* availableTile = nullptr;
+			std::vector<Tile*>* neighbours = _currentTileP->getNeighboursP();
+			for (int i = 0; i < neighbours->size(); i++) {
+				if ((*neighbours)[i]->isAvailable(_type)) {
+					availableTile = (*neighbours)[i];
+				}
 			}
+			if (availableTile == nullptr) {
+				//Stop both units
+				_wantsToMove = false;
+				oppositeUnit->setWantsToMove(false);
+			}
+			//Add the current tile to the _path stack, then add the available neighbour tile
+			_path.push(_currentTileP);
+			_path.push(availableTile);
 		}
-		if (availableTile == nullptr) {
-			//Stop both units
-			_wantsToMove = false;
-			oppositeUnit->setWantsToMove(false);
+	}
+	else {
+		//If the unit that's blocking this unit stopped moving, I need to find a new path.
+		_wantsToMove = false;		//Stop this unit, in case a path cannot be found
+
+		//Check if the target tile is available
+		while (_path.size() != 1) {
+			_path.pop();
 		}
-		//Add the current tile to the _path stack, then add the available neighbour tile
-		_path.push(_currentTileP);
-		_path.push(availableTile);
+		Tile* targetTileP = _path.top();
+		if (targetTileP->isAvailableForPathfinding(_type)) {
+			//Set the path parameters
+			std::vector<Unit*> unitsToMove;
+			unitsToMove.push_back(this);
+			PathParameters* parameters = new PathParameters(PathParameters::A_Star, targetTileP, unitsToMove);
+			_pathfinderP->pushPathParameters(parameters);
+
+			//Notify the other thread
+			_pathfinderP->getCondP()->notify_one();
+		}
+
+		/* POSSIBLE OPTIMIZATION
+		Right now, if I get blocked by a unit, I recalculate the whole path from the current point to the intended target.
+		Instead, I could only calculate the path to the nearest available tile on the original path, then add the rest out the
+		original path to the new path. That way, I would only calculate just enough to get past the obstacle and wouldn't have to
+		calculate what has been calculated before. But this could be pretty tricky to implement.
+		*/
 	}
 }
 

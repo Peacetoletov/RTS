@@ -4,6 +4,7 @@
 #include <vector>
 #include "unit.h"			//This is necessary because of Unit::Type enum
 
+class Pathfinder;
 class Tile;
 
 /* class Map
@@ -18,7 +19,7 @@ public:
 	/* Map
 	Initializes terrain with all tiles available to all units.
 	*/
-	Map(int rows, int columns);
+	Map(int rows, int columns, Pathfinder* pathfinderP);
 
 	/* ~Map
 	Deletes instances of GameObject in _objects
@@ -62,6 +63,7 @@ private:
 	//VARIABLES
 	int _rows;
 	int _columns;
+	Pathfinder* _pathfinderP;
 
 	/*
 	//_objects: Contains information about units and building on the map.

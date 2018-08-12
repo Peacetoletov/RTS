@@ -27,11 +27,12 @@ A* should be good enough for groups smaller than 10 units.
 class Pathfinder {
 public:
 	Pathfinder();
-	Pathfinder(Map* mapP, Graphics* graphics);
 
 	~Pathfinder();
 
-	//TODO: Implement bidirectional Dijkstra pathfinding algortihm
+	void initMap(Map* mapP);
+
+	//Bidirectional Dijkstra pathfinding algorithm
 	std::stack<Tile*> bidirectionalDijkstra(Tile* start, Tile* target, Unit::Type type);
 
 	//struct PossiblePath is used in bidirectionalDijkstra
@@ -41,9 +42,7 @@ public:
 		Tile* path2End;
 	};
 
-	/* A* pathfinding algorithm
-	TODO: all the TODOs defined in the function implementation
-	*/
+	//A* pathfinding algorithm
 	std::stack<Tile*> A_Star(Tile* start, Tile* target, bool canFly);
 
 	//This is where the pathfinder thread starts.
@@ -60,7 +59,6 @@ public:
 
 private:
 	Map* _mapP;
-	Graphics* _graphicsP;
 
 	std::mutex _muWaiter;
 	std::mutex _mu;

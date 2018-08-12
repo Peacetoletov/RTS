@@ -8,12 +8,13 @@
 #include <iostream>
 
 class Graphics;
+class Pathfinder;
 struct SDL_Texture;
 
 class Level {
 public:
 	Level();
-	Level(std::string levelName, int rows, int columns, Graphics* graphicsP);
+	Level(std::string levelName, int rows, int columns, Graphics* graphicsP, Pathfinder* pathfinderP);
 	~Level();
 	void update(int elapsedTime);
 	void draw(Graphics &graphics);

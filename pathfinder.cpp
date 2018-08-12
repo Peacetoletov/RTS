@@ -15,25 +15,18 @@
 
 #include <iostream>
 
-//test
-//#include <time.h>
-
-
 /* class Pathfinder
 This class deals with pathfinding.
 */
 
 Pathfinder::Pathfinder() {}
 
-Pathfinder::Pathfinder(Map* mapP, Graphics* graphicsP) :
-	_mapP(mapP),
-	_graphicsP(graphicsP)
-{
+Pathfinder::~Pathfinder() {
 	
 }
 
-Pathfinder::~Pathfinder() {
-	
+void Pathfinder::initMap(Map* mapP) {
+	_mapP = mapP;
 }
 
 std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, Unit::Type type) {

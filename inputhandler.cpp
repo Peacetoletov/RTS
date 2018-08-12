@@ -117,18 +117,8 @@ void InputHandler::rightMouseButtonPressed() {
 		int mouseY = _inputP->getMouseY();
 		Tile* targetTileP = mapP->getTilesP()[mapP->positionToId(mouseY / globals::TILE_SIZE, mouseX / globals::TILE_SIZE)];
 
-		bool canMove = false;
-		if (unitsToMove[0]->getType() == Unit::Type::LAND) {		//unitsToMove[0]->getType() works because all the units in the vector are of the same type
-			if (targetTileP->getTerrainType() == Tile::TerrainAvailability::ALL) {
-				canMove = true;
-			}
-		}
-		else {
-			if (targetTileP->getTerrainType() == Tile::TerrainAvailability::ALL ||
-				targetTileP->getTerrainType() == Tile::TerrainAvailability::AIR) {
-				canMove = true;
-			}
-		}
+		//The unit can only start moving if the target tile is available
+		bool canMove = targetTileP->isAvailableForPathfinding(unitsToMove[0]->getType());		//unitsToMove[0]->getType() works because all the units in the vector are of the same type
 
 		//Set path of the selected unit(s)
 		if (canMove) {

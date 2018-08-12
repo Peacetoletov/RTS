@@ -5,6 +5,7 @@
 #include <vector>
 
 class Tile;
+class Pathfinder;
 
 class Unit {
 public:
@@ -15,7 +16,7 @@ public:
 
 	Unit();		//Won't be used
 
-	Unit(Tile* currentTile, Type type, std::vector<Unit*>* unitsP);
+	Unit(Tile* currentTile, Type type, std::vector<Unit*>* unitsP, Pathfinder* pathfinderP);
 
 	~Unit();		//Not used yet
 
@@ -44,6 +45,7 @@ private:
 	Tile* _currentTileP;
 	Type _type;
 	std::vector<Unit*>* _unitsP;			//vector of all units on the map
+	Pathfinder* _pathfinderP;
 	float _speed = 0.25f;
 	std::stack<Tile*> _path;
 	bool _wantsToMove = false;

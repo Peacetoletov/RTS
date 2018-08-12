@@ -2,6 +2,7 @@
 #include "tile.h"
 #include "unit.h"
 #include "globals.h"
+#include "pathfinder.h"
 
 #include <iostream>
 
@@ -11,9 +12,10 @@ This class contains information about the tiles on the map.
 
 Map::Map() {}
 
-Map::Map(int rows, int columns) : 
+Map::Map(int rows, int columns, Pathfinder* pathfinderP) : 
 	_rows(rows),
-	_columns(columns)
+	_columns(columns),
+	_pathfinderP(pathfinderP)
 {
 	//Create tiles
 	int tilesAmount = rows * columns;
@@ -266,7 +268,7 @@ void Map::loadTestMap() {
 void Map::loadTestUnits(const int amount, int row[], int column[], Unit::Type type[]) {
 	for (int i = 0; i < amount; i++) {
 		Tile* tile = _tiles[positionToId(row[i], column[i])];
-		Unit* unit = new Unit(tile, type[i], &_units);
+		Unit* unit = new Unit(tile, type[i], &_units, _pathfinderP);
 		if (type[i] == Unit::Type::LAND) {
 			tile->setLandUnitP(unit);
 		}
