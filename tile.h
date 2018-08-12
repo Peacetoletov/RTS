@@ -16,17 +16,6 @@ public:
 		NONE
 	};
 
-	//Which units are currently standing on this tile
-	//TODO: Instead of this enum, I will have 2 pointers to an air unit on this tile and a land unit on this tile.
-	/*
-	enum class Occupancy {
-		LAND,
-		AIR,		
-		LAND_AND_AIR,
-		NONE
-	};
-	*/
-
 	/* This is used in the bidirectional Dijkstra pathfinding algortihm.
 	I have 2 directions so this is used to distinct which direction the tile belongs to.
 	*/
@@ -49,8 +38,7 @@ public:
 	//Calculates H (the distance between this tile and the end tile).
 	int calculateH(Tile* endTile);
 
-	/* bool isNeighbourDiagonal
-	Returns true if the neighbour tile is touching this tile by a corner.
+	/* Returns true if the neighbour tile is touching this tile by a corner.
 	Returns false if the neighbour tile is touching this tile by an edge.
 	*/
 	bool isNeighbourDiagonal(Tile* neighbour);
@@ -70,7 +58,6 @@ public:
 
 	//Setters
 	void setTerrainType(TerrainAvailability terrainType);
-	//void setOccupancy(Occupancy occupancy);
 	void setDirection(Direction direction);
 	void setLandUnitP(Unit* unit);
 	void setAirUnitP(Unit* unit);
@@ -83,7 +70,6 @@ public:
 	//Getters
 	int getId();
 	TerrainAvailability getTerrainType();
-	//Occupancy getOccupancy();
 	Direction getDirection();
 	Unit* getLandUnitP();
 	Unit* getAirUnitP();
@@ -97,8 +83,8 @@ public:
 private:
 	int _id;
 	TerrainAvailability _terrainType;
-	//Occupancy _occupancy = Occupancy::NONE;
 	Direction _direction;
+
 	//Which land and air units are on this tile
 	Unit* _landUnitP = nullptr;
 	Unit* _airUnitP = nullptr;

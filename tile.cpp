@@ -13,12 +13,6 @@ Tile::Tile(int id, TerrainAvailability terrainType, Map* mapP) :
 	_mapP(mapP)
 {
 	reset();
-
-	/*
-	this->_wasVisited = false;
-	this->_G = INT_MAX;		//Not infinity, but close enough
-	this->_H = INT_MAX;		//Not infinity, but close enough
-	*/
 }
 
 Tile::~Tile() {
@@ -90,51 +84,44 @@ bool Tile::isAvailable(Unit::Type unitType) {
 		}
 	}
 	return false;
+}
 
-	/*
+bool Tile::isAvailableForPathfinding(Unit::Type unitType) {
+	/* Similar to isAvailable(Unit::Type unitType), but this one returns true if the tile is occupied
+	by a unit that is moving.
+	*/
 	//Land
 	if (unitType == Unit::Type::LAND) {
 		if (_terrainType == TerrainAvailability::ALL) {
-			if (_occupancy == Occupancy::NONE ||
-					_occupancy == Occupancy::AIR) {
+			if (_landUnitP == nullptr) {
 				return true;
 			}
-		}	
+			else {
+				if (_landUnitP->getMoving()) {
+					return true;
+				}
+			}
+		}
 	}
 	//Air
 	else {
 		if (_terrainType == TerrainAvailability::ALL || _terrainType == TerrainAvailability::AIR) {
-			if (_occupancy == Occupancy::NONE ||
-					_occupancy == Occupancy::LAND) {
+			if (_airUnitP == nullptr) {
 				return true;
+			}
+			else {
+				if (_airUnitP->getMoving()) {
+					return true;
+				}
 			}
 		}
 	}
-	return false;
-	*/
-}
-
-bool Tile::isAvailableForPathfinding(Unit::Type unitType) {
-	//Check if the unit is moving
-
-
-	/*
-	if (!isAvailable(unitType)) {
-		
-	}
-	*/
 	return false;
 }
 
 void Tile::setTerrainType(TerrainAvailability terrainType) {
 	_terrainType = terrainType;
 }
-
-/*
-void Tile::setOccupancy(Occupancy occupancy) {
-	_occupancy = occupancy;
-}
-*/
 
 void Tile::setDirection(Direction direction) {
 	_direction = direction;
@@ -175,12 +162,6 @@ int Tile::getId() {
 Tile::TerrainAvailability Tile::getTerrainType() {
 	return _terrainType;
 }
-
-/*
-Tile::Occupancy Tile::getOccupancy() {
-	return _occupancy;
-}
-*/
 
 Tile::Direction Tile::getDirection() {
 	return _direction;
