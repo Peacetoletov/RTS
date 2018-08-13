@@ -100,6 +100,18 @@ private:
 	//int _F doesn't have to be stored, as I can get it by summing up _G and _H
 	Tile* _parentP;
 
+	/* This is used in group pathfinding. I can store multiple vector fields, one for each group. If I exceed a certain limit (100?),
+	I will remove the first field and go from the start. If I use 1/4 of all tiles for 1 group movement, this will take about 800 kb.
+
+	Important: By overwriting the old fields, I may end up with units that don't know where to go.
+
+	To get around this, I could do this: whenever I'm about to overwrite, loop through all units. If they have the group pathfinding
+	id of the vector field I'm about to overwrite, I will assign the path the need to take from their point to get to the target,
+	essencially just copying parts of the infromation from the vector field to the given unit. Then I can safely overwrite it and
+	no unit will get lost.
+	*/
+	std::vector<Tile*> _groupParentP;
+
 };
 
 #endif

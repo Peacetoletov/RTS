@@ -7,6 +7,7 @@
 #include "unit.h"
 #include "map.h"
 #include "tile.h"
+#include "rect.h"
 
 #include <vector>
 #include <iostream>
@@ -24,11 +25,12 @@ InputHandler::InputHandler(Input* inputP, Level* levelP, Pathfinder* pathfinderP
 
 bool InputHandler::handleInput() {
 	if (_inputP->wasMouseButtonPressed(SDL_BUTTON_LEFT)) {
-		//std::cout << "Left mouse button pressed!" << std::endl;
 		leftMouseButtonPressed();
 	}
+	if (_inputP->wasMouseButtonReleased(SDL_BUTTON_LEFT)) {
+		leftMouseButtonReleased();
+	}
 	if (_inputP->wasMouseButtonPressed(SDL_BUTTON_RIGHT)) {
-		//std::cout << "Right mouse button pressed!" << std::endl;
 		rightMouseButtonPressed();
 	}
 	if (_inputP->didMouseMove()) {
@@ -57,9 +59,33 @@ void InputHandler::update() {
 			(*unitsP)[i]->setHovered(false);
 		}
 	}
+
+	//Group unit selection - check if the left mouse button is being held. If not, set _mouseSelectStartX and Y to mouseX and Y
+	if (!_inputP->isMouseButtonHeld(SDL_BUTTON_LEFT)) {
+		_mouseSelectStartX = _inputP->getMouseX();
+		_mouseSelectStartY = _inputP->getMouseY();
+	}
+
+}
+
+Input* InputHandler::getInputP() {
+	return _inputP;
+}
+
+int InputHandler::getMouseSelectStartX() {
+	return _mouseSelectStartX;
+}
+
+int InputHandler::getMouseSelectStartY() {
+	return _mouseSelectStartY;
 }
 
 void InputHandler::leftMouseButtonPressed() {
+	_mouseSelectStartX = _inputP->getMouseX();
+	_mouseSelectStartY = _inputP->getMouseY();
+}
+
+void InputHandler::leftMouseButtonReleased() {
 	//Check if the mouse is within the borders of the map (terrain)
 	int mouseX = _inputP->getMouseX();
 	int mouseY = _inputP->getMouseY();
@@ -80,13 +106,13 @@ void InputHandler::leftMouseButtonPressed() {
 			int tileId = (*unitsP)[i]->getCurrentTileP()->getId();
 			/* This is the same check as in InputHandler::update(). Therefore, I could just check the _hovered
 			variable of the unit. Problem with that approach is that this function is called BEFORE the update function,
-			meaning the mouse click could be 1 frame off. By checking the condition (seemingly unnecessarily) again, 
+			meaning the mouse click could be 1 frame off. By checking the condition (seemingly unnecessarily) again,
 			I make sure this is frame perfect.
 			*/
 			if (mouseX > _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE &&
-					mouseX <= _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE + globals::TILE_SIZE &&
-					mouseY > _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE &&
-					mouseY <= _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE + globals::TILE_SIZE) {
+				mouseX <= _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE + globals::TILE_SIZE &&
+				mouseY > _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE &&
+				mouseY <= _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE + globals::TILE_SIZE) {
 				//Set the current unit as selected
 				(*unitsP)[i]->setSelected(true);
 

@@ -53,8 +53,8 @@ void Game::gameLoop() {
 
 	_pathfinderP->initMap(_levelP->getMapP());
 
-	Drawer drawer(&graphics, _levelP->getMapP());		//Needs to be created after the level
 	InputHandler inputHandler(&input, _levelP, _pathfinderP);		
+	Drawer drawer(&graphics, _levelP->getMapP(), &inputHandler);		//Needs to be created after the level and inputhandler
 
 	int test = 0; //test
 		
@@ -113,13 +113,12 @@ void Game::gameLoop() {
 void Game::draw(Graphics &graphics, Drawer drawer) {
 	graphics.clear();
 
-	//this->_levelP->getPathfinderP()->testDrawTiles();		
 	drawer.draw();
 
 	graphics.flip();
 }
 
-void Game::update(int elapsedTime, InputHandler inputHandler) {
+void Game::update(int elapsedTime, InputHandler& inputHandler) {
 	inputHandler.update();
 	_levelP->update(elapsedTime);
 }

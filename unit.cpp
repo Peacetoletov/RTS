@@ -99,7 +99,7 @@ void Unit::avoidOppositeUnit() {
 		//Check if the opposite unit intends to move to the tile that this unit currently stands on
 		if (oppositeUnit->getPathP()->top()->getId() == _currentTileP->getId()) {
 			//Units are blocking each other
-			/*Loop through neighbours of this tile until I find one that is available. If I don't find any (extremely uunlikely),
+			/*Loop through neighbours of this tile until I find one that is available. If I don't find any (extremely unlikely),
 			stop both units.
 			*/
 			Tile* availableTile = nullptr;
@@ -113,6 +113,7 @@ void Unit::avoidOppositeUnit() {
 				//Stop both units
 				_wantsToMove = false;
 				oppositeUnit->setWantsToMove(false);
+				//I actually haven't tested this block of code yet because it's hard to simulate this situation.
 			}
 			//Add the current tile to the _path stack, then add the available neighbour tile
 			_path.push(_currentTileP);

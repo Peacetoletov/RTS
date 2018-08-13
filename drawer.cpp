@@ -4,12 +4,17 @@
 #include "globals.h"		//tileSize
 #include "tile.h"
 #include "map.h"
+#include "inputhandler.h"
+#include "input.h"
+
+#include <iostream>
 
 Drawer::Drawer() {}
 
-Drawer::Drawer(Graphics* graphicsP, Map* mapP) :
+Drawer::Drawer(Graphics* graphicsP, Map* mapP, InputHandler* inputHandlerP) :
 	_graphicsP(graphicsP),
-	_mapP(mapP)
+	_mapP(mapP),
+	_inputHandlerP(inputHandlerP)
 {
 
 }
@@ -20,6 +25,9 @@ void Drawer::draw() {
 
 	//Draw units
 	drawUnits();
+
+	//Draw mouse related stuff (cursor, unit selection)
+	drawMouse();
 
 	//Draw test
 	//drawTest();
@@ -108,6 +116,37 @@ void Drawer::drawUnits() {
 		}		
 		SDL_RenderFillRect(renderer, &rect);
 	}
+}
+
+void Drawer::drawMouse() {
+	Input* inputP = _inputHandlerP->getInputP();
+	int minSize = 5;
+	int mouseX = inputP->getMouseX();
+	int mouseSelectionStartX = _inputHandlerP->getMouseSelectStartX();
+	int mouseY = inputP->getMouseY();
+	int mouseSelectionStartY = _inputHandlerP->getMouseSelectStartY();
+	int width = abs(mouseX - mouseSelectionStartX);
+	int height = abs(mouseY - mouseSelectionStartY);
+
+	if (shouldDrawSelectionRect(minSize, width, height)) {
+		//Works incorrectly, fix this!
+		//std::cout << "Drawing rectangle!" << std::endl;
+		SDL_Renderer* renderer = this->_graphicsP->getRenderer();
+		SDL_Rect rect;
+		rect.x = (mouseSelectionStartX - mouseX > 0) ? mouseX : mouseSelectionStartX;
+		rect.y = (mouseSelectionStartY - mouseY > 0) ? mouseY : mouseSelectionStartY;
+		rect.w = width;
+		rect.h = height;
+		SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);		//allows the use of alpha channel
+		SDL_SetRenderDrawColor(renderer, 64, 224, 208, 150);
+		SDL_RenderFillRect(renderer, &rect);
+
+	}
+}
+
+bool Drawer::shouldDrawSelectionRect(int minSize, int width, int height) {
+	//Returns true if one of the sides of the rectangle would be at least minSize
+	return ((width >= minSize) || (height >= minSize));
 }
 
 void Drawer::drawTest() {

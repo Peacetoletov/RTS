@@ -4,6 +4,7 @@
 class Input;
 class Level;
 class Pathfinder;
+struct Rect;
 
 class InputHandler {
 public:
@@ -23,12 +24,21 @@ public:
 	//This update function covers everything that requires mouse position
 	void update();
 
+	//Getters
+	Input* getInputP();
+	int getMouseSelectStartX();
+	int getMouseSelectStartY();
+
 private:
 	Input* _inputP;
 	Level* _levelP;
 	Pathfinder* _pathfinderP;
 
+	int _mouseSelectStartX;
+	int _mouseSelectStartY;
+
 	void leftMouseButtonPressed();
+	void leftMouseButtonReleased();
 	void rightMouseButtonPressed();
 };
 
