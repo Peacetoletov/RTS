@@ -413,6 +413,13 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 
 void Pathfinder::threadStart() {
 
+	/* TODO
+	Right now, I got an exception (setWantsToMove()) and a runtime error (not sure why) when testing. 
+	That means possibly 2 different bugs.
+	Before I do anything else, I need to fix those. I'm not quite sure how to reproduce them, but generally
+	sending many units against each other should do the trick.
+	*/
+
 	while (true) {
 		std::unique_lock<std::mutex> locker(_muWaiter);
 		if (_pathParametersQueue.size() == 0) {
@@ -428,7 +435,7 @@ void Pathfinder::threadStart() {
 		*/
 		PathParameters* parameters = getFrontPathParameters();
 		Unit* unit = (*(parameters->getUnitsP()))[0];
-		unit->setWantsToMove(false);
+		unit->setWantsToMove(false);		//this might be causing the exception
 		
 		if (parameters->getAlgorithm() == PathParameters::Algorithm::A_Star) {
 			
@@ -438,7 +445,7 @@ void Pathfinder::threadStart() {
 
 			if (path.size() != 0) {
 				unit->setPath(path);
-				unit->setWantsToMove(true);
+				unit->setWantsToMove(true);		//this might be causing the exception
 			}
 		}
 

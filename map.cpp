@@ -310,6 +310,10 @@ void Map::update() {
 	}
 }
 
+void Map::setSelectedUnits(std::vector<Unit*> selectedUnits) {
+	_selectedUnits = selectedUnits;
+}
+
 int Map::getRows() {
 	return this->_rows;
 }
@@ -320,6 +324,10 @@ int Map::getColumns() {
 
 std::vector<Unit*>* Map::getUnitsP() {
 	return &this->_units;
+}
+
+std::vector<Unit*>* Map::getSelectedUnitsP() {
+	return &_selectedUnits;
 }
 
 Tile** Map::getTilesP() {

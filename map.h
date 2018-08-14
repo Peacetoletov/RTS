@@ -53,10 +53,14 @@ public:
 
 	void update();
 
+	//Setters
+	void setSelectedUnits(std::vector<Unit*> selectedUnits);
+
 	//Getters
 	int getRows();
 	int getColumns();
 	std::vector<Unit*>* getUnitsP();
+	std::vector<Unit*>* getSelectedUnitsP();
 	Tile** getTilesP();
 
 private:
@@ -70,11 +74,12 @@ private:
 	std::vector<GameObject*> _objects;		//Alternatively, this can be divided into 2 separate vectors,
 										//1 containing  units and the other one buildings.
 	*/
-	std::vector<Unit*> _units;		
+	std::vector<Unit*> _units;				
 	//std::vector<Building*> _buildings;
 
-	/* Tile** _tiles
-	Pointer to an array of pointers to instances of Tile object.
+	std::vector<Unit*> _selectedUnits;
+
+	/* Pointer to an array of pointers to instances of Tile object.
 	_tiles[i] points to a tile with id i.
 	Example: _tiles[20] points to a tile with id 20.
 	*/

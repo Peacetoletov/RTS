@@ -30,8 +30,8 @@ Level::Level(std::string levelName, int rows, int columns, Graphics* graphicsP, 
 		5, 6, 7, 60, 61, 62, 60, 61, 62, 61
 	};
 	Unit::Type type[unitsAmount] = { 
-		Unit::Type::AIR, Unit::Type::AIR, Unit::Type::LAND, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR,
-		Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR
+		Unit::Type::AIR, Unit::Type::AIR, Unit::Type::LAND, Unit::Type::AIR, Unit::Type::LAND, Unit::Type::LAND, Unit::Type::LAND, Unit::Type::LAND, Unit::Type::LAND, Unit::Type::LAND,
+		Unit::Type::LAND, Unit::Type::LAND, Unit::Type::LAND, Unit::Type::LAND, Unit::Type::LAND, Unit::Type::LAND, Unit::Type::LAND, Unit::Type::LAND, Unit::Type::LAND, Unit::Type::LAND
 	};
 
 	_mapP->loadTestUnits(unitsAmount, row, column, type);

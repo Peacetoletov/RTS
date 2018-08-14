@@ -8,10 +8,10 @@
 
 PathParameters::PathParameters() {}
 
-PathParameters::PathParameters(Algorithm algorithm, Tile* targetP, std::vector<Unit*> units) :
+PathParameters::PathParameters(Algorithm algorithm, Tile* targetP, std::vector<Unit*>* unitsP) :
 	_algorithm(algorithm),
 	_targetP(targetP),
-	_units(units)		//Not sure whether this line will work
+	_unitsP(unitsP)		//Not sure whether this line will work
 {
 	//Test if it works
 	//std::cout << "Id of the unit is " << _units[0]->getId() << std::endl;
@@ -28,5 +28,5 @@ Tile* PathParameters::getTargetP() {
 }
 
 std::vector<Unit*>* PathParameters::getUnitsP() {
-	return &_units;
+	return _unitsP;
 }

@@ -131,9 +131,9 @@ void Unit::avoidOppositeUnit() {
 		Tile* targetTileP = _path.top();
 		if (targetTileP->isAvailableForPathfinding(_type)) {
 			//Set the path parameters
-			std::vector<Unit*> unitsToMove;
-			unitsToMove.push_back(this);
-			PathParameters* parameters = new PathParameters(PathParameters::A_Star, targetTileP, unitsToMove);
+			std::vector<Unit*> unitGroup;		//group of 1 unit
+			unitGroup.push_back(this);
+			PathParameters* parameters = new PathParameters(PathParameters::A_Star, targetTileP, &unitGroup);		//Deletion is handled in Pathfinder
 			_pathfinderP->pushPathParameters(parameters);
 
 			//Notify the other thread

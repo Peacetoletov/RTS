@@ -67,7 +67,53 @@ void InputHandler::leftMouseButtonReleased() {
 		int height = abs(mouseY - _mouseSelectionStartY);
 		if (shouldShowSelectionRect(width, height)) {
 			//User wants to select multiple units
-			//TODO: CONTINUE HERE
+			//Only land units are selectable in groups
+
+			//Assign values to startX, startY, endX, endY
+			int startX, startY, endX, endY;
+			if (_mouseSelectionStartX - mouseX > 0) {
+				startX = mouseX;
+				endX = _mouseSelectionStartX;
+			}
+			else {
+				startX = _mouseSelectionStartX;
+				endX = mouseX;
+			}
+			if (_mouseSelectionStartY - mouseY > 0) {
+				startY = mouseY;
+				endY = _mouseSelectionStartY;
+			}
+			else {
+				startY = _mouseSelectionStartY;
+				endY = mouseY;
+			}
+
+			//Calculate start and end columns and rows
+			int startColumn = startX / globals::TILE_SIZE;
+			int startRow = startY / globals::TILE_SIZE;
+			int endColumn = endX / globals::TILE_SIZE;
+			int endRow = endY / globals::TILE_SIZE;
+
+			int columnDiff = endColumn - startColumn;
+			int rowDiff = endRow - startRow;
+
+			/* Loop through all selected tiles, check if a land unit stands on it. If it does, 
+			add it into a vector and set selected = true.
+			*/
+			std::vector<Unit*> unitGroup;
+			Tile** tilesP = mapP->getTilesP();
+			for (int column = startColumn; column < endColumn + 1; column++) {
+				for (int row = startRow; row < endRow + 1; row++) {
+					Unit* unit = tilesP[mapP->positionToId(row, column)]->getLandUnitP();
+					if (unit != nullptr) {
+						unitGroup.push_back(unit);
+						unit->setSelected(true);
+					}
+				}
+			}
+
+			//Set the selected units in Map
+			mapP->setSelectedUnits(unitGroup);
 		}
 		else {
 			//User want to select a single unit
@@ -84,6 +130,11 @@ void InputHandler::leftMouseButtonReleased() {
 					mouseY <= _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE + globals::TILE_SIZE) {
 					//Set the current unit as selected
 					(*unitsP)[i]->setSelected(true);
+
+					//Set the selected units in Map
+					std::vector<Unit*> unitGroup;		//group of 1 unit
+					unitGroup.push_back((*unitsP)[i]);
+					mapP->setSelectedUnits(unitGroup);
 
 					//No need to continue searching through the rest of the units
 					break;
@@ -103,28 +154,21 @@ void InputHandler::rightMouseButtonPressed() {
 		(mouseY > 0 && mouseY < mapP->getRows() * globals::TILE_SIZE)) {
 		//Test pathfinding
 		//Right now, I only test the pathfinding of 1 unit.
-		std::vector<Unit*>* unitsP = _levelP->getMapP()->getUnitsP();		//All units
-		std::vector<Unit*> unitsToMove;
-		for (int i = 0; i < unitsP->size(); i++) {
-			if ((*unitsP)[i]->getSelected()) {
-				unitsToMove.push_back((*unitsP)[i]);
-				//Once I implement group selection, I need to make sure to only enable grouping units of the same type
-			}
-		}
+		std::vector<Unit*>* selectedUnitsP = _levelP->getMapP()->getSelectedUnitsP();		//All units
 
 		//Select the target
-		if (!unitsToMove.empty()) {
+		if (!(*selectedUnitsP).empty()) {
 			Map* mapP = _levelP->getMapP();
 			int mouseX = _inputP->getMouseX();
 			int mouseY = _inputP->getMouseY();
 			Tile* targetTileP = mapP->getTilesP()[mapP->positionToId(mouseY / globals::TILE_SIZE, mouseX / globals::TILE_SIZE)];
 
 			//The unit can only start moving if the target tile is available
-			bool canMove = targetTileP->isAvailableForPathfinding(unitsToMove[0]->getType());		//unitsToMove[0]->getType() works because all the units in the vector are of the same type
+			bool canMove = targetTileP->isAvailableForPathfinding((*selectedUnitsP)[0]->getType());		//unitsToMove[0]->getType() works because all the units in the vector are of the same type
 
 			if (canMove) {
 				//Set path of the selected unit(s)
-				PathParameters* parameters = new PathParameters(PathParameters::A_Star, targetTileP, unitsToMove);
+				PathParameters* parameters = new PathParameters(PathParameters::A_Star, targetTileP, selectedUnitsP);		//Deletion is handled in Pathfinder
 				_pathfinderP->pushPathParameters(parameters);
 
 				//Notify the other thread
