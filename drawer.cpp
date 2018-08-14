@@ -120,17 +120,14 @@ void Drawer::drawUnits() {
 
 void Drawer::drawMouse() {
 	Input* inputP = _inputHandlerP->getInputP();
-	int minSize = 5;
 	int mouseX = inputP->getMouseX();
-	int mouseSelectionStartX = _inputHandlerP->getMouseSelectStartX();
+	int mouseSelectionStartX = _inputHandlerP->getMouseSelectionStartX();
 	int mouseY = inputP->getMouseY();
-	int mouseSelectionStartY = _inputHandlerP->getMouseSelectStartY();
+	int mouseSelectionStartY = _inputHandlerP->getMouseSelectionStartY();
 	int width = abs(mouseX - mouseSelectionStartX);
 	int height = abs(mouseY - mouseSelectionStartY);
 
-	if (shouldDrawSelectionRect(minSize, width, height)) {
-		//Works incorrectly, fix this!
-		//std::cout << "Drawing rectangle!" << std::endl;
+	if (_inputHandlerP->shouldShowSelectionRect(width, height)) {
 		SDL_Renderer* renderer = this->_graphicsP->getRenderer();
 		SDL_Rect rect;
 		rect.x = (mouseSelectionStartX - mouseX > 0) ? mouseX : mouseSelectionStartX;
@@ -142,11 +139,6 @@ void Drawer::drawMouse() {
 		SDL_RenderFillRect(renderer, &rect);
 
 	}
-}
-
-bool Drawer::shouldDrawSelectionRect(int minSize, int width, int height) {
-	//Returns true if one of the sides of the rectangle would be at least minSize
-	return ((width >= minSize) || (height >= minSize));
 }
 
 void Drawer::drawTest() {
@@ -161,9 +153,6 @@ void Drawer::drawTest() {
 			int x = _mapP->idToColumn(tile->getId()) * globals::TILE_SIZE + 5;
 			int y = _mapP->idToRow(tile->getId()) * globals::TILE_SIZE + 5;
 
-			
-			//graphicsP->drawText(std::to_string(tiles[id]->getH()), x, y, this->_font, color);
-			
 			_graphicsP->drawText(std::to_string(F), x, y, font, color);
 		}
 	}

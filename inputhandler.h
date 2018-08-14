@@ -24,18 +24,21 @@ public:
 	//This update function covers everything that requires mouse position
 	void update();
 
+	//Also used by Drawer.
+	bool shouldShowSelectionRect(int width, int height);
+
 	//Getters
 	Input* getInputP();
-	int getMouseSelectStartX();
-	int getMouseSelectStartY();
+	int getMouseSelectionStartX();
+	int getMouseSelectionStartY();
 
 private:
 	Input* _inputP;
 	Level* _levelP;
 	Pathfinder* _pathfinderP;
 
-	int _mouseSelectStartX;
-	int _mouseSelectStartY;
+	int _mouseSelectionStartX;
+	int _mouseSelectionStartY;
 
 	void leftMouseButtonPressed();
 	void leftMouseButtonReleased();

@@ -7,7 +7,6 @@
 #include "unit.h"
 #include "map.h"
 #include "tile.h"
-#include "rect.h"
 
 #include <vector>
 #include <iostream>
@@ -42,47 +41,9 @@ bool InputHandler::handleInput() {
 	return false;
 }
 
-void InputHandler::update() {
-	//Check for unit hovering
-	std::vector<Unit*>* unitsP = _levelP->getMapP()->getUnitsP();
-	int mouseX = _inputP->getMouseX();
-	int mouseY = _inputP->getMouseY();
-	for (int i = 0; i < unitsP->size(); i++) {
-		int tileId = (*unitsP)[i]->getCurrentTileP()->getId();
-		if (mouseX > _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE &&
-				mouseX <= _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE + globals::TILE_SIZE &&
-				mouseY > _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE &&
-				mouseY <= _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE + globals::TILE_SIZE) {
-			(*unitsP)[i]->setHovered(true);
-		}
-		else {
-			(*unitsP)[i]->setHovered(false);
-		}
-	}
-
-	//Group unit selection - check if the left mouse button is being held. If not, set _mouseSelectStartX and Y to mouseX and Y
-	if (!_inputP->isMouseButtonHeld(SDL_BUTTON_LEFT)) {
-		_mouseSelectStartX = _inputP->getMouseX();
-		_mouseSelectStartY = _inputP->getMouseY();
-	}
-
-}
-
-Input* InputHandler::getInputP() {
-	return _inputP;
-}
-
-int InputHandler::getMouseSelectStartX() {
-	return _mouseSelectStartX;
-}
-
-int InputHandler::getMouseSelectStartY() {
-	return _mouseSelectStartY;
-}
-
 void InputHandler::leftMouseButtonPressed() {
-	_mouseSelectStartX = _inputP->getMouseX();
-	_mouseSelectStartY = _inputP->getMouseY();
+	_mouseSelectionStartX = _inputP->getMouseX();
+	_mouseSelectionStartY = _inputP->getMouseY();
 }
 
 void InputHandler::leftMouseButtonReleased() {
@@ -101,23 +62,32 @@ void InputHandler::leftMouseButtonReleased() {
 			}
 		}
 
-		//Check if the mouse clicked on a unit, selecting it
-		for (int i = 0; i < unitsP->size(); i++) {
-			int tileId = (*unitsP)[i]->getCurrentTileP()->getId();
-			/* This is the same check as in InputHandler::update(). Therefore, I could just check the _hovered
-			variable of the unit. Problem with that approach is that this function is called BEFORE the update function,
-			meaning the mouse click could be 1 frame off. By checking the condition (seemingly unnecessarily) again,
-			I make sure this is frame perfect.
-			*/
-			if (mouseX > _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE &&
-				mouseX <= _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE + globals::TILE_SIZE &&
-				mouseY > _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE &&
-				mouseY <= _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE + globals::TILE_SIZE) {
-				//Set the current unit as selected
-				(*unitsP)[i]->setSelected(true);
+		//Check if user created a selection rectangle
+		int width = abs(mouseX - _mouseSelectionStartX);
+		int height = abs(mouseY - _mouseSelectionStartY);
+		if (shouldShowSelectionRect(width, height)) {
+			//User wants to select multiple units
+			//TODO: CONTINUE HERE
+		}
+		else {
+			//User want to select a single unit
+			for (int i = 0; i < unitsP->size(); i++) {
+				int tileId = (*unitsP)[i]->getCurrentTileP()->getId();
+				/* This is the same check as in InputHandler::update(). Therefore, I could just check the _hovered
+				variable of the unit. Problem with that approach is that this function is called BEFORE the update function,
+				meaning the mouse click could be 1 frame off. By checking the condition (seemingly unnecessarily) again,
+				I make sure this is frame perfect.
+				*/
+				if (mouseX > _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE &&
+					mouseX <= _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE + globals::TILE_SIZE &&
+					mouseY > _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE &&
+					mouseY <= _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE + globals::TILE_SIZE) {
+					//Set the current unit as selected
+					(*unitsP)[i]->setSelected(true);
 
-				//No need to continue searching through the rest of the units
-				break;
+					//No need to continue searching through the rest of the units
+					break;
+				}
 			}
 		}
 
@@ -125,35 +95,86 @@ void InputHandler::leftMouseButtonReleased() {
 }
 
 void InputHandler::rightMouseButtonPressed() {
-	//Test pathfinding
-	//Right now, I only test the pathfinding of 1 unit.
-	std::vector<Unit*>* unitsP = _levelP->getMapP()->getUnitsP();		//All units
-	std::vector<Unit*> unitsToMove;
+	//Check if the mouse is within the borders of the map (terrain)
+	int mouseX = _inputP->getMouseX();
+	int mouseY = _inputP->getMouseY();
+	Map* mapP = _levelP->getMapP();
+	if ((mouseX > 0 && mouseX < mapP->getColumns() * globals::TILE_SIZE) &&
+		(mouseY > 0 && mouseY < mapP->getRows() * globals::TILE_SIZE)) {
+		//Test pathfinding
+		//Right now, I only test the pathfinding of 1 unit.
+		std::vector<Unit*>* unitsP = _levelP->getMapP()->getUnitsP();		//All units
+		std::vector<Unit*> unitsToMove;
+		for (int i = 0; i < unitsP->size(); i++) {
+			if ((*unitsP)[i]->getSelected()) {
+				unitsToMove.push_back((*unitsP)[i]);
+				//Once I implement group selection, I need to make sure to only enable grouping units of the same type
+			}
+		}
+
+		//Select the target
+		if (!unitsToMove.empty()) {
+			Map* mapP = _levelP->getMapP();
+			int mouseX = _inputP->getMouseX();
+			int mouseY = _inputP->getMouseY();
+			Tile* targetTileP = mapP->getTilesP()[mapP->positionToId(mouseY / globals::TILE_SIZE, mouseX / globals::TILE_SIZE)];
+
+			//The unit can only start moving if the target tile is available
+			bool canMove = targetTileP->isAvailableForPathfinding(unitsToMove[0]->getType());		//unitsToMove[0]->getType() works because all the units in the vector are of the same type
+
+			if (canMove) {
+				//Set path of the selected unit(s)
+				PathParameters* parameters = new PathParameters(PathParameters::A_Star, targetTileP, unitsToMove);
+				_pathfinderP->pushPathParameters(parameters);
+
+				//Notify the other thread
+				_pathfinderP->getCondP()->notify_one();
+			}
+		}
+
+	}
+}
+
+void InputHandler::update() {
+	//Check for unit hovering
+	std::vector<Unit*>* unitsP = _levelP->getMapP()->getUnitsP();
+	int mouseX = _inputP->getMouseX();
+	int mouseY = _inputP->getMouseY();
 	for (int i = 0; i < unitsP->size(); i++) {
-		if ((*unitsP)[i]->getSelected()) {
-			unitsToMove.push_back((*unitsP)[i]);
-			//Once I implement group selection, I need to make sure to only enable grouping units of the same type
+		int tileId = (*unitsP)[i]->getCurrentTileP()->getId();
+		if (mouseX > _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE &&
+			mouseX <= _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE + globals::TILE_SIZE &&
+			mouseY > _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE &&
+			mouseY <= _levelP->getMapP()->idToRow(tileId) * globals::TILE_SIZE + globals::TILE_SIZE) {
+			(*unitsP)[i]->setHovered(true);
+		}
+		else {
+			(*unitsP)[i]->setHovered(false);
 		}
 	}
 
-	//Select the target
-	if (!unitsToMove.empty()) {
-		Map* mapP = _levelP->getMapP();
-		int mouseX = _inputP->getMouseX();
-		int mouseY = _inputP->getMouseY();
-		Tile* targetTileP = mapP->getTilesP()[mapP->positionToId(mouseY / globals::TILE_SIZE, mouseX / globals::TILE_SIZE)];
-
-		//The unit can only start moving if the target tile is available
-		bool canMove = targetTileP->isAvailableForPathfinding(unitsToMove[0]->getType());		//unitsToMove[0]->getType() works because all the units in the vector are of the same type
-
-		//Set path of the selected unit(s)
-		if (canMove) {
-			PathParameters* parameters = new PathParameters(PathParameters::A_Star, targetTileP, unitsToMove);
-			_pathfinderP->pushPathParameters(parameters);
-
-			//Notify the other thread
-			_pathfinderP->getCondP()->notify_one();
-		}
+	//Group unit selection - check if the left mouse button is being held. If not, set _mouseSelectStartX and Y to mouseX and Y
+	if (!_inputP->isMouseButtonHeld(SDL_BUTTON_LEFT)) {
+		_mouseSelectionStartX = _inputP->getMouseX();
+		_mouseSelectionStartY = _inputP->getMouseY();
 	}
 
+}
+
+bool InputHandler::shouldShowSelectionRect(int width, int height) {
+	//Returns true if one of the sides of the rectangle would be at least minSize
+	int minSize = 5;
+	return ((width >= minSize) || (height >= minSize));
+}
+
+Input* InputHandler::getInputP() {
+	return _inputP;
+}
+
+int InputHandler::getMouseSelectionStartX() {
+	return _mouseSelectionStartX;
+}
+
+int InputHandler::getMouseSelectionStartY() {
+	return _mouseSelectionStartY;
 }

@@ -20,10 +20,19 @@ Level::Level(std::string levelName, int rows, int columns, Graphics* graphicsP, 
 	_mapP = new Map(80, 100, pathfinderP);
 	_mapP->loadTestMap();
 
-	const int unitsAmount = 4;
-	int row[unitsAmount] = { 1, 1, 1, 1 };
-	int column[unitsAmount] = { 1, 2, 50, 54 };
-	Unit::Type type[unitsAmount] = { Unit::Type::AIR, Unit::Type::AIR, Unit::Type::LAND, Unit::Type::AIR };
+	const int unitsAmount = 20;
+	int row[unitsAmount] = { 
+		1, 1, 1, 1, 15, 15, 15, 16, 16, 16,
+		17, 17, 17, 20, 20, 20, 21, 21, 22, 24
+	};
+	int column[unitsAmount] = {
+		1, 2, 50, 54, 5, 6, 7, 5, 6, 7,
+		5, 6, 7, 60, 61, 62, 60, 61, 62, 61
+	};
+	Unit::Type type[unitsAmount] = { 
+		Unit::Type::AIR, Unit::Type::AIR, Unit::Type::LAND, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR,
+		Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR, Unit::Type::AIR
+	};
 
 	_mapP->loadTestUnits(unitsAmount, row, column, type);
 	//this->_pathfinderP = new Pathfinder(this->_mapP, graphicsP);
