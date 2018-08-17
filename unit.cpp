@@ -45,7 +45,7 @@ void Unit::update() {
 			This makes one unit get out of the way, let the other unit pass and then move back and continue.
 			*/
 			
-			avoidOppositeUnit();		
+			avoidOppositeUnit();		//CURRENTLY COMMENTED OUT
 		}
 		else {
 			//Desired tile isn't occupied, unit can start moving.
@@ -95,7 +95,7 @@ void Unit::avoidOppositeUnit() {
 	}
 	
 	//Check if the opposite unit hasn't finished its path yet
-	if (!oppositeUnit->getPathP()->empty()) {
+	if (!oppositeUnit->getPathP()->empty()) {		//this is kinda weird and might be causing problems, some threading problems too
 		//Check if the opposite unit intends to move to the tile that this unit currently stands on
 		if (oppositeUnit->getPathP()->top()->getId() == _currentTileP->getId()) {
 			//Units are blocking each other
@@ -110,9 +110,10 @@ void Unit::avoidOppositeUnit() {
 				}
 			}
 			if (availableTile == nullptr) {
+				std::cout << "This block of code should happen extremely rarely" << std::endl;
 				//Stop both units
 				_wantsToMove = false;
-				oppositeUnit->setWantsToMove(false);
+				oppositeUnit->setWantsToMove(false);		
 				//I actually haven't tested this block of code yet because it's hard to simulate this situation.
 			}
 			//Add the current tile to the _path stack, then add the available neighbour tile
@@ -124,6 +125,10 @@ void Unit::avoidOppositeUnit() {
 		//If the unit that's blocking this unit stopped moving, I need to find a new path.
 		_wantsToMove = false;		//Stop this unit, in case a path cannot be found
 
+		std::cout << "Blocking unit stopped moving (empty path)" << std::endl;
+
+		//99% sure that the code below is causing the errors
+		
 		//Check if the target tile is available
 		while (_path.size() != 1) {
 			_path.pop();
@@ -139,6 +144,7 @@ void Unit::avoidOppositeUnit() {
 			//Notify the other thread
 			_pathfinderP->getCondP()->notify_one();
 		}
+		
 
 		/* POSSIBLE OPTIMIZATION
 		Right now, if I get blocked by a unit, I recalculate the whole path from the current point to the intended target.

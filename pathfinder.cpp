@@ -414,10 +414,20 @@ std::stack<Tile*> Pathfinder::A_Star(Tile* start, Tile* target, bool canFly) {
 void Pathfinder::threadStart() {
 
 	/* TODO
-	Right now, I got an exception (setWantsToMove()) and a runtime error (not sure why) when testing. 
-	That means possibly 2 different bugs.
+	Right now, I got an exception (setWantsToMove() - probably a problem with nullptr) and a runtime error 
+	(something vector out of range) when testing. That means possibly 2 different bugs.
 	Before I do anything else, I need to fix those. I'm not quite sure how to reproduce them, but generally
 	sending many units against each other should do the trick.
+
+	Found a new bug: exception thrown: read access violation in Tile::getId()
+
+	Now I'm pretty sure all the bugs come from Unit::avoidOppositeUnit() because when I commented the use
+	of the function out, I couldn't get it to crash at all.
+
+	Ok I'm 99.9% sure I figured out the cause of the bug. I always tested the avoidOppositeUnit() function by
+	sending 2 units against themselves. It permormes completely fine in that case. But when I send 2 units 
+	right after each other in the same direction and the first one stops moving while the second one would like
+	to keep moving, them BOOM - error.
 	*/
 
 	while (true) {
@@ -435,7 +445,7 @@ void Pathfinder::threadStart() {
 		*/
 		PathParameters* parameters = getFrontPathParameters();
 		Unit* unit = (*(parameters->getUnitsP()))[0];
-		unit->setWantsToMove(false);		//this might be causing the exception
+		unit->setWantsToMove(false);		
 		
 		if (parameters->getAlgorithm() == PathParameters::Algorithm::A_Star) {
 			
@@ -445,7 +455,7 @@ void Pathfinder::threadStart() {
 
 			if (path.size() != 0) {
 				unit->setPath(path);
-				unit->setWantsToMove(true);		//this might be causing the exception
+				unit->setWantsToMove(true);		
 			}
 		}
 
