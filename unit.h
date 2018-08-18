@@ -69,7 +69,7 @@ private:
 	//METHODS
 	void setPointersToThisUnit();
 	void move();
-	void avoidOppositeUnit();
+	void avoidDynamicObstacle();
 };
 
 #endif

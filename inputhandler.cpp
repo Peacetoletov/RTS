@@ -154,21 +154,21 @@ void InputHandler::rightMouseButtonPressed() {
 		(mouseY > 0 && mouseY < mapP->getRows() * globals::TILE_SIZE)) {
 		//Test pathfinding
 		//Right now, I only test the pathfinding of 1 unit.
-		std::vector<Unit*>* selectedUnitsP = _levelP->getMapP()->getSelectedUnitsP();		//All units
+		std::vector<Unit*> selectedUnits = *_levelP->getMapP()->getSelectedUnitsP();		//All units
 
 		//Select the target
-		if (!(*selectedUnitsP).empty()) {
+		if (!selectedUnits.empty()) {
 			Map* mapP = _levelP->getMapP();
 			int mouseX = _inputP->getMouseX();
 			int mouseY = _inputP->getMouseY();
 			Tile* targetTileP = mapP->getTilesP()[mapP->positionToId(mouseY / globals::TILE_SIZE, mouseX / globals::TILE_SIZE)];
 
 			//The unit can only start moving if the target tile is available
-			bool canMove = targetTileP->isAvailableForPathfinding((*selectedUnitsP)[0]->getType());		//unitsToMove[0]->getType() works because all the units in the vector are of the same type
+			bool canMove = targetTileP->isAvailableForPathfinding(selectedUnits[0]->getType());		//unitsToMove[0]->getType() works because all the units in the vector are of the same type
 
 			if (canMove) {
 				//Set path of the selected unit(s)
-				PathParameters* parameters = new PathParameters(PathParameters::A_Star, targetTileP, selectedUnitsP);		//Deletion is handled in Pathfinder
+				PathParameters* parameters = new PathParameters(targetTileP, selectedUnits);		//Deletion is handled in Pathfinder
 				_pathfinderP->pushPathParameters(parameters);
 
 				//Notify the other thread

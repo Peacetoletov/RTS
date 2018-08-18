@@ -425,9 +425,8 @@ void Pathfinder::threadStart() {
 	of the function out, I couldn't get it to crash at all.
 
 	Ok I'm 99.9% sure I figured out the cause of the bug. I always tested the avoidOppositeUnit() function by
-	sending 2 units against themselves. It permormes completely fine in that case. But when I send 2 units 
-	right after each other in the same direction and the first one stops moving while the second one would like
-	to keep moving, them BOOM - error.
+	sending 2 units against themselves. It permormes completely fine in that case because both of the units
+	are moving. But if one unit stops and becomes an obstacle for the other unit, BOOM - error.
 	*/
 
 	while (true) {
@@ -446,20 +445,15 @@ void Pathfinder::threadStart() {
 		PathParameters* parameters = getFrontPathParameters();
 		Unit* unit = (*(parameters->getUnitsP()))[0];
 		unit->setWantsToMove(false);		
-		
-		if (parameters->getAlgorithm() == PathParameters::Algorithm::A_Star) {
-			
-			Tile* startTile = _mapP->getTilesP()[unit->getCurrentTileP()->getId()];
-			//std::stack<Tile*> path = A_Star(startTile, parameters->getTargetP(), false);
-			std::stack<Tile*> path = bidirectionalDijkstra(startTile, parameters->getTargetP(), unit->getType());
 
-			if (path.size() != 0) {
-				unit->setPath(path);
-				unit->setWantsToMove(true);		
-			}
+		Tile* startTile = _mapP->getTilesP()[unit->getCurrentTileP()->getId()];
+		//std::stack<Tile*> path = A_Star(startTile, parameters->getTargetP(), false);
+		std::stack<Tile*> path = bidirectionalDijkstra(startTile, parameters->getTargetP(), unit->getType());
+
+		if (path.size() != 0) {
+			unit->setPath(path);
+			unit->setWantsToMove(true);		
 		}
-
-
 		
 		auto end = std::chrono::system_clock::now();
 		std::chrono::duration<float> diff = end - start;

@@ -38,14 +38,12 @@ void Unit::update() {
 		if (!_path.top()->isAvailable(_type)) {
 
 			//Desired tile is occupied, unit cannot move.
-			//_moving = false;		//unnecessary
 			//std::cout << "Next tile is occupied!" << std::endl;
 
-			/* When 2 units are moving towards each other from opposite directions, they would get stuck.
-			This makes one unit get out of the way, let the other unit pass and then move back and continue.
+			/* The unit on its way will probably encounter other units. This function handles how the unit reacts when
+			one gets in the way.
 			*/
-			
-			avoidOppositeUnit();		//CURRENTLY COMMENTED OUT
+			avoidDynamicObstacle();
 		}
 		else {
 			//Desired tile isn't occupied, unit can start moving.
@@ -79,27 +77,40 @@ void Unit::update() {
 	
 }
 
-void Unit::avoidOppositeUnit() {
+void Unit::avoidDynamicObstacle() {
+	/* The unit on its way will probably encounter other units. This function handles how the unit reacts when
+	one gets in the way.
+	*/
+	/* When 2 units are moving towards each other from opposite directions, they would get stuck.
+	This makes one unit get out of the way, let the other unit pass and then move back and continue.
+	*/
+
 	//Select the unit that's in the way
-	Unit* oppositeUnit = nullptr;
+	Unit* blockingUnit = nullptr;
 	for (int i = 0; i < _unitsP->size(); i++) {
 		if ((*_unitsP)[i]->getCurrentTileP()->getId() == _path.top()->getId()) {
-			oppositeUnit = (*_unitsP)[i];
+			blockingUnit = (*_unitsP)[i];
 			break;
 		}
 	}
 
-	if (oppositeUnit == nullptr) {
-		std::cout << "Error in Unit::avoidOppositeUnit()" << std::endl;
+	if (blockingUnit == nullptr) {
+		std::cout << "Error in Unit::avoidDynamicObstacle()" << std::endl;
 		return;
 	}
 	
-	//Check if the opposite unit hasn't finished its path yet
-	if (!oppositeUnit->getPathP()->empty()) {		//this is kinda weird and might be causing problems, some threading problems too
-		//Check if the opposite unit intends to move to the tile that this unit currently stands on
-		if (oppositeUnit->getPathP()->top()->getId() == _currentTileP->getId()) {
+	//Check if the blocking unit hasn't finished its path yet
+	if (!blockingUnit->getPathP()->empty()) {
+		/* Check if the blocking unit intends to move to the tile that this unit currently stands on. If both units waited
+		on each other to make a move, it would result in a deadlock. I need to handle the situation, therefore one unit
+		will get out of the way, let the other one pass and then go back and continue in the original path.
+
+		If the blocking unit intends to move to another tile (not this one), then I won't do anything and I will just wait.
+		*/
+		if (blockingUnit->getPathP()->top()->getId() == _currentTileP->getId()) {
 			//Units are blocking each other
-			/*Loop through neighbours of this tile until I find one that is available. If I don't find any (extremely unlikely),
+
+			/* Loop through neighbours of this tile until I find one that is available. If I don't find any (extremely unlikely),
 			stop both units.
 			*/
 			Tile* availableTile = nullptr;
@@ -113,7 +124,7 @@ void Unit::avoidOppositeUnit() {
 				std::cout << "This block of code should happen extremely rarely" << std::endl;
 				//Stop both units
 				_wantsToMove = false;
-				oppositeUnit->setWantsToMove(false);		
+				blockingUnit->setWantsToMove(false);		
 				//I actually haven't tested this block of code yet because it's hard to simulate this situation.
 			}
 			//Add the current tile to the _path stack, then add the available neighbour tile
@@ -125,10 +136,6 @@ void Unit::avoidOppositeUnit() {
 		//If the unit that's blocking this unit stopped moving, I need to find a new path.
 		_wantsToMove = false;		//Stop this unit, in case a path cannot be found
 
-		std::cout << "Blocking unit stopped moving (empty path)" << std::endl;
-
-		//99% sure that the code below is causing the errors
-		
 		//Check if the target tile is available
 		while (_path.size() != 1) {
 			_path.pop();
@@ -136,13 +143,15 @@ void Unit::avoidOppositeUnit() {
 		Tile* targetTileP = _path.top();
 		if (targetTileP->isAvailableForPathfinding(_type)) {
 			//Set the path parameters
+			
 			std::vector<Unit*> unitGroup;		//group of 1 unit
 			unitGroup.push_back(this);
-			PathParameters* parameters = new PathParameters(PathParameters::A_Star, targetTileP, &unitGroup);		//Deletion is handled in Pathfinder
+			PathParameters* parameters = new PathParameters(targetTileP, unitGroup);		//Deletion is handled in Pathfinder
 			_pathfinderP->pushPathParameters(parameters);
 
 			//Notify the other thread
 			_pathfinderP->getCondP()->notify_one();
+			
 		}
 		
 
