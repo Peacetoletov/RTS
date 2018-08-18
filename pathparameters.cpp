@@ -8,9 +8,10 @@
 
 PathParameters::PathParameters() {}
 
-PathParameters::PathParameters(Tile* targetP, std::vector<Unit*> units) :
+PathParameters::PathParameters(Tile* targetP, std::vector<Unit*> units, int groupId) :
 	_targetP(targetP),
-	_units(units)		//Not sure whether this line will work
+	_units(units),
+	_groupId(groupId)
 {
 	//Test if it works
 	//std::cout << "Id of the unit is " << _units[0]->getId() << std::endl;
@@ -24,4 +25,8 @@ Tile* PathParameters::getTargetP() {
 
 std::vector<Unit*>* PathParameters::getUnitsP() {
 	return &_units;
+}
+
+int PathParameters::getGroupId() {
+	return _groupId;
 }

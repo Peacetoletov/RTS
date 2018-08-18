@@ -168,7 +168,12 @@ void InputHandler::rightMouseButtonPressed() {
 
 			if (canMove) {
 				//Set path of the selected unit(s)
-				PathParameters* parameters = new PathParameters(targetTileP, selectedUnits);		//Deletion is handled in Pathfinder
+				//If I'm only sending 1 unit, groupId will be -1
+				int groupId = -1;
+				if (selectedUnits.size() > 1) {
+					groupId = _pathfinderP->getIncrementedCurrentGroupId();
+				}
+				PathParameters* parameters = new PathParameters(targetTileP, selectedUnits, groupId);		//Deletion is handled in Pathfinder
 				_pathfinderP->pushPathParameters(parameters);
 
 				//Notify the other thread

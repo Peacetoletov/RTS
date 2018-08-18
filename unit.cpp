@@ -146,7 +146,7 @@ void Unit::avoidDynamicObstacle() {
 			
 			std::vector<Unit*> unitGroup;		//group of 1 unit
 			unitGroup.push_back(this);
-			PathParameters* parameters = new PathParameters(targetTileP, unitGroup);		//Deletion is handled in Pathfinder
+			PathParameters* parameters = new PathParameters(targetTileP, unitGroup, -1);		//Deletion is handled in Pathfinder
 			_pathfinderP->pushPathParameters(parameters);
 
 			//Notify the other thread

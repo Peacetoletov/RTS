@@ -15,15 +15,17 @@ class PathParameters {
 public:
 	PathParameters();		//Won't be used
 
-	PathParameters(Tile* _targetP, std::vector<Unit*> _units);
+	PathParameters(Tile* _targetP, std::vector<Unit*> _units, int groupId);
 
 	//Getters
 	Tile* getTargetP();
 	std::vector<Unit*>* getUnitsP();
+	int getGroupId();
 
 private:
 	Tile* _targetP;
 	std::vector<Unit*> _units;		//Vector of pointers to units in the unit group
+	int _groupId;
 };
 
 #endif
