@@ -110,7 +110,7 @@ private:
 	essencially just copying parts of the infromation from the vector field to the given unit. Then I can safely overwrite it and
 	no unit will get lost.
 	*/
-	std::vector<Tile*> _groupParentP;
+	std::vector<Tile*> _groupParent;		//The size is set to 100 in the constructor
 
 };
 

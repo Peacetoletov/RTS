@@ -37,7 +37,7 @@ public:
 	std::stack<Tile*> bidirectionalDijkstra(Tile* start, Tile* target, Unit::Type type);
 
 	//Dijkstra pathfinding algorithm used for groups of units
-	void dijkstraForGroups(std::vector<Unit*>* unitsP, Tile* target);
+	void dijkstraForGroups(std::vector<Unit*> units, Tile* target, int groupId);
 
 	//struct PossiblePath is used in bidirectionalDijkstra
 	struct PossiblePath {
@@ -46,7 +46,7 @@ public:
 		Tile* path2End;
 	};
 
-	//A* pathfinding algorithm
+	//A* pathfinding algorithm - deprecated
 	std::stack<Tile*> A_Star(Tile* start, Tile* target, bool canFly);
 
 	//This is where the pathfinder thread starts.
@@ -78,20 +78,26 @@ private:
 	int _currentGroupId = 0;
 
 	//METHODS
+
+	//Can be used in multiple functions
+	//Resets analyzed tiles
+	void resetAnalyzedTiles(std::vector<Tile*>& analyzedTiles);
+
+
 	//bidirectionalDijkstra (bd)
 	//Checks if a new path is better than the current one. If it is, it replaces the current one with the new one.
 	void bdUpdatePathIfBetter(Tile* currentTile, Tile* neighbour, PossiblePath& currentBestPath, bool dirStart);
 
-	//Sets G of start and end tiles, adds them to the analyzedTiles vector and to openTiles priority queue
+	//Sets G of start and target tiles, adds them to the analyzedTiles vector and to openTiles priority queue
 	void bdInit(Tile* start, Tile* target, std::vector<Tile*>& analyzedTiles, std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles[]);
 
 	//If start and target tiles are neighbours, creates the path and returns true. Otherwise returns false.
 	bool bdAreStartAndTargetNeighbours(Tile* start, Tile* target, std::stack<Tile*>& finalPath);
 
 	//Initialize a new iteration of the while loop. Returns an updated currentTile, or nullptr if there are no available tiles.
-	Tile* bdInitNewIteration(bool& dirStart, Tile* currentTile, std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles[]);
+	Tile* bdInitNewIteration(bool& dirStart, std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles[]);
 
-	//Analyze neighbours of the current tile.
+	//Analyzes neighbours of the current tile.
 	void bdAnalyzeNeighbours(Tile* currentTile, bool& dirStart, PossiblePath& currentBestPath, bool& pathFound,
 		Unit::Type type, std::vector<Tile*>& analyzedTiles, std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles[]);
 
@@ -111,9 +117,27 @@ private:
 	//Joins the directions together(reverses the pointers to parents of one direction)
 	void bdJoinDirectionsTogether(PossiblePath& currentBestPath, Tile* target, Tile* start, std::stack<Tile*>& finalPath);
 
-	//Can be used in multiple functions
-	//Resets analyzed tiles
-	void resetAnalyzedTiles(std::vector<Tile*>& analyzedTiles);
+
+	//dijkstraForGroups (dfg)
+	//Sets G of the target tile, adds it to the analyzedTiles vector and to openTiles priority queue.
+	void dfgInit(Tile* target, std::vector<Tile*>& analyzedTiles, std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
+
+	//Initializes a new iteration. Returns next tile in the priority queue and sets it as visited.
+	Tile* dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
+
+	//Analyzes neighbours of the current tile.
+	void dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
+		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
+
+	//Assigns values to currentTile's variables (G, parent).
+	void dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour);
+
+	//Pushes currentTile to the analyzedTiles vector and the openTiles queue.
+	void dfgPushTile(Tile* neighbour, std::vector<Tile*>& analyzedTiles,
+		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
+
+	//Check if all tiles that units in the group stand on are analyzed. 
+	bool dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy);
 
 	//Deprecated
 	/* Takes a Tile* and inserts it into an already sorted vector of Tile*s (sorted by F) so that the vector remains 

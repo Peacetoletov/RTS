@@ -13,6 +13,7 @@ Tile::Tile(int id, TerrainAvailability terrainType, Map* mapP) :
 	_mapP(mapP)
 {
 	reset();
+	_groupParent.resize(100);
 }
 
 Tile::~Tile() {

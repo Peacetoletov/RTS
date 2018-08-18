@@ -154,7 +154,7 @@ void InputHandler::rightMouseButtonPressed() {
 		(mouseY > 0 && mouseY < mapP->getRows() * globals::TILE_SIZE)) {
 		//Test pathfinding
 		//Right now, I only test the pathfinding of 1 unit.
-		std::vector<Unit*> selectedUnits = *_levelP->getMapP()->getSelectedUnitsP();		//All units
+		std::vector<Unit*> selectedUnits = *_levelP->getMapP()->getSelectedUnitsP();		
 
 		//Select the target
 		if (!selectedUnits.empty()) {
