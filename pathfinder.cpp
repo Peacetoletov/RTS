@@ -150,7 +150,6 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	//Begin the loop
 	bool allTilesAnalyzed = false;			//all tiles (on which a unit from the group stands) analyzed
 	Tile* currentTile = target;
-	int i = 0;
 	std::vector<Unit*> unitsCopy = units;		//Creates a copy of the units vector that I can modify when checking if all tiles are analyzed
 	
 	/* TODO
@@ -170,21 +169,27 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 
 	//Analyze all tiles which are occupied by units in the group
 	while (!allTilesAnalyzed) {
-		//TODO: continue here
 		currentTile = dfgInitNewIteration(openTiles);
 		if (currentTile == nullptr) {
 			//Out of open tiles
 			allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy, leader);		//Also sets the leader
 			break;
 		}
-		//Analyze neighbours	
-		dfgAnalyzeNeighbours(currentTile, analyzedTiles, openTiles, groupId);		
+		//Analyze straight neighbours
+		dfgAnalyzeStraightNeighbours(currentTile, analyzedTiles, openTiles, groupId);	
+
+		//Check for a potential leader
+		dfgAreAllTilesAnalyzed(unitsCopy, leader);
+
+		/* TODO - optimization
+		Make checking for diagonal or straight neighbours more efficient. This way, it's about 30% slower that it could be.
+		*/
+
+		//Analyze diagonal neighbours
+		dfgAnalyzeDiagonalNeighbours(currentTile, analyzedTiles, openTiles, groupId);
 
 		//Break the loop if all units in the group stand on a tile that has been analyzed.
-		if (i % 10 == 0) {		//Checking after each analyzed tile could be inefficient, therefore I only check every 10 iterations
-			allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy, leader);		//Also sets the leader
-		}
-		i++;
+		allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy, leader);		//Also potentially sets the leader
 	}
 
 	//Reset all analyzed tiles
@@ -194,9 +199,9 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	std::stack<int> leadersPathRelativeIdChange = dfgGetLeadersPathRelativeIdChange(leader, target, groupId);
 
 	//Set leader's path to each unit
-	//dfgSetLeadersPath();
+	//dfgSetLeadersPath();		
 
-	//std::cout << "allTilesAnalyzed = " << allTilesAnalyzed << "; units.size() = " << units.size() << std::endl;
+	//Before I continue here, I need to optimize what I have
 
 
 }
@@ -540,20 +545,39 @@ Tile* Pathfinder::dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Til
 	return currentTile;
 }
 
-void Pathfinder::dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
+void Pathfinder::dfgAnalyzeStraightNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
 	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId) {
 	std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
 	for (int i = 0; i < neighbours->size(); i++) {
-
-		/* If the neighbour tile was already checked, skip it.
-		If the unit cannot access the neighbour tile because of the terrain, also skip it.
-		*/
-		
-		Unit::Type type = Unit::Type::LAND;		//Currently, I only allow group pathfinding of land units
-		if ((*neighbours)[i]->getTerrainType() == Tile::TerrainAvailability::ALL && (*neighbours)[i]->getG() == INT_MAX) {
-			dfgAssignValuesToTile(currentTile, (*neighbours)[i], groupId);
-			dfgPushTile((*neighbours)[i], analyzedTiles, openTiles);
+		//Only allow straight neighbours
+		if (!currentTile->isNeighbourDiagonal((*neighbours)[i])) {
+			dfgAnalyzeNeighbour(currentTile, (*neighbours)[i], analyzedTiles, openTiles, groupId);
 		}
+	}
+}
+
+void Pathfinder::dfgAnalyzeDiagonalNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
+	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId) {
+	std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
+	for (int i = 0; i < neighbours->size(); i++) {
+		//Only allow diagonal neighbours
+		if (currentTile->isNeighbourDiagonal((*neighbours)[i])) {
+			dfgAnalyzeNeighbour(currentTile, (*neighbours)[i], analyzedTiles, openTiles, groupId);
+		}
+	}
+}
+
+void Pathfinder::dfgAnalyzeNeighbour(Tile* currentTile, Tile* neighbour, std::vector<Tile*>& analyzedTiles,
+	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId) {
+
+	/* If the neighbour tile was already checked, skip it.
+	If the unit cannot access the neighbour tile because of the terrain, also skip it.
+	*/
+		
+	Unit::Type type = Unit::Type::LAND;		//Currently, I only allow group pathfinding of land units
+	if (neighbour->getTerrainType() == Tile::TerrainAvailability::ALL &&neighbour->getG() == INT_MAX) {
+		dfgAssignValuesToTile(currentTile, neighbour, groupId);
+		dfgPushTile(neighbour, analyzedTiles, openTiles);
 	}
 }
 
@@ -612,38 +636,31 @@ void Pathfinder::dfgAssignGroupId(std::vector<Unit*>& units, int groupId) {
 std::stack<int> Pathfinder::dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile* target, int groupId) {
 	std::stack<int> relativeIdChange;
 	std::stack<int> relativeIdChangeReversed;
+
 	//Put all tiles of the path into a stack. But because I stack from the unit and end at the target, the path will be reversed.
 	Tile* currentTile = leader->getCurrentTileP()->getGroupParent(groupId);
 	int idOld = leader->getCurrentTileP()->getId();
 	while (currentTile->getId() != target->getId()) {
 		int idNew = currentTile->getId();
-		relativeIdChangeReversed.push(idOld - idNew);
+		relativeIdChangeReversed.push(idNew - idOld);
 		idOld = currentTile->getId();
 		currentTile = currentTile->getGroupParent(groupId);
 	}
 	int idNew = currentTile->getId();
-	relativeIdChangeReversed.push(idOld - idNew);
+	relativeIdChangeReversed.push(idNew - idOld);
 	
 	//Reverse the reversed path, making it a normal path
-	/*
 	while (!relativeIdChangeReversed.empty()) {
-		//something here to reverse it
-	}
-	*/
-
-
-	while (!relativeIdChangeReversed.empty()) {		//Just a test
-		std::cout << "relativeIdChangeReversed = " << relativeIdChangeReversed.top() << std::endl;
+		relativeIdChange.push(relativeIdChangeReversed.top());
 		relativeIdChangeReversed.pop();
 	}
 
-	/* TODO
-	Fix a bug that causes a wrong unit to become the leader
+	/*
+	while (!relativeIdChange.empty()) {		//Just a test
+		std::cout << "relativeIdChange = " << relativeIdChange.top() << std::endl;
+		relativeIdChange.pop();
+	}
 	*/
-
-	std::cout << "Leader's id = " << leader->getCurrentTileP()->getId() << std::endl;
-
-	std::cout << "\nEnd\n" << std::endl;
 
 	return relativeIdChange;
 }

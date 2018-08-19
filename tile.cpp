@@ -51,6 +51,12 @@ int Tile::calculateH(Tile* endTile) {
 }
 
 bool Tile::isNeighbourDiagonal(Tile* neighbour) {
+	/* TODO
+	Rework this function. This information is static and not changing, therefore I don't need to recalculate it
+	each time this function is called. This creates a lot of work when I need to use this function in dfgAnalyzeStraightNeighbours
+	and dfgAnalyzeDiagonalNeighbours.
+	*/
+
 	//Get difference in rows and columns between the tiles
 	int rowDiff = abs(_mapP->idToRow(this->_id) - _mapP->idToRow(neighbour->getId()));
 	int columnDiff = abs(_mapP->idToColumn(this->_id) - _mapP->idToColumn(neighbour->getId()));

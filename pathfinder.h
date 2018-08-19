@@ -127,7 +127,15 @@ private:
 	Tile* dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
 
 	//Analyzes neighbours of the current tile.
-	void dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
+	void dfgAnalyzeStraightNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
+		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId);
+
+	//Analyzes neighbours of the current tile.
+	void dfgAnalyzeDiagonalNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
+		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId);
+
+	//Analyzes neighbours of the current tile.
+	void dfgAnalyzeNeighbour(Tile* currentTile, Tile* neighbour, std::vector<Tile*>& analyzedTiles,
 		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId);
 
 	//Assigns values to currentTile's variables (G, parent).

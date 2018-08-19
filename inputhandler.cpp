@@ -146,6 +146,13 @@ void InputHandler::leftMouseButtonReleased() {
 }
 
 void InputHandler::rightMouseButtonPressed() {
+	/* TODO
+	Right now, it's possible to select a group of units and spam right click faster than I can calculate the paths.
+	To get around this, I can check the queue of paths waiting to be calculated, and if there are more than x (3?) 
+	path calculations in the queue, the request will be ignored.
+	Of course, this can only be applied to human-induced requests.
+	*/
+
 	//Check if the mouse is within the borders of the map (terrain)
 	int mouseX = _inputP->getMouseX();
 	int mouseY = _inputP->getMouseY();
