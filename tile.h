@@ -66,6 +66,7 @@ public:
 	void setG(int G);
 	void setH(int H);
 	void setParentP(Tile* parentP);
+	void setGroupParent(Tile* parent, int groupId);
 
 	//Getters
 	int getId();
@@ -79,6 +80,7 @@ public:
 	int getH();			//This one is currently being used for testing
 	int getF();
 	Tile* getParentP();
+	Tile* getGroupParent(int groupId);		
 
 private:
 	int _id;

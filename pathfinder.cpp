@@ -29,7 +29,7 @@ void Pathfinder::initMap(Map* mapP) {
 	_mapP = mapP;
 }
 
-std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, Unit::Type type) {
+std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Unit* unit, Tile* target) {
 	/* Create a vector of analyzed tiles.
 	Will be used after the path is found to loop through all the analyzed tiles to reset them.
 	This is common to both directions.
@@ -60,7 +60,11 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, U
 	//The final path will be stored in this stack
 	std::stack<Tile*> finalPath;
 
+	//Assign groupId of -1 to the unit, since this isn't a group
+	unit->setGroupId(-1);
+
 	//Initialize the algorithm - add start and target to analyzed and open tiles, set their G to 0
+	Tile* start = _mapP->getTilesP()[unit->getCurrentTileP()->getId()];
 	bdInit(start, target, analyzedTiles, openTiles);
 
 	//Begin the loop
@@ -87,7 +91,7 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Tile* start, Tile* target, U
 			//break;
 		}
 		//Analyze neighbours	
-		bdAnalyzeNeighbours(currentTile, dirStart, currentBestPath, pathFound, type, analyzedTiles, openTiles);
+		bdAnalyzeNeighbours(currentTile, dirStart, currentBestPath, pathFound, unit->getType(), analyzedTiles, openTiles);
 	}
 
 	if (pathFound) {
@@ -137,6 +141,9 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	//Leader's path will be stored in this stack
 	std::stack<Tile*> leaderPath;
 
+	//Assign groupId to each unit in the group
+	dfgAssignGroupId(units, groupId);
+
 	//Initialize the algorithm - add target tile to analyzed and open tiles, set its G to 0
 	dfgInit(target, analyzedTiles, openTiles);
 
@@ -146,33 +153,51 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	int i = 0;
 	std::vector<Unit*> unitsCopy = units;		//Creates a copy of the units vector that I can modify when checking if all tiles are analyzed
 	
+	/* TODO
+	Right now, I view all units as a passable terrain. That means if some units stand in the way, the whole group will get stuck
+	in that point and every unit will have to recalculate. Instead, I need to view all units as obstacles and only view units
+	in the group as a passable terrain.
+
+	Also, I need to implement a simple way to avoid obstacles. For example, if the vector field says to go down but that tile contains
+	an obstacle, I will check tile on the left and right of that obstacle and if they are free, move there.
+
+	Or, another way of avoiding obstacles is to use bidirectional dijkstra to move to the first free tile on the original path
+	(determined by the vector field), move there and then continue using the vector field.
+	*/
+
+	//Define the leader (NOTE: assigned in dfgAreAllTilesAnalyzed)
+	Unit* leader = nullptr;
+
 	//Analyze all tiles which are occupied by units in the group
 	while (!allTilesAnalyzed) {
 		//TODO: continue here
 		currentTile = dfgInitNewIteration(openTiles);
 		if (currentTile == nullptr) {
 			//Out of open tiles
-			if (dfgAreAllTilesAnalyzed(unitsCopy)) {		
-				allTilesAnalyzed = true;
-			}
+			allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy, leader);		//Also sets the leader
 			break;
 		}
 		//Analyze neighbours	
-		dfgAnalyzeNeighbours(currentTile, analyzedTiles, openTiles);		
+		dfgAnalyzeNeighbours(currentTile, analyzedTiles, openTiles, groupId);		
 
 		//Break the loop if all units in the group stand on a tile that has been analyzed.
 		if (i % 10 == 0) {		//Checking after each analyzed tile could be inefficient, therefore I only check every 10 iterations
-			if (dfgAreAllTilesAnalyzed(unitsCopy)) {		
-				allTilesAnalyzed = true;
-			}
+			allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy, leader);		//Also sets the leader
 		}
 		i++;
 	}
 
 	//Reset all analyzed tiles
-	resetAnalyzedTiles(analyzedTiles);
+	resetAnalyzedTiles(analyzedTiles);			//doesn't reset the _groupParent vector
 
-	std::cout << "allTilesAnalyzed = " << allTilesAnalyzed << "; units.size() = " << units.size() << std::endl;
+	//Create leader's path
+	std::stack<int> leadersPathRelativeIdChange = dfgGetLeadersPathRelativeIdChange(leader, target, groupId);
+
+	//Set leader's path to each unit
+	//dfgSetLeadersPath();
+
+	//std::cout << "allTilesAnalyzed = " << allTilesAnalyzed << "; units.size() = " << units.size() << std::endl;
+
 
 }
 
@@ -200,7 +225,7 @@ void Pathfinder::threadStart() {
 		if (unitsP->size() == 1) {
 			//Only 1 unit
 			Tile* startTile = _mapP->getTilesP()[(*unitsP)[0]->getCurrentTileP()->getId()];
-			std::stack<Tile*> path = bidirectionalDijkstra(startTile, parameters->getTargetP(), (*unitsP)[0]->getType());
+			std::stack<Tile*> path = bidirectionalDijkstra((*unitsP)[0], parameters->getTargetP());
 
 			if (path.size() != 0) {
 				(*unitsP)[0]->setPath(path);
@@ -516,7 +541,7 @@ Tile* Pathfinder::dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Til
 }
 
 void Pathfinder::dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
-	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles) {
+	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId) {
 	std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
 	for (int i = 0; i < neighbours->size(); i++) {
 
@@ -526,13 +551,13 @@ void Pathfinder::dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& ana
 		
 		Unit::Type type = Unit::Type::LAND;		//Currently, I only allow group pathfinding of land units
 		if ((*neighbours)[i]->getTerrainType() == Tile::TerrainAvailability::ALL && (*neighbours)[i]->getG() == INT_MAX) {
-			dfgAssignValuesToTile(currentTile, (*neighbours)[i]);
+			dfgAssignValuesToTile(currentTile, (*neighbours)[i], groupId);
 			dfgPushTile((*neighbours)[i], analyzedTiles, openTiles);
 		}
 	}
 }
 
-void Pathfinder::dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour) {
+void Pathfinder::dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour, int groupId) {
 	//Set G value
 	/* I first need to check if the neighbour tile is diagonal or not.
 	If it's diagonal, I would add 14 to the current G, otherwise 10.
@@ -551,7 +576,7 @@ void Pathfinder::dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour) {
 	neighbour->setG(currentTile->getG() + G_increase);
 
 	//Set the parent
-	neighbour->setParentP(currentTile);
+	neighbour->setGroupParent(currentTile, groupId);
 }
 
 void Pathfinder::dfgPushTile(Tile* neighbour, std::vector<Tile*>& analyzedTiles,
@@ -561,16 +586,70 @@ void Pathfinder::dfgPushTile(Tile* neighbour, std::vector<Tile*>& analyzedTiles,
 	openTiles.push(neighbour);
 }
 
-bool Pathfinder::dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy) {
+bool Pathfinder::dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy, Unit*& leader) {
 	//Loop through all units in the group
 	for (int i = unitsCopy.size() - 1; i >= 0; i--) {		//I need to go backwards because I might remove some elements which would mess up with the iteration if I went from the start
 		if (unitsCopy[i]->getCurrentTileP()->getG() != INT_MAX) {
 			//This tile has been analyzed
+			//If this is the first analyzed tile, set this unit as the leader
+			if (leader == nullptr) {
+				leader = unitsCopy[i];
+			}
+
 			//Remove this unit from the vector
 			unitsCopy.erase(unitsCopy.begin() + i);
 		}
 	}
 	return (unitsCopy.size() == 0);		
+}
+
+void Pathfinder::dfgAssignGroupId(std::vector<Unit*>& units, int groupId) {
+	for (int i = 0; i < units.size(); i++) {
+		units[i]->setGroupId(groupId);
+	}
+}
+
+std::stack<int> Pathfinder::dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile* target, int groupId) {
+	std::stack<int> relativeIdChange;
+	std::stack<int> relativeIdChangeReversed;
+	//Put all tiles of the path into a stack. But because I stack from the unit and end at the target, the path will be reversed.
+	Tile* currentTile = leader->getCurrentTileP()->getGroupParent(groupId);
+	int idOld = leader->getCurrentTileP()->getId();
+	while (currentTile->getId() != target->getId()) {
+		int idNew = currentTile->getId();
+		relativeIdChangeReversed.push(idOld - idNew);
+		idOld = currentTile->getId();
+		currentTile = currentTile->getGroupParent(groupId);
+	}
+	int idNew = currentTile->getId();
+	relativeIdChangeReversed.push(idOld - idNew);
+	
+	//Reverse the reversed path, making it a normal path
+	/*
+	while (!relativeIdChangeReversed.empty()) {
+		//something here to reverse it
+	}
+	*/
+
+
+	while (!relativeIdChangeReversed.empty()) {		//Just a test
+		std::cout << "relativeIdChangeReversed = " << relativeIdChangeReversed.top() << std::endl;
+		relativeIdChangeReversed.pop();
+	}
+
+	/* TODO
+	Fix a bug that causes a wrong unit to become the leader
+	*/
+
+	std::cout << "Leader's id = " << leader->getCurrentTileP()->getId() << std::endl;
+
+	std::cout << "\nEnd\n" << std::endl;
+
+	return relativeIdChange;
+}
+
+void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units) {
+
 }
 
 //Deprecated

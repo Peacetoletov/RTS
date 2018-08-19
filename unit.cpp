@@ -203,6 +203,10 @@ void Unit::move() {
 	}
 }
 
+int Unit::getGroupId() {
+	return _groupId;
+}
+
 Unit::Type Unit::getType() {
 	return _type;
 }
@@ -233,6 +237,10 @@ bool Unit::getHovered() {
 
 bool Unit::getSelected() {
 	return _selected;
+}
+
+void Unit::setGroupId(int groupId) {
+	_groupId = groupId;
 }
 
 void Unit::setWantsToMove(bool wantsToMove) {

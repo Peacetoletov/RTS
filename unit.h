@@ -23,6 +23,7 @@ public:
 	void update();
 
 	//Getters
+	int getGroupId();
 	Type getType();
 	Tile* getCurrentTileP();
 	std::stack<Tile*>* getPathP();
@@ -34,6 +35,7 @@ public:
 
 	//Setters
 	//void setCurrentTileP(int id);			//is this even needed?		//I'm pretty sure it is now		//is it though?
+	void setGroupId(int groupId);
 	void setPath(std::stack<Tile*> path);
 	void setWantsToMove(bool wantsToMove);
 	void setMoving(bool moving);
@@ -42,6 +44,7 @@ public:
 	void setSelected(bool selected);
 
 private:
+	int _groupId;
 	Tile* _currentTileP;
 	Type _type;
 	std::vector<Unit*>* _unitsP;			//vector of all units on the map

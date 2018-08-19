@@ -156,6 +156,10 @@ void Tile::setParentP(Tile* parentP) {
 	this->_parentP = parentP;
 }
 
+void Tile::setGroupParent(Tile* parent, int groupId) {
+	_groupParent[groupId] = parent;
+}
+
 int Tile::getId() {
 	return this->_id;
 }
@@ -198,4 +202,8 @@ int Tile::getF() {
 
 Tile* Tile::getParentP() {
 	return this->_parentP;
+}
+
+Tile* Tile::getGroupParent(int groupId) {
+	return _groupParent[groupId];
 }

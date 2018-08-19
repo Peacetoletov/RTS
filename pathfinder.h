@@ -34,7 +34,8 @@ public:
 	void initMap(Map* mapP);
 
 	//Bidirectional Dijkstra pathfinding algorithm used for individual units
-	std::stack<Tile*> bidirectionalDijkstra(Tile* start, Tile* target, Unit::Type type);
+	//std::stack<Tile*> bidirectionalDijkstra(Tile* start, Tile* target, Unit::Type type);
+	std::stack<Tile*> bidirectionalDijkstra(Unit* unit, Tile* target);
 
 	//Dijkstra pathfinding algorithm used for groups of units
 	void dijkstraForGroups(std::vector<Unit*> units, Tile* target, int groupId);
@@ -127,17 +128,26 @@ private:
 
 	//Analyzes neighbours of the current tile.
 	void dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
-		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
+		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId);
 
 	//Assigns values to currentTile's variables (G, parent).
-	void dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour);
+	void dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour, int groupId);
 
 	//Pushes currentTile to the analyzedTiles vector and the openTiles queue.
 	void dfgPushTile(Tile* neighbour, std::vector<Tile*>& analyzedTiles,
 		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
 
 	//Check if all tiles that units in the group stand on are analyzed. 
-	bool dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy);
+	bool dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy, Unit*& leader);
+
+	//Assign groupId to each unit in the group
+	void dfgAssignGroupId(std::vector<Unit*>& units, int groupId);
+
+	//Creates leader's path
+	std::stack<int> dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile* target, int groupId);
+
+	//Set leader's path to each unit
+	void dfgSetLeadersPath(std::vector<Unit*>& units);
 
 	//Deprecated
 	/* Takes a Tile* and inserts it into an already sorted vector of Tile*s (sorted by F) so that the vector remains 
