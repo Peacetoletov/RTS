@@ -87,7 +87,7 @@ private:
 
 	//bidirectionalDijkstra (bd)
 	//Checks if a new path is better than the current one. If it is, it replaces the current one with the new one.
-	void bdUpdatePathIfBetter(Tile* currentTile, Tile* neighbour, PossiblePath& currentBestPath, bool dirStart);
+	void bdUpdatePathIfBetter(Tile* currentTile, Tile* neighbour, int neighbourIndex, PossiblePath& currentBestPath, bool dirStart);
 
 	//Sets G of start and target tiles, adds them to the analyzedTiles vector and to openTiles priority queue
 	void bdInit(Tile* start, Tile* target, std::vector<Tile*>& analyzedTiles, std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles[]);
@@ -103,10 +103,10 @@ private:
 		Unit::Type type, std::vector<Tile*>& analyzedTiles, std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles[]);
 
 	//Checks if a path was found. If it was, it changes corresponding variables.
-	void bdCheckPathFound(bool dirStart, Tile* neighbour, Tile* currentTile, PossiblePath& currentBestPath, bool& pathFound);
+	void bdCheckPathFound(bool dirStart, Tile* neighbour, int neighbourIndex, Tile* currentTile, PossiblePath& currentBestPath, bool& pathFound);
 
 	//Assigns values to currentTile's variables (G, parent, direction)
-	void bdAssignValuesToTile(Tile* currentTile, Tile* neighbour, bool dirStart);
+	void bdAssignValuesToTile(Tile* currentTile, Tile* neighbour, int neighbourIndex, bool dirStart);
 
 	//Pushes currentTile to the analyzedTiles vector and a corresponding openTiles queue.
 	void bdPushTile(bool dirStart, Tile* neighbour, std::vector<Tile*>& analyzedTiles, 

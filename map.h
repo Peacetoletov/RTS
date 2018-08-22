@@ -85,6 +85,10 @@ private:
 	*/
 	Tile** _tiles;						
 
+	//Constant pointers to booleans true and false. Used in setting tile's neighbours.
+	const bool* _truePtr = new bool(true);
+	const bool* _falsePtr = new bool(false);
+
 	//METHODS
 	/* void setNeighbours(Tile* tile, Tile** tiles)
 	Sets neighbours of tiles[id] (id = arg1) as pointers to other tiles from array tiles (arg2)

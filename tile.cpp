@@ -18,6 +18,7 @@ Tile::Tile(int id, TerrainAvailability terrainType, Map* mapP) :
 
 Tile::~Tile() {
 	//std::cout << "Deleting tile " << this->_id << std::endl;
+	
 }
 
 void Tile::test() {
@@ -63,6 +64,10 @@ bool Tile::isNeighbourDiagonal(Tile* neighbour) {
 
 	//If the difference in rows and columns is 1, return true. Otherwise return false.
 	return ((rowDiff == 1 && columnDiff == 1) ? true : false);
+}
+
+bool Tile::isNeighbourDiagonal(int neighbourIndex) {
+	return *_neighboursDiagonal[neighbourIndex];
 }
 
 void Tile::reset() {
@@ -142,8 +147,9 @@ void Tile::setAirUnitP(Unit* unit) {
 	_airUnitP = unit;
 }
 
-void Tile::setNeighbours(std::vector<Tile*> neighbours) {
-	this->_neighbours = neighbours;
+void Tile::setNeighbour(Tile* neighbour, const bool* isDiagonal) {
+	_neighbours.push_back(neighbour);
+	_neighboursDiagonal.push_back(isDiagonal);
 }
 
 void Tile::setWasVisited(bool wasVisited) {

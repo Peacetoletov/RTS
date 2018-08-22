@@ -30,7 +30,7 @@ public:
 	//Creates the object and initializes _id, _terrainType, _mapP.
 	Tile(int id, TerrainAvailability terrainType, Map* mapP);
 
-	//Test purpose only (for now)
+	//Test purpose only (for now)		
 	~Tile();
 
 	void test();		//Test purpose only
@@ -42,6 +42,11 @@ public:
 	Returns false if the neighbour tile is touching this tile by an edge.
 	*/
 	bool isNeighbourDiagonal(Tile* neighbour);
+
+	/* Same function as isNeighbourDiagonal(Tile* neighbour).
+	This one is more efficient.
+	*/
+	bool isNeighbourDiagonal(int neighbourIndex);
 
 	//Resets all member variables to their default state.
 	void reset();
@@ -61,7 +66,7 @@ public:
 	void setDirection(Direction direction);
 	void setLandUnitP(Unit* unit);
 	void setAirUnitP(Unit* unit);
-	void setNeighbours(std::vector<Tile*> neighbours);
+	void setNeighbour(Tile* neighbour, const bool* isDiagonal);
 	void setWasVisited(bool wasVisited);
 	void setG(int G);
 	void setH(int H);
@@ -96,6 +101,10 @@ private:
 
 	//Pathfinding variables
 	std::vector<Tile*> _neighbours;		//Vector holding pointers to neighbour tiles
+	/* Whether the neighbour tile at the specific index is diagonal or not.
+	Contains pointers instead of raw booleans because that would take too much time to create.
+	*/
+	std::vector<const bool*> _neighboursDiagonal;		
 	bool _wasVisited;
 	int _G;								//Distance from start
 	int _H;								//Minimal distance to end

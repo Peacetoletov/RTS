@@ -25,19 +25,18 @@ Map::Map(int rows, int columns, Pathfinder* pathfinderP) :
 		tiles[id] = new Tile(id, Tile::TerrainAvailability::ALL, this);
 	}
 
-	this->_tiles = tiles;
+	_tiles = tiles;
 
 	//Set neighbours to each tile
 	for (int id = 0; id < tilesAmount; id++) {
 		this->setNeighbours(id, tiles);
-	}
-	
+	}	
 }
 
 Map::~Map() {
 	//Delete Units in _units
 	for (int i = 0; i < this->_units.size(); i++) {
-		delete this->_units[i];
+		delete _units[i];
 	}
 
 	//TODO: delete Building in _buildings
@@ -45,9 +44,13 @@ Map::~Map() {
 	//Delete contents of array _tiles and the array itself
 	int tilesAmount = _rows * _columns;
 	for (int i = 0; i < tilesAmount; i++) {
-		delete this->_tiles[i];
+		delete _tiles[i];
 	}
-	delete[] this->_tiles;
+	delete[] _tiles;
+
+	//Delete constant booleans truePtr and falsePtr
+	delete _truePtr;
+	delete _falsePtr;
 }
 
 void Map::loadTestMap() {
@@ -336,10 +339,12 @@ Tile** Map::getTilesP() {
 
 //PRIVATE METHODS
 void Map::setNeighbours(int id, Tile** tiles) {
+	/*
 	std::vector<Tile*> neighbours;
 	int row = idToRow(id);
 	int column = idToColumn(id);
 
+	
 	//Loop through all tiles around the current tile
 	for (int r = -1; r <= 1; r++) {	
 		for (int c = -1; c <= 1; c++) {
@@ -364,4 +369,38 @@ void Map::setNeighbours(int id, Tile** tiles) {
 
 	//Add the vector to the current tile
 	tiles[id]->setNeighbours(neighbours);
+	*/
+
+	int row = idToRow(id);
+	int column = idToColumn(id);
+
+	//Loop through all tiles around the current tile
+	for (int r = -1; r <= 1; r++) {
+		for (int c = -1; c <= 1; c++) {
+
+			//Skip iterating through itself
+			if (r == 0 && c == 0) {
+				continue;
+			}
+
+			//If the tile is at the edge, skip tiles that would be out of bounds
+			if ((row == 0 && r == -1) ||
+				(row == (this->_rows - 1) && r == 1) ||
+				(column == 0 && c == -1) ||
+				(column == (this->_columns - 1) && c == 1)) {
+				continue;
+			}
+
+			//Add this tile to current tile's neighbours vector
+			if ((r == -1 || r == 1) && (c == -1 || c == 1)) {
+				//Diagonal
+				tiles[id]->setNeighbour(tiles[positionToId(row + r, column + c)], _truePtr);
+			}
+			else {
+				//Straight
+				tiles[id]->setNeighbour(tiles[positionToId(row + r, column + c)], _falsePtr);
+			}
+			
+		}
+	}
 }

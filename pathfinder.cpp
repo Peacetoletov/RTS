@@ -203,6 +203,26 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 
 	//Before I continue here, I need to optimize what I have
 
+	/* The optimization won't be as easy as I thought. If I gave each tile a vector of bool values representing whether
+	their neighbours are diagonal, the time to start the program would dramatically increase.
+
+	However, if I don't use booleans and instead use pointers to booleans, the time gets back into normal length.
+	*/
+
+	/* Poèkat, proè bych to mìl dìlat jak kokot? Vdy to, co dìlám teï, je to, e po kadém analyzování se podívám, jestli u
+	jsem zanalyzoval všechna pole s jednotkami. A tohle trvá cca 250ms, co by se dalo sníit na nìjakıch 200ms, kdybych to 
+	optimalizoval. Jene proè vùbec zjišuji v prùbìhu, zda u ta políèka mám zanalyzovaná? Jednodušší by bylo prostì zanalyzovat 
+	všechno, co trvá max. nìjakıch 150ms. Pøípadnì na konci bych ještì mohl zanalyzovat pole s jednotkami, abych zjistil, jestli nìjaká 
+	jednotka tøeba nestojí na poli, ze kterého do cíle nevede cesta.
+	*/
+
+	/* TODO
+	Trochu pozmìnit, jak group pathfinding funguje.
+	Momentálnì kdy mám 2 jednotka dál od sebe a oznaèím cíl mezi nimi (O - - - - X - - - O), tak jedotka vlevo pùjde 4 políèka
+	doleva, a a potom zjistí, e má vlastnì jít doprava. Proto bych mohl udìlat check, e pokud by první krok jednotky (kterı
+	by odpovídal kroku leadera) el vıraznì jinam ne øíkajá vektory, pak by ignoroval leadera a øídil se jenom vektory.
+	*/
+
 
 }
 
@@ -303,8 +323,8 @@ void Pathfinder::resetAnalyzedTiles(std::vector<Tile*>& analyzedTiles) {
 
 
 //bidirectionalDijkstra (bd)
-void Pathfinder::bdUpdatePathIfBetter(Tile* currentTile, Tile* neighbour, PossiblePath& currentBestPath, bool dirStart) {
-	int G_increase = currentTile->isNeighbourDiagonal(neighbour) ? 14 : 10;
+void Pathfinder::bdUpdatePathIfBetter(Tile* currentTile, Tile* neighbour, int neighbourIndex, PossiblePath& currentBestPath, bool dirStart) {
+	int G_increase = currentTile->isNeighbourDiagonal(neighbourIndex) ? 14 : 10;
 	int totalG = currentTile->getG() + neighbour->getG() + G_increase;
 	if (totalG < currentBestPath.totalG) {
 		currentBestPath.totalG = totalG;
@@ -388,49 +408,36 @@ void Pathfinder::bdAnalyzeNeighbours(Tile* currentTile, bool& dirStart, Possible
 			in terms of path length. I can't break here after finding 1 path. After I check all the neighbours,
 			I can finally leave this while loop and check all the other open tiles for possibly better paths.
 			*/
-			bdCheckPathFound(dirStart, (*neighbours)[i], currentTile, currentBestPath, pathFound);
+			bdCheckPathFound(dirStart, (*neighbours)[i], i, currentTile, currentBestPath, pathFound);
 		}
 		/* This neighbour tile hasn't been analyzed. If it is accessible, assign value to its variables
 		(G, parent, direction) and push it to the corresponding openList queue and analyzedTiles vector.
 		*/
 		else if ((*neighbours)[i]->isAvailableForPathfinding(type)) {
-			bdAssignValuesToTile(currentTile, (*neighbours)[i], dirStart);
+			bdAssignValuesToTile(currentTile, (*neighbours)[i], i, dirStart);
 			bdPushTile(dirStart, (*neighbours)[i], analyzedTiles, openTiles);
 		}
 	}
 }
 
-void Pathfinder::bdCheckPathFound(bool dirStart, Tile* neighbour, Tile* currentTile, PossiblePath& currentBestPath, bool& pathFound) {
+void Pathfinder::bdCheckPathFound(bool dirStart, Tile* neighbour, int neighbourIndex, Tile* currentTile, PossiblePath& currentBestPath, bool& pathFound) {
 	if (dirStart && neighbour->getDirection() == Tile::Direction::TARGET) {
 
 		//If this path is better than the current one (the first path found always is), update it to the new path.
-		bdUpdatePathIfBetter(currentTile, neighbour, currentBestPath, dirStart);
+		bdUpdatePathIfBetter(currentTile, neighbour, neighbourIndex, currentBestPath, dirStart);
 		pathFound = true;
 	}
 	else if (!dirStart && neighbour->getDirection() == Tile::Direction::START) {
 
 		//If this path is better than the current one (the first path found always is), update it to the new path.
-		bdUpdatePathIfBetter(currentTile, neighbour, currentBestPath, dirStart);
+		bdUpdatePathIfBetter(currentTile, neighbour, neighbourIndex, currentBestPath, dirStart);
 		pathFound = true;
 	}
 }
 
-void Pathfinder::bdAssignValuesToTile(Tile* currentTile, Tile* neighbour, bool dirStart) {
+void Pathfinder::bdAssignValuesToTile(Tile* currentTile, Tile* neighbour, int neighbourIndex, bool dirStart) {
 	//Set G value
-	/* I first need to check if the neighbour tile is diagonal or not.
-	If it's diagonal, I would add 14 to the current G, otherwise 10.
-	I only change the G value if the new value would be smaller than
-	the current one.
-
-	POSSIBLE OPTIMIZATION:
-	Instead of checking this all the time, I can assign another vector to each tile
-	that contains information about each neighbour (whether or not it's diagonal).
-	I would access this infomation based on the index in the vector.
-	Is neighbour[i] diagonal? I look at isDiagonal[i] and boom! I don't need to calculate
-	it over and over again.
-	I tested it and found out that this would speed it up by 10%.
-	*/
-	int G_increase = currentTile->isNeighbourDiagonal(neighbour) ? 14 : 10;
+	int G_increase = currentTile->isNeighbourDiagonal(neighbourIndex) ? 14 : 10;
 	neighbour->setG(currentTile->getG() + G_increase);
 
 	//Set the parent
@@ -471,10 +478,10 @@ void Pathfinder::bdCheckForBetterPath(bool dirStart, PossiblePath& currentBestPa
 		for (int i = 0; i < neighbours->size(); i++) {
 			if ((*neighbours)[i]->getG() != INT_MAX) {
 				if (dirStart && (*neighbours)[i]->getDirection() == Tile::Direction::TARGET) {
-					bdUpdatePathIfBetter(currentTile, (*neighbours)[i], currentBestPath, dirStart);
+					bdUpdatePathIfBetter(currentTile, (*neighbours)[i], i, currentBestPath, dirStart);
 				}
 				else if (!dirStart && (*neighbours)[i]->getDirection() == Tile::Direction::START) {
-					bdUpdatePathIfBetter(currentTile, (*neighbours)[i], currentBestPath, dirStart);
+					bdUpdatePathIfBetter(currentTile, (*neighbours)[i], i, currentBestPath, dirStart);
 				}
 			}
 		}
@@ -583,11 +590,7 @@ void Pathfinder::dfgAnalyzeNeighbour(Tile* currentTile, Tile* neighbour, std::ve
 
 void Pathfinder::dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour, int groupId) {
 	//Set G value
-	/* I first need to check if the neighbour tile is diagonal or not.
-	If it's diagonal, I would add 14 to the current G, otherwise 10.
-	I only change the G value if the new value would be smaller than
-	the current one.
-
+	/* 
 	POSSIBLE OPTIMIZATION:
 	Instead of checking this all the time, I can assign another vector to each tile
 	that contains information about each neighbour (whether or not it's diagonal).
