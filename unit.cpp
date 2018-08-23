@@ -37,12 +37,15 @@ void Unit::update() {
 		Tile* nextTile = nullptr;
 		if (_groupId == -1) {
 			nextTile = _path.top();
-			//_path.pop();
 		}
 		else {
 			int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();
+
+			/* This is the only place where getId() is called in this class. I have no idea where the error
+			is coming from because it seems impossible to get a nullptr anywhere.
+			*/
+
 			nextTile = _tiles[newTileId];
-			//_leadersPathRelativeIdChange.pop();
 		}
 
 		//Check whether the next tile is occupied by a unit of the same type

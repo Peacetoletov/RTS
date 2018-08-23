@@ -158,7 +158,7 @@ void InputHandler::rightMouseButtonPressed() {
 	int mouseY = _inputP->getMouseY();
 	Map* mapP = _levelP->getMapP();
 	if ((mouseX > 0 && mouseX < mapP->getColumns() * globals::TILE_SIZE) &&
-		(mouseY > 0 && mouseY < mapP->getRows() * globals::TILE_SIZE)) {
+			(mouseY > 0 && mouseY < mapP->getRows() * globals::TILE_SIZE)) {
 		//Test pathfinding
 		//Right now, I only test the pathfinding of 1 unit.
 		std::vector<Unit*> selectedUnits = *_levelP->getMapP()->getSelectedUnitsP();		
@@ -197,6 +197,9 @@ void InputHandler::update() {
 	int mouseX = _inputP->getMouseX();
 	int mouseY = _inputP->getMouseY();
 	for (int i = 0; i < unitsP->size(); i++) {
+		if ((*unitsP)[i]->getCurrentTileP() == nullptr) {
+			std::cout << "I don't believe this can happen" << std::endl;
+		}
 		int tileId = (*unitsP)[i]->getCurrentTileP()->getId();
 		if (mouseX > _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE &&
 			mouseX <= _levelP->getMapP()->idToColumn(tileId) * globals::TILE_SIZE + globals::TILE_SIZE &&

@@ -191,8 +191,13 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	(determined by the vector field), move there and then continue using the vector field.
 	*/
 
-	/* 245-260 ms the old way if I selected an impossible path (possible for some units, impossible for all)
-	175-190 ms the current way if I select an impossible path (possible for some units, impossible for all)
+	/* TODO - fix a runtime error
+	Sometimes, when I select a group of units (I selected 2 units about 3 tiles apart from each other) and I click very fast
+	on various locations far from each other (opposite directions), I get a runtime error because of nullptr and trying 
+	to call getId() from that nullptr. Somewhere.
+
+	I'm pretty sure it's not in this class because the only times the function gets called is in dfgGetLeadersPathRelativeIdChange
+	and I don't think it's possible to get a nullptr there.
 	*/
 
 }
@@ -640,12 +645,28 @@ std::stack<int> Pathfinder::dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile
 
 	//Put all tiles of the path into a stack. But because I stack from the unit and end at the target, the path will be reversed.
 	Tile* currentTile = leader->getCurrentTileP()->getGroupParent(groupId);
+
+	/*	Found the cause of the problem. It's currentTile in the condition of the while loop.
+	
+	Found a way to replicate it. Select a group of units and start rapidly clicking on 1 tile. The crash happens when
+	the first unit gets on that tile but hasn't fully finished moving onto that tile.
+	*/
+
 	int idOld = leader->getCurrentTileP()->getId();
+
+	if (currentTile == nullptr) {
+		std::cout << "This can apparently happen" << std::endl;
+	}
 	while (currentTile->getId() != target->getId()) {
 		int idNew = currentTile->getId();
 		relativeIdChangeReversed.push(idNew - idOld);
 		idOld = currentTile->getId();
+
+		//THIS CAUSES PROBLEMS
 		currentTile = currentTile->getGroupParent(groupId);
+		if (currentTile == nullptr) {
+			std::cout << "This can apparently happen" << std::endl;
+		}
 	}
 	int idNew = currentTile->getId();
 	relativeIdChangeReversed.push(idNew - idOld);
