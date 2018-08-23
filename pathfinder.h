@@ -123,26 +123,12 @@ private:
 	//Sets G of the target tile, adds it to the analyzedTiles vector and to openTiles priority queue.
 	void dfgInit(Tile* target, std::vector<Tile*>& analyzedTiles, std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
 
+	//Analyzes all tiles which are occupied by units in the group and creates the vector field of pointers to parent tiles
+	void dfgCreateVectorMap(bool& allTilesAnalyzed, Tile* currentTile, std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, 
+		std::vector<Unit*> unitsCopy, std::vector<Tile*>& analyzedTiles, int groupId);
+
 	//Initializes a new iteration. Returns next tile in the priority queue and sets it as visited.
 	Tile* dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
-
-	//Analyzes neighbours of the current tile.
-	/*
-	void dfgAnalyzeStraightNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
-		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId);
-		*/
-
-	//Analyzes neighbours of the current tile.
-	/*
-	void dfgAnalyzeDiagonalNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
-		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId);
-		*/
-
-	//Analyzes neighbours of the current tile.
-	/*
-	void dfgAnalyzeNeighbour(Tile* currentTile, Tile* neighbour, std::vector<Tile*>& analyzedTiles,
-		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId);
-		*/
 
 	//Analyzes neighbours of the current tile.
 	void dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
@@ -160,6 +146,9 @@ private:
 
 	//Assign groupId to each unit in the group
 	void dfgAssignGroupId(std::vector<Unit*>& units, int groupId);
+
+	//Choose the leader
+	Unit* dfgChooseLeader(std::vector<Unit*> units);
 
 	//Creates leader's path
 	std::stack<int> dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile* target, int groupId);

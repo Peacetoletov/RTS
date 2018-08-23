@@ -44,7 +44,7 @@ public:
 	void setSelected(bool selected);
 
 private:
-	int _groupId;
+	int _groupId = -1;
 	Tile* _currentTileP;
 	Type _type;
 	std::vector<Unit*>* _unitsP;			//vector of all units on the map

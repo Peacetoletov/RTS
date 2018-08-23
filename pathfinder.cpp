@@ -84,11 +84,10 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Unit* unit, Tile* target) {
 	//Attempt to find a path (not necessarily the best path)
 	while (!pathFound) {
 		currentTile = bdInitNewIteration(dirStart, openTiles);
-		//bdInitNewIteration(dirStart, currentTile, openTiles);
 		if (currentTile == nullptr) {
 			//Out of open tiles, path not found. This will return an empty stack
-			return finalPath;
-			//break;
+			//return finalPath;
+			break;
 		}
 		//Analyze neighbours	
 		bdAnalyzeNeighbours(currentTile, dirStart, currentBestPath, pathFound, unit->getType(), analyzedTiles, openTiles);
@@ -147,71 +146,30 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	//Initialize the algorithm - add target tile to analyzed and open tiles, set its G to 0
 	dfgInit(target, analyzedTiles, openTiles);
 
-	//Begin the loop
+	//Analyze all tiles which are occupied by units in the group and create the vector field of pointers to parent tiles
 	bool allTilesAnalyzed = false;			//all tiles (on which a unit from the group stands) analyzed
-	Tile* currentTile = target;
-	std::vector<Unit*> unitsCopy = units;		//Creates a copy of the units vector that I can modify when checking if all tiles are analyzed
-	int i = 1;
-
-	/* TODO
-	Right now, I view all units as a passable terrain. That means if some units stand in the way, the whole group will get stuck
-	in that point and every unit will have to recalculate. Instead, I need to view all units as obstacles and only view units
-	in the group as a passable terrain.
-
-	Also, I need to implement a simple way to avoid obstacles. For example, if the vector field says to go down but that tile contains
-	an obstacle, I will check tile on the left and right of that obstacle and if they are free, move there.
-
-	Or, another way of avoiding obstacles is to use bidirectional dijkstra to move to the first free tile on the original path
-	(determined by the vector field), move there and then continue using the vector field.
-	*/
-
-	//Analyze all tiles which are occupied by units in the group
-	while (!allTilesAnalyzed) {
-		currentTile = dfgInitNewIteration(openTiles);
-		if (currentTile == nullptr) {
-			//Out of open tiles
-			allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy);		
-			break;
-		}
-		//Analyze neighbours
-		dfgAnalyzeNeighbours(currentTile, analyzedTiles, openTiles, groupId);	
-
-		//Break the loop if all units in the group stand on a tile that has been analyzed.
-		if (i % 100 == 0) {
-			allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy);
-		}
-		i++;
-
-		/* TODO - change the way a leader is chosen.
-		Currently, I check all units after each analysis to check for a potential leader.
-		Instead, I should apply Dijkstra vectors to all possible tiles and then choose the
-		unit which stands on the tile with the lowest G.
-
-		Alternatively, I could do it the way I initially intended, that is check if all tiles are analyzed
-		after x amount of iterations (100?). The reason I discarded that approach was because I though I wouldn't be
-		able to choose the leader that way. Now I realized I can just look at the G values.
-		*/
-	}
+	dfgCreateVectorMap(allTilesAnalyzed, target, openTiles, units, analyzedTiles, groupId);
 
 	//Choose the leader
-	Unit* leader = nullptr;		//TODO: Assign the value here
+	Unit* leader = dfgChooseLeader(units);		
 
 	//Reset all analyzed tiles
 	resetAnalyzedTiles(analyzedTiles);			//doesn't reset the _groupParent vector
 
+	//Return if there is no leader
+	if (leader == nullptr) {
+		/* If a leader doesn't exist, it means no unit has a possible path to the target. I don't need to do anything
+		else here and can safely return.
+		*/
+		std::cout << "Warning: Leader doesn't exist! Returning." << std::endl;
+		return;
+	}
+
 	//Create leader's path
-	//std::stack<int> leadersPathRelativeIdChange = dfgGetLeadersPathRelativeIdChange(leader, target, groupId);
+	std::stack<int> leadersPathRelativeIdChange = dfgGetLeadersPathRelativeIdChange(leader, target, groupId);
 
 	//Set leader's path to each unit
-	//dfgSetLeadersPath();		
-
-	//Before I continue here, I need to optimize what I have
-
-	/* The optimization won't be as easy as I thought. If I gave each tile a vector of bool values representing whether
-	their neighbours are diagonal, the time to start the program would dramatically increase.
-
-	However, if I don't use booleans and instead use pointers to booleans, the time gets back into normal length.
-	*/
+	//dfgSetLeadersPath();			
 
 	/* PoËkat, proË bych to mÏl dÏlat jak kokot? Vûdyù to, co dÏl·m teÔ, je to, ûe po kaûdÈm analyzov·nÌ se podÌv·m, jestli uû
 	jsem zanalyzoval vöechna pole s jednotkami. A tohle trv· cca 250ms, coû by se dalo snÌûit na nÏjak˝ch 200ms, kdybych to 
@@ -228,7 +186,16 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	Jelikoû i 90stupÚov˝ rozdÌl by byl p¯Ìliö velk˝, jedin· hodnota, kterou budu tolerovat, je 45 stupÚ˘.
 	*/
 
-	/* 245-260 ms currently if I select an impossible path (for all units)
+	/* TODO
+	I need to implement a simple way to avoid obstacles. For example, if the vector field says to go down but that tile contains
+	an obstacle, I will check tile on the left and right of that obstacle and if they are free, move there.
+
+	Or, another way of avoiding obstacles is to use bidirectional dijkstra to move to the first free tile on the original path
+	(determined by the vector field), move there and then continue using the vector field.
+	*/
+
+	/* 245-260 ms the old way if I selected an impossible path (possible for some units, impossible for all)
+	175-190 ms the current way if I select an impossible path (possible for some units, impossible for all)
 	*/
 
 }
@@ -402,7 +369,7 @@ void Pathfinder::bdAnalyzeNeighbours(Tile* currentTile, bool& dirStart, Possible
 	//Analyzes neighbours of the current tile
 	std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
 	for (int i = 0; i < neighbours->size(); i++) {
-		/* If the neighbour tile was already checked in this direction, skip it.
+		/* If the neighbour tile was already analyzed in this direction (G is less than INT_MAX), skip it.
 		If the unit cannot move through the neighbour tile, also skip it.
 		If the neighbour tile was checked in the other direction, the path has been found.
 		*/
@@ -539,6 +506,27 @@ void Pathfinder::dfgInit(Tile* target, std::vector<Tile*>& analyzedTiles, std::p
 	openTiles.push(target);
 }
 
+void Pathfinder::dfgCreateVectorMap(bool& allTilesAnalyzed, Tile* currentTile, std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, 
+		std::vector<Unit*> unitsCopy, std::vector<Tile*>& analyzedTiles, int groupId) {
+	int i = 1;
+	while (!allTilesAnalyzed) {
+		currentTile = dfgInitNewIteration(openTiles);
+		if (currentTile == nullptr) {
+			//Out of open tiles
+			allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy);
+			break;
+		}
+		//Analyze neighbours
+		dfgAnalyzeNeighbours(currentTile, analyzedTiles, openTiles, groupId);
+
+		//Break the loop if all units in the group stand on a tile that has been analyzed.
+		if (i % 100 == 0) {
+			allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy);
+		}
+		i++;
+	}
+}
+
 Tile* Pathfinder::dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles) {
 	/* Choose the most suitable tile to visit and remove the pointer to the current
 	tile from the openTiles vector, as I'm about to visit the tile.
@@ -559,62 +547,40 @@ Tile* Pathfinder::dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Til
 	return currentTile;
 }
 
-/*
-void Pathfinder::dfgAnalyzeStraightNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
-	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId) {
-	std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
-	for (int i = 0; i < neighbours->size(); i++) {
-		//Only allow straight neighbours
-		//if (!currentTile->isNeighbourDiagonal((*neighbours)[i])) {
-		if (!currentTile->isNeighbourDiagonal(i)) {
-			dfgAnalyzeNeighbour(currentTile, (*neighbours)[i], analyzedTiles, openTiles, groupId);
-		}
-	}
-}
-
-void Pathfinder::dfgAnalyzeDiagonalNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
-	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId) {
-	std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
-	for (int i = 0; i < neighbours->size(); i++) {
-		//Only allow diagonal neighbours
-		if (currentTile->isNeighbourDiagonal((*neighbours)[i])) {
-			dfgAnalyzeNeighbour(currentTile, (*neighbours)[i], analyzedTiles, openTiles, groupId);
-		}
-	}
-}
-*/
-
 void Pathfinder::dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
 	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId) {
 	std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
 	for (int i = 0; i < neighbours->size(); i++) {
-		/* If the neighbour tile was already checked, skip it.
+		/* If the neighbour tile was already checked (G is less than INT_MAX), skip it.
 		If the unit cannot access the neighbour tile because of the terrain, also skip it.
 		*/
 
 		Unit::Type type = Unit::Type::LAND;		//Currently, I only allow group pathfinding of land units
+
+		/* TODO
+		This needs to be changed. The current version views all units as a passable terrain. But I need to view 
+		stationary units that aren't from the group as obstacles.
+		*/
+
 		if ((*neighbours)[i]->getTerrainType() == Tile::TerrainAvailability::ALL && (*neighbours)[i]->getG() == INT_MAX) {
-			dfgAssignValuesToTile(currentTile, (*neighbours)[i], i, groupId);
-			dfgPushTile((*neighbours)[i], analyzedTiles, openTiles);
+			if ((*neighbours)[i]->getLandUnitP() != nullptr) {
+				//This tile contains a land unit
+				Unit* unit = (*neighbours)[i]->getLandUnitP();
+
+				//I view the unit as a passable terrain if it wants to move (or is moving) or is in the same group
+				if (unit->getWantsToMove() || unit->getGroupId() == groupId) {
+					dfgAssignValuesToTile(currentTile, (*neighbours)[i], i, groupId);
+					dfgPushTile((*neighbours)[i], analyzedTiles, openTiles);
+				}
+			}
+			else {
+				//This tile doesn't contain a land unit
+				dfgAssignValuesToTile(currentTile, (*neighbours)[i], i, groupId);
+				dfgPushTile((*neighbours)[i], analyzedTiles, openTiles);
+			}
 		}
 	}
 }
-
-/*
-void Pathfinder::dfgAnalyzeNeighbour(Tile* currentTile, Tile* neighbour, std::vector<Tile*>& analyzedTiles,
-	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId) {
-
-	// If the neighbour tile was already checked, skip it.
-	//If the unit cannot access the neighbour tile because of the terrain, also skip it.
-	
-		
-	Unit::Type type = Unit::Type::LAND;		//Currently, I only allow group pathfinding of land units
-	if (neighbour->getTerrainType() == Tile::TerrainAvailability::ALL &&neighbour->getG() == INT_MAX) {
-		dfgAssignValuesToTile(currentTile, neighbour, groupId);
-		dfgPushTile(neighbour, analyzedTiles, openTiles);
-	}
-}
-*/
 
 void Pathfinder::dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour, int neighbourIndex, int groupId) {
 	//Set G value
@@ -657,6 +623,18 @@ void Pathfinder::dfgAssignGroupId(std::vector<Unit*>& units, int groupId) {
 	for (int i = 0; i < units.size(); i++) {
 		units[i]->setGroupId(groupId);
 	}
+}
+
+Unit* Pathfinder::dfgChooseLeader(std::vector<Unit*> units) {
+	int lowestG = INT_MAX;
+	Unit* leader = nullptr;
+	for (int i = 0; i < units.size(); i++) {
+		if (units[i]->getCurrentTileP()->getG() < lowestG) {
+			lowestG = units[i]->getCurrentTileP()->getG();
+			leader = units[i];
+		}
+	}
+	return leader;
 }
 
 std::stack<int> Pathfinder::dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile* target, int groupId) {
