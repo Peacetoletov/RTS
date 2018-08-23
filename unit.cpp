@@ -8,8 +8,9 @@
 
 Unit::Unit() {}
 
-Unit::Unit(Tile* currentTileP, Unit::Type type, std::vector<Unit*>* unitsP, Pathfinder* pathfinderP) :
+Unit::Unit(Tile* currentTileP, Tile** tiles, Unit::Type type, std::vector<Unit*>* unitsP, Pathfinder* pathfinderP) :
 	_currentTileP(currentTileP),
+	_tiles(tiles),
 	_type(type),
 	_unitsP(unitsP),
 	_pathfinderP(pathfinderP)
@@ -22,20 +23,30 @@ Unit::~Unit() {
 }
 
 void Unit::update() {
+	/* TODO
+	I will need to update this once I implement group pathfinding. What if 2 units (both following a leader's relative path)
+	go straight against each other and then block each other?
+	*/
+
 	/* If the unit wants to move and isn't moving yet, set moving to true (if it's possible) and
 	calculate the distance it needs to travel (diagonal distance is longer).
 	*/
-	//std::cout << "Want to move? " << _wantsToMove << std::endl;
-
-	/*
-	if (_path.size() == 0) {
-		return;
-	}*/
 
 	if (_wantsToMove && !_moving) {
+		//Define the next tile
+		Tile* nextTile = nullptr;
+		if (_groupId == -1) {
+			nextTile = _path.top();
+			//_path.pop();
+		}
+		else {
+			int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();
+			nextTile = _tiles[newTileId];
+			//_leadersPathRelativeIdChange.pop();
+		}
 
 		//Check whether the next tile is occupied by a unit of the same type
-		if (!_path.top()->isAvailable(_type)) {
+		if (!nextTile->isAvailable(_type)) {
 
 			//Desired tile is occupied, unit cannot move.
 			//std::cout << "Next tile is occupied!" << std::endl;
@@ -43,30 +54,29 @@ void Unit::update() {
 			/* The unit on its way will probably encounter other units. This function handles how the unit reacts when
 			one gets in the way.
 			*/
-			avoidDynamicObstacle();
+			//avoidDynamicObstacle();		//Currently commented out because it wouldn't work with group pathfinding
 		}
 		else {
-			//Desired tile isn't occupied, unit can start moving.
+			//Next tile isn't occupied, unit can start moving.
 			_moving = true;
 
 			//Set distance
-			_distance = _currentTileP->isNeighbourDiagonal(_path.top()) ?
+			_distance = _currentTileP->isNeighbourDiagonal(nextTile) ?
 				globals::TILE_DIAGONAL_DISTANCE : globals::TILE_STRAIGHT_DISTANCE;
 
 			//Set pointers to this unit in the current tile and the next tile
-			setPointersToThisUnit();
+			setPointersToThisUnit(nextTile);
 
 			//Set the current tile to the tile the unit is moving onto
-			_currentTileP = _path.top();
+			_currentTileP = nextTile;
 
-			//Remove the tile from the stack
-			_path.pop();
-			
-			if (_path.size() == 0) {
-				_wantsToMove = false;
-				_moving = false;
+			//Remove the top element of the corresponding stack
+			if (_groupId == -1) {
+				_path.pop();
 			}
-			
+			else {
+				_leadersPathRelativeIdChange.pop();
+			}			
 		}
 	}
 
@@ -83,6 +93,10 @@ void Unit::avoidDynamicObstacle() {
 	*/
 	/* When 2 units are moving towards each other from opposite directions, they would get stuck.
 	This makes one unit get out of the way, let the other unit pass and then move back and continue.
+	*/
+
+	/* TODO
+	This function needs to get updated to work with group pathfinding as well.
 	*/
 
 	//Select the unit that's in the way
@@ -164,7 +178,7 @@ void Unit::avoidDynamicObstacle() {
 	}
 }
 
-void Unit::setPointersToThisUnit() {
+void Unit::setPointersToThisUnit(Tile* nextTile) {
 	//This tile
 	if (_type == Unit::Type::LAND) {
 		_currentTileP->setLandUnitP(nullptr);
@@ -175,10 +189,10 @@ void Unit::setPointersToThisUnit() {
 
 	//Next tile
 	if (_type == Unit::Type::LAND) {
-		_path.top()->setLandUnitP(this);
+		nextTile->setLandUnitP(this);
 	}
 	else {
-		_path.top()->setAirUnitP(this);
+		nextTile->setAirUnitP(this);
 	}
 }
 
@@ -195,11 +209,24 @@ void Unit::move() {
 	//std::cout << "Current distance = " << _currentDistance << std::endl;
 
 	if (_currentDistance >= _distance) {
-		//Now the unit is on the new tile (technically it was there for a longer time but now it can move further)
-
+		//Now the unit is fully on the new tile (technically it was there for a longer time but now it can move further)
 		_currentDistance = 0;
 		_moving = false;
 
+		//Stop the unit if it reached its destination
+		if (_groupId == -1) {
+			if (_path.size() == 0) {
+				_wantsToMove = false;
+				_moving = false;
+			}
+		}
+		else {
+			if (_leadersPathRelativeIdChange.size() == 0) {
+				_wantsToMove = false;
+				_moving = false;
+			}
+		}
+		
 	}
 }
 
@@ -253,6 +280,10 @@ void Unit::setMoving(bool moving) {
 
 void Unit::setPath(std::stack<Tile*> path) {
 	_path = path;
+}
+
+void Unit::setLeadersPathRelativeIdChange(std::stack<int> path) {
+	_leadersPathRelativeIdChange = path;
 }
 
 void Unit::setDistance(int distance) {

@@ -154,7 +154,7 @@ private:
 	std::stack<int> dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile* target, int groupId);
 
 	//Set leader's path to each unit
-	void dfgSetLeadersPath(std::vector<Unit*>& units);
+	void dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> leadersPathRelativeIdChange);
 
 	//Deprecated
 	/* Takes a Tile* and inserts it into an already sorted vector of Tile*s (sorted by F) so that the vector remains 

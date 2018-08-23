@@ -16,7 +16,7 @@ public:
 
 	Unit();		//Won't be used
 
-	Unit(Tile* currentTile, Type type, std::vector<Unit*>* unitsP, Pathfinder* pathfinderP);
+	Unit(Tile* currentTile, Tile** tiles, Type type, std::vector<Unit*>* unitsP, Pathfinder* pathfinderP);
 
 	~Unit();		//Not used yet
 
@@ -37,6 +37,7 @@ public:
 	//void setCurrentTileP(int id);			//is this even needed?		//I'm pretty sure it is now		//is it though?
 	void setGroupId(int groupId);
 	void setPath(std::stack<Tile*> path);
+	void setLeadersPathRelativeIdChange(std::stack<int> path);
 	void setWantsToMove(bool wantsToMove);
 	void setMoving(bool moving);
 	void setDistance(int distance);
@@ -44,13 +45,15 @@ public:
 	void setSelected(bool selected);
 
 private:
-	int _groupId = -1;
+	int _groupId = -1;				//-1 if the unit isn't in any group; 0-99 if it is in one.
 	Tile* _currentTileP;
+	Tile** _tiles;
 	Type _type;
 	std::vector<Unit*>* _unitsP;			//vector of all units on the map
 	Pathfinder* _pathfinderP;
 	float _speed = 0.25f;
 	std::stack<Tile*> _path;
+	std::stack<int> _leadersPathRelativeIdChange;
 	bool _wantsToMove = false;
 	bool _moving = false;
 	/* This represents the imaginary distance (NOT in pixels) between the current tile 
@@ -61,7 +64,6 @@ private:
 	It is always less than _distance and once it overflows, it gets reset back to 0.
 	At that moment, the unit is fully on the new tile and if it's not at the end of
 	the path yet, it moves onto the next tile in the _path stack.
-
 	I can also look at this variable as the distance from the previous tile.
 	*/
 	float _currentDistance;
@@ -70,7 +72,7 @@ private:
 	bool _selected = false;
 
 	//METHODS
-	void setPointersToThisUnit();
+	void setPointersToThisUnit(Tile* nextTile);
 	void move();
 	void avoidDynamicObstacle();
 };

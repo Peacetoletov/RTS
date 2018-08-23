@@ -153,15 +153,16 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	//Choose the leader
 	Unit* leader = dfgChooseLeader(units);		
 
-	//Reset all analyzed tiles
-	resetAnalyzedTiles(analyzedTiles);			//doesn't reset the _groupParent vector
-
 	//Return if there is no leader
 	if (leader == nullptr) {
-		/* If a leader doesn't exist, it means no unit has a possible path to the target. I don't need to do anything
-		else here and can safely return.
+		/* If a leader doesn't exist, it means no unit has a possible path to the target. I only need to reset analyzed 
+		tiles and can safely return.
 		*/
 		std::cout << "Warning: Leader doesn't exist! Returning." << std::endl;
+
+		//Reset all analyzed tiles
+		resetAnalyzedTiles(analyzedTiles);			//doesn't reset the _groupParent vector
+
 		return;
 	}
 
@@ -169,14 +170,10 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	std::stack<int> leadersPathRelativeIdChange = dfgGetLeadersPathRelativeIdChange(leader, target, groupId);
 
 	//Set leader's path to each unit
-	//dfgSetLeadersPath();			
+	dfgSetLeadersPath(units, leadersPathRelativeIdChange);			//Must happen before resetting analyzed tiles
 
-	/* Poèkat, proè bych to mìl dìlat jak kokot? Vdy to, co dìlám teï, je to, e po kadém analyzování se podívám, jestli u
-	jsem zanalyzoval všechna pole s jednotkami. A tohle trvá cca 250ms, co by se dalo sníit na nìjakıch 200ms, kdybych to 
-	optimalizoval. Jene proè vùbec zjišuji v prùbìhu, zda u ta políèka mám zanalyzovaná? Jednodušší by bylo prostì zanalyzovat 
-	všechno, co trvá max. nìjakıch 150ms. Pøípadnì na konci bych ještì mohl zanalyzovat pole s jednotkami, abych zjistil, jestli nìjaká 
-	jednotka tøeba nestojí na poli, ze kterého do cíle nevede cesta.
-	*/
+	//Reset all analyzed tiles
+	resetAnalyzedTiles(analyzedTiles);			//doesn't reset the _groupParent vector
 
 	/* TODO
 	Trochu pozmìnit, jak group pathfinding funguje.
@@ -669,8 +666,14 @@ std::stack<int> Pathfinder::dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile
 	return relativeIdChange;
 }
 
-void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units) {
-
+void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> leadersPathRelativeIdChange) {
+	for (int i = 0; i < units.size(); i++) {
+		//Skip the unit if the tile hasn't been analyzed (it's impossible to get to the target from that tile)
+		if (units[i]->getCurrentTileP()->getG() != INT_MAX) {			//Must happen before resetting analyzed tiles
+			units[i]->setLeadersPathRelativeIdChange(leadersPathRelativeIdChange);
+			units[i]->setWantsToMove(true);
+		}
+	}
 }
 
 //Deprecated
