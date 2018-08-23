@@ -127,26 +127,36 @@ private:
 	Tile* dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
 
 	//Analyzes neighbours of the current tile.
+	/*
 	void dfgAnalyzeStraightNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
 		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId);
+		*/
 
 	//Analyzes neighbours of the current tile.
+	/*
 	void dfgAnalyzeDiagonalNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
 		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId);
+		*/
 
 	//Analyzes neighbours of the current tile.
+	/*
 	void dfgAnalyzeNeighbour(Tile* currentTile, Tile* neighbour, std::vector<Tile*>& analyzedTiles,
+		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId);
+		*/
+
+	//Analyzes neighbours of the current tile.
+	void dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
 		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId);
 
 	//Assigns values to currentTile's variables (G, parent).
-	void dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour, int groupId);
+	void dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour, int neighbourIndex, int groupId);
 
 	//Pushes currentTile to the analyzedTiles vector and the openTiles queue.
 	void dfgPushTile(Tile* neighbour, std::vector<Tile*>& analyzedTiles,
 		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
 
 	//Check if all tiles that units in the group stand on are analyzed. 
-	bool dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy, Unit*& leader);
+	bool dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy);
 
 	//Assign groupId to each unit in the group
 	void dfgAssignGroupId(std::vector<Unit*>& units, int groupId);

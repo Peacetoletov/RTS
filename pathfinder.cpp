@@ -151,7 +151,8 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	bool allTilesAnalyzed = false;			//all tiles (on which a unit from the group stands) analyzed
 	Tile* currentTile = target;
 	std::vector<Unit*> unitsCopy = units;		//Creates a copy of the units vector that I can modify when checking if all tiles are analyzed
-	
+	int i = 1;
+
 	/* TODO
 	Right now, I view all units as a passable terrain. That means if some units stand in the way, the whole group will get stuck
 	in that point and every unit will have to recalculate. Instead, I need to view all units as obstacles and only view units
@@ -164,39 +165,42 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	(determined by the vector field), move there and then continue using the vector field.
 	*/
 
-	//Define the leader (NOTE: assigned in dfgAreAllTilesAnalyzed)
-	Unit* leader = nullptr;
-
 	//Analyze all tiles which are occupied by units in the group
 	while (!allTilesAnalyzed) {
 		currentTile = dfgInitNewIteration(openTiles);
 		if (currentTile == nullptr) {
 			//Out of open tiles
-			allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy, leader);		//Also sets the leader
+			allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy);		
 			break;
 		}
-		//Analyze straight neighbours
-		dfgAnalyzeStraightNeighbours(currentTile, analyzedTiles, openTiles, groupId);	
-
-		//Check for a potential leader
-		dfgAreAllTilesAnalyzed(unitsCopy, leader);
-
-		/* TODO - optimization
-		Make checking for diagonal or straight neighbours more efficient. This way, it's about 30% slower that it could be.
-		*/
-
-		//Analyze diagonal neighbours
-		dfgAnalyzeDiagonalNeighbours(currentTile, analyzedTiles, openTiles, groupId);
+		//Analyze neighbours
+		dfgAnalyzeNeighbours(currentTile, analyzedTiles, openTiles, groupId);	
 
 		//Break the loop if all units in the group stand on a tile that has been analyzed.
-		allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy, leader);		//Also potentially sets the leader
+		if (i % 100 == 0) {
+			allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy);
+		}
+		i++;
+
+		/* TODO - change the way a leader is chosen.
+		Currently, I check all units after each analysis to check for a potential leader.
+		Instead, I should apply Dijkstra vectors to all possible tiles and then choose the
+		unit which stands on the tile with the lowest G.
+
+		Alternatively, I could do it the way I initially intended, that is check if all tiles are analyzed
+		after x amount of iterations (100?). The reason I discarded that approach was because I though I wouldn't be
+		able to choose the leader that way. Now I realized I can just look at the G values.
+		*/
 	}
+
+	//Choose the leader
+	Unit* leader = nullptr;		//TODO: Assign the value here
 
 	//Reset all analyzed tiles
 	resetAnalyzedTiles(analyzedTiles);			//doesn't reset the _groupParent vector
 
 	//Create leader's path
-	std::stack<int> leadersPathRelativeIdChange = dfgGetLeadersPathRelativeIdChange(leader, target, groupId);
+	//std::stack<int> leadersPathRelativeIdChange = dfgGetLeadersPathRelativeIdChange(leader, target, groupId);
 
 	//Set leader's path to each unit
 	//dfgSetLeadersPath();		
@@ -220,9 +224,12 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	Trochu pozmìnit, jak group pathfinding funguje.
 	Momentálnì když mám 2 jednotka dál od sebe a oznaèím cíl mezi nimi (O - - - - X - - - O), tak jedotka vlevo pùjde 4 políèka
 	doleva, a až potom zjistí, že má vlastnì jít doprava. Proto bych mohl udìlat check, že pokud by první krok jednotky (který
-	by odpovídal kroku leadera) žel výraznì jinam než øíkajá vektory, pak by ignoroval leadera a øídil se jenom vektory.
+	by odpovídal kroku leadera) šel výraznì jinam než øíkajá vektory, pak by ignoroval leadera a øídil se jenom vektory.
+	Jelikož i 90stupòový rozdíl by byl pøíliš velký, jediná hodnota, kterou budu tolerovat, je 45 stupòù.
 	*/
 
+	/* 245-260 ms currently if I select an impossible path (for all units)
+	*/
 
 }
 
@@ -552,12 +559,14 @@ Tile* Pathfinder::dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Til
 	return currentTile;
 }
 
+/*
 void Pathfinder::dfgAnalyzeStraightNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
 	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId) {
 	std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
 	for (int i = 0; i < neighbours->size(); i++) {
 		//Only allow straight neighbours
-		if (!currentTile->isNeighbourDiagonal((*neighbours)[i])) {
+		//if (!currentTile->isNeighbourDiagonal((*neighbours)[i])) {
+		if (!currentTile->isNeighbourDiagonal(i)) {
 			dfgAnalyzeNeighbour(currentTile, (*neighbours)[i], analyzedTiles, openTiles, groupId);
 		}
 	}
@@ -573,13 +582,31 @@ void Pathfinder::dfgAnalyzeDiagonalNeighbours(Tile* currentTile, std::vector<Til
 		}
 	}
 }
+*/
 
+void Pathfinder::dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
+	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId) {
+	std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
+	for (int i = 0; i < neighbours->size(); i++) {
+		/* If the neighbour tile was already checked, skip it.
+		If the unit cannot access the neighbour tile because of the terrain, also skip it.
+		*/
+
+		Unit::Type type = Unit::Type::LAND;		//Currently, I only allow group pathfinding of land units
+		if ((*neighbours)[i]->getTerrainType() == Tile::TerrainAvailability::ALL && (*neighbours)[i]->getG() == INT_MAX) {
+			dfgAssignValuesToTile(currentTile, (*neighbours)[i], i, groupId);
+			dfgPushTile((*neighbours)[i], analyzedTiles, openTiles);
+		}
+	}
+}
+
+/*
 void Pathfinder::dfgAnalyzeNeighbour(Tile* currentTile, Tile* neighbour, std::vector<Tile*>& analyzedTiles,
 	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId) {
 
-	/* If the neighbour tile was already checked, skip it.
-	If the unit cannot access the neighbour tile because of the terrain, also skip it.
-	*/
+	// If the neighbour tile was already checked, skip it.
+	//If the unit cannot access the neighbour tile because of the terrain, also skip it.
+	
 		
 	Unit::Type type = Unit::Type::LAND;		//Currently, I only allow group pathfinding of land units
 	if (neighbour->getTerrainType() == Tile::TerrainAvailability::ALL &&neighbour->getG() == INT_MAX) {
@@ -587,8 +614,9 @@ void Pathfinder::dfgAnalyzeNeighbour(Tile* currentTile, Tile* neighbour, std::ve
 		dfgPushTile(neighbour, analyzedTiles, openTiles);
 	}
 }
+*/
 
-void Pathfinder::dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour, int groupId) {
+void Pathfinder::dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour, int neighbourIndex, int groupId) {
 	//Set G value
 	/* 
 	POSSIBLE OPTIMIZATION:
@@ -599,7 +627,7 @@ void Pathfinder::dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour, int g
 	it over and over again.
 	I tested it and found out that this would speed it up by 10%.
 	*/
-	int G_increase = currentTile->isNeighbourDiagonal(neighbour) ? 14 : 10;
+	int G_increase = currentTile->isNeighbourDiagonal(neighbourIndex) ? 14 : 10;
 	neighbour->setG(currentTile->getG() + G_increase);
 
 	//Set the parent
@@ -613,16 +641,11 @@ void Pathfinder::dfgPushTile(Tile* neighbour, std::vector<Tile*>& analyzedTiles,
 	openTiles.push(neighbour);
 }
 
-bool Pathfinder::dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy, Unit*& leader) {
+bool Pathfinder::dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy) {
 	//Loop through all units in the group
 	for (int i = unitsCopy.size() - 1; i >= 0; i--) {		//I need to go backwards because I might remove some elements which would mess up with the iteration if I went from the start
 		if (unitsCopy[i]->getCurrentTileP()->getG() != INT_MAX) {
 			//This tile has been analyzed
-			//If this is the first analyzed tile, set this unit as the leader
-			if (leader == nullptr) {
-				leader = unitsCopy[i];
-			}
-
 			//Remove this unit from the vector
 			unitsCopy.erase(unitsCopy.begin() + i);
 		}
