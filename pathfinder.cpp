@@ -643,30 +643,23 @@ std::stack<int> Pathfinder::dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile
 	std::stack<int> relativeIdChange;
 	std::stack<int> relativeIdChangeReversed;
 
+	if (leader->getCurrentTileP()->getId() == target->getId()) {
+		/* Edge case - this can happen when a group is moving and user commands them to move on a tile that's already
+		occupied by a moving unit from this group. Because the unit is moving, it's legal to select a command to move them
+		to this place. That results in leader having G = 0 because it's already on the target tile. And because target tile
+		doesn't have a group parent, I would get nullptr errors.
+		*/
+		//Return an empty stack (because the leader is already on the target tile)
+		return relativeIdChangeReversed;
+	}
+
 	//Put all tiles of the path into a stack. But because I stack from the unit and end at the target, the path will be reversed.
 	Tile* currentTile = leader->getCurrentTileP()->getGroupParent(groupId);
-
-	/*	Found the cause of the problem. It's currentTile in the condition of the while loop.
-	
-	Found a way to replicate it. Select a group of units and start rapidly clicking on 1 tile. The crash happens when
-	the first unit gets on that tile but hasn't fully finished moving onto that tile.
-	*/
-
 	int idOld = leader->getCurrentTileP()->getId();
-
-	if (currentTile == nullptr) {
-		std::cout << "This can apparently happen" << std::endl;
-	}
 	while (currentTile->getId() != target->getId()) {
 		int idNew = currentTile->getId();
 		relativeIdChangeReversed.push(idNew - idOld);
 		idOld = currentTile->getId();
-
-		//THIS CAUSES PROBLEMS
-		currentTile = currentTile->getGroupParent(groupId);
-		if (currentTile == nullptr) {
-			std::cout << "This can apparently happen" << std::endl;
-		}
 	}
 	int idNew = currentTile->getId();
 	relativeIdChangeReversed.push(idNew - idOld);
