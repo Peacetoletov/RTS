@@ -34,25 +34,33 @@ void Unit::update() {
 
 	if (_wantsToMove && !_moving) {
 		//Define the next tile
+		/*
 		Tile* nextTile = nullptr;
 		if (_groupId == -1) {
 			nextTile = _path.top();
 		}
 		else {
 			int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();
-
-			/* This is the only place where getId() is called in this class. I have no idea where the error
-			is coming from because it seems impossible to get a nullptr anywhere.
-			*/
-
 			nextTile = _tiles[newTileId];
 		}
+		*/
+		Tile* nextTile = chooseNextTile();
 
 		//Check whether the next tile is occupied by a unit of the same type
 		if (!nextTile->isAvailable(_type)) {
 
 			//Desired tile is occupied, unit cannot move.
 			//std::cout << "Next tile is occupied!" << std::endl;
+
+			/* If the unit is following a leader and got stuck on a stationary obstacle, 
+			now it's time to start following the vector field	
+			*/
+			if (_followingLeader && nextTile->getLandUnitP() != nullptr) {		
+				if (nextTile->getLandUnitP()->getMoving()) {			//Again, this works because I only allow land units to be grouped
+					_followingLeader = false;
+				}
+			}
+			
 
 			/* The unit on its way will probably encounter other units. This function handles how the unit reacts when
 			one gets in the way.
@@ -87,7 +95,23 @@ void Unit::update() {
 	if (_moving) {
 		move();
 	}
-	
+}
+
+Tile* Unit::chooseNextTile() {
+	Tile* nextTile = nullptr;
+	if (_groupId == -1) {
+		nextTile = _path.top();
+	}
+	else {
+		if (_followingLeader) {
+			int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();
+			nextTile = _tiles[newTileId];
+		}
+		else {
+			nextTile = _currentTileP->getGroupParent(_groupId);
+		}
+	}
+	return nextTile;
 }
 
 void Unit::avoidDynamicObstacle() {
@@ -287,6 +311,10 @@ void Unit::setPath(std::stack<Tile*> path) {
 
 void Unit::setLeadersPathRelativeIdChange(std::stack<int> path) {
 	_leadersPathRelativeIdChange = path;
+}
+
+void Unit::setFollowingLeader(bool followingLeader) {
+	_followingLeader = followingLeader;
 }
 
 void Unit::setDistance(int distance) {

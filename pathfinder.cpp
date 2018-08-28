@@ -107,6 +107,16 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Unit* unit, Tile* target) {
 	return finalPath;
 }
 
+std::stack<Tile*> Pathfinder::dijkstra(Unit* unit, Tile* target) {
+	/* I found out that pushing 10 000 tiles into a vector takes about 15 ms, while resetting 10 000 tiles takes about
+	1 ms. That means it's pointless to store the analyzed tiles. Instead, I will simply reset all tiles.
+	*/
+
+	std::stack<Tile*> path;
+
+	return path;
+}
+
 void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int groupId) {
 	/* This algorithm starts at the target and goes the usual Dijkstra way. It stops when it assigns a parent tile
 	to all tiles that units in the group stand on. This way, I create a vector field that is specific to this group
@@ -175,6 +185,14 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	//Reset all analyzed tiles
 	resetAnalyzedTiles(analyzedTiles);			//doesn't reset the _groupParent vector
 
+	/* At the moment, I'll shift my attention to single unit pathfinder for the last time (hopefully). Using a standard
+	queue instead of a priority queue might save a lot of time.
+	*/
+
+	/* TODO
+	When a unit following leader's path gets stuck, it will start following the vector field.
+	*/
+
 	/* TODO
 	Trochu pozmìnit, jak group pathfinding funguje.
 	Momentálnì když mám 2 jednotka dál od sebe a oznaèím cíl mezi nimi (O - - - - X - - - O), tak jedotka vlevo pùjde 4 políèka
@@ -184,20 +202,11 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	*/
 
 	/* TODO
-	I need to implement a simple way to avoid obstacles. For example, if the vector field says to go down but that tile contains
-	an obstacle, I will check tile on the left and right of that obstacle and if they are free, move there.
+	When units start following the vector field, the may encounter an obstacle. In that case, they will look at tiles 45 degrees
+	from the tile they wanted to go on. If one of those 2 tiles is available, go there. If not, stop.
 
-	Or, another way of avoiding obstacles is to use bidirectional dijkstra to move to the first free tile on the original path
-	(determined by the vector field), move there and then continue using the vector field.
-	*/
-
-	/* TODO - fix a runtime error
-	Sometimes, when I select a group of units (I selected 2 units about 3 tiles apart from each other) and I click very fast
-	on various locations far from each other (opposite directions), I get a runtime error because of nullptr and trying 
-	to call getId() from that nullptr. Somewhere.
-
-	I'm pretty sure it's not in this class because the only times the function gets called is in dfgGetLeadersPathRelativeIdChange
-	and I don't think it's possible to get a nullptr there.
+	This will ensure good grouping when I tell many units clump together and it will also make units much less likely to
+	get stuck on an unexpected obstacle in the middle of the path.
 	*/
 
 }
@@ -430,7 +439,7 @@ void Pathfinder::bdAssignValuesToTile(Tile* currentTile, Tile* neighbour, int ne
 
 void Pathfinder::bdPushTile(bool dirStart, Tile* neighbour, std::vector<Tile*>& analyzedTiles, std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles[]) {
 	//Add this tile (neighbour) to the vector of analyzed and open tiles
-	analyzedTiles.push_back(neighbour);
+	analyzedTiles.push_back(neighbour);			
 	if (dirStart) {
 		openTiles[0].push(neighbour);
 	}
@@ -660,6 +669,7 @@ std::stack<int> Pathfinder::dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile
 		int idNew = currentTile->getId();
 		relativeIdChangeReversed.push(idNew - idOld);
 		idOld = currentTile->getId();
+		currentTile = currentTile->getGroupParent(groupId);
 	}
 	int idNew = currentTile->getId();
 	relativeIdChangeReversed.push(idNew - idOld);
@@ -685,6 +695,7 @@ void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> le
 		//Skip the unit if the tile hasn't been analyzed (it's impossible to get to the target from that tile)
 		if (units[i]->getCurrentTileP()->getG() != INT_MAX) {			//Must happen before resetting analyzed tiles
 			units[i]->setLeadersPathRelativeIdChange(leadersPathRelativeIdChange);
+			units[i]->setFollowingLeader(true);
 			units[i]->setWantsToMove(true);
 		}
 	}

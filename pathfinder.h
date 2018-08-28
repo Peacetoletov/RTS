@@ -37,6 +37,9 @@ public:
 	//std::stack<Tile*> bidirectionalDijkstra(Tile* start, Tile* target, Unit::Type type);
 	std::stack<Tile*> bidirectionalDijkstra(Unit* unit, Tile* target);
 
+	//Dijkstra pathfinding algorithm used for individual units
+	std::stack<Tile*> dijkstra(Unit* unit, Tile* target);
+
 	//Dijkstra pathfinding algorithm used for groups of units
 	void dijkstraForGroups(std::vector<Unit*> units, Tile* target, int groupId);
 

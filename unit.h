@@ -38,6 +38,7 @@ public:
 	void setGroupId(int groupId);
 	void setPath(std::stack<Tile*> path);
 	void setLeadersPathRelativeIdChange(std::stack<int> path);
+	void setFollowingLeader(bool followingLeader);
 	void setWantsToMove(bool wantsToMove);
 	void setMoving(bool moving);
 	void setDistance(int distance);
@@ -51,9 +52,10 @@ private:
 	Type _type;
 	std::vector<Unit*>* _unitsP;			//vector of all units on the map
 	Pathfinder* _pathfinderP;
-	float _speed = 0.25f;
+	float _speed = 0.25f;					//0.25
 	std::stack<Tile*> _path;
 	std::stack<int> _leadersPathRelativeIdChange;
+	bool _followingLeader;
 	bool _wantsToMove = false;
 	bool _moving = false;
 	/* This represents the imaginary distance (NOT in pixels) between the current tile 
@@ -72,6 +74,7 @@ private:
 	bool _selected = false;
 
 	//METHODS
+	Tile* chooseNextTile();
 	void setPointersToThisUnit(Tile* nextTile);
 	void move();
 	void avoidDynamicObstacle();
