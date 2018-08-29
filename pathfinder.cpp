@@ -112,6 +112,33 @@ std::stack<Tile*> Pathfinder::dijkstra(Unit* unit, Tile* target) {
 	1 ms. That means it's pointless to store the analyzed tiles. Instead, I will simply reset all tiles.
 	*/
 
+	/* Open tiles are candidates to be visited. One tile can appear in the queue multiple times, 
+	each subsequent time it will point to a more optimized path.
+	*/
+	std::queue<Tile*> openTiles;
+
+	//Assign groupId of -1 to the unit, since this isn't a group
+	unit->setGroupId(-1);
+
+	//Initialize the algorithm - add the start tile to open tiles, set the G to 0
+	openTiles.push(unit->getCurrentTileP());
+	unit->getCurrentTileP()->setG(0);
+
+	//Begin the loop
+	bool pathFound = false;
+	Tile* currentTile = unit->getCurrentTileP();
+
+	//Loop through all tiles possible tiles
+	/* TODO: Instead of looping through all tiles, stop the loop prematurely if the target tile gets its G assigned. After
+	that, it isn't yet guaranteed that this is the shortest path, therefore I will need to loop through the rest of tiles
+	in openTiles. 
+	This approach will result in much shorter times for closer distances, while it should remain the same for very long
+	distances.
+	while (!openTiles.empty()) {
+		//TODO: Continue here
+	}
+
+	//this is here so that it doesn't give me errors - temporary
 	std::stack<Tile*> path;
 
 	return path;
