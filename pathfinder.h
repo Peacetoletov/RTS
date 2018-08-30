@@ -87,6 +87,9 @@ private:
 	//Resets analyzed tiles
 	void resetAnalyzedTiles(std::vector<Tile*>& analyzedTiles);
 
+	//Resets all tiles
+	void resetAllTiles();
+
 
 	//bidirectionalDijkstra (bd)
 	//Checks if a new path is better than the current one. If it is, it replaces the current one with the new one.
@@ -120,6 +123,14 @@ private:
 
 	//Joins the directions together(reverses the pointers to parents of one direction)
 	void bdJoinDirectionsTogether(PossiblePath& currentBestPath, Tile* target, Tile* start, std::stack<Tile*>& finalPath);
+
+
+	//dijkstra (d)
+	void dAnalyzeAllAvailableTiles(std::queue<Tile*>& openTiles, bool& pathFound, Unit::Type type);
+
+	void dAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, Unit::Type type, int newG);
+
+	std::stack<Tile*> dGetPath(bool& pathFound, Tile* start, Tile* target);
 
 
 	//dijkstraForGroups (dfg)
