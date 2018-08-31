@@ -126,9 +126,9 @@ private:
 
 
 	//dijkstra (d)
-	void dAnalyzeAllAvailableTiles(std::queue<Tile*>& openTiles, bool& pathFound, Unit::Type type);
+	void dAnalyzeAllAvailableTiles(std::queue<Tile*>& openTiles, bool& pathFound, Unit::Type type, int targetId);
 
-	void dAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, Unit::Type type, int newG);
+	void dAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, Unit::Type type, int targetId, bool& pathFound, int newG);
 
 	std::stack<Tile*> dGetPath(bool& pathFound, Tile* start, Tile* target);
 

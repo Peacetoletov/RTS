@@ -52,7 +52,7 @@ private:
 	Type _type;
 	std::vector<Unit*>* _unitsP;			//vector of all units on the map
 	Pathfinder* _pathfinderP;
-	float _speed = 0.25f;					//0.25
+	float _speed = 4.0f;					//0.25
 	std::stack<Tile*> _path;
 	std::stack<int> _leadersPathRelativeIdChange;
 	bool _followingLeader;

@@ -108,10 +108,6 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Unit* unit, Tile* target) {
 }
 
 std::stack<Tile*> Pathfinder::dijkstra(Unit* unit, Tile* target) {
-	/* I found out that pushing 10 000 tiles into a vector takes about 15 ms, while resetting 10 000 tiles takes about
-	1 ms. That means it's pointless to store the analyzed tiles. Instead, I will simply reset all tiles.
-	*/
-
 	/* Open tiles are candidates to be visited. One tile can appear in the queue multiple times, 
 	each subsequent time it will point to a more optimized path.
 	*/
@@ -127,31 +123,25 @@ std::stack<Tile*> Pathfinder::dijkstra(Unit* unit, Tile* target) {
 
 	//Begin the main loop
 	bool pathFound = false;
-	dAnalyzeAllAvailableTiles(openTiles, pathFound, unit->getType());
+	dAnalyzeAllAvailableTiles(openTiles, pathFound, unit->getType(), target->getId());
 
-	/* TODO
-	Remove this temporary "pathFound = true;". Instead, create a check in the main loop for this.
-
-	When the path is found, stop adding more tiles to the queue and only check if the ones which are
-	already in the queue if they aren't better.
+	/* NOTE: I break the main loop after finding the first path available. It's possible that under some conditions,
+	this will not find the best path. But in my testing, it always found the best path, so I'm leaving it like this.
 	*/
-
-	pathFound = true;		//TEMPORARY
 
 	//Create the path
 	std::stack<Tile*> path = dGetPath(pathFound, start, target);
-
-	if (path.empty()) {
-		std::cout << "Something went wrong." << std::endl;
-	}
-
-	//test
-	//std::cout << "G of the target tile is " << target->getG() << std::endl;
 
 	//Reset all tiles
 	resetAllTiles();
 
 	return path;
+
+	/* TODO
+	If I end up only using this function and never using bidirectional Dijkstra, it means a lot of functions and variables
+	(for example the functions that check for neighbours and the vector of booleans used in these functions) might become
+	useless. Remove them.
+	*/
 }
 
 void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int groupId) {
@@ -244,6 +234,33 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 
 	This will ensure good grouping when I tell many units clump together and it will also make units much less likely to
 	get stuck on an unexpected obstacle in the middle of the path.
+	*/
+
+	/* TODO
+	I was testing moving a group of units. They somehow get stuck when colliding with a wall, but more importantly,
+	this caused an exception once. This was with speed 2.0f.
+
+	After recreating this bug once more, I realized that it happened when the units were as they are captured
+	in screenshot rts12. The leader was the bottom-most unit and it went right and down. 4 units got stuck 
+	in a corner. I think these 4 units are the cause of the problem.
+
+	My hypothesis was incorrect, as I wasn't able to reproduce the bug by doing that. Instead, I managed to reproduce
+	the bug by doing something different, as captured in rts13. I also clicked twice very fast, maybe on the same spot,
+	just as it crashed. This might be the problem.
+
+	Another king of a bug (not exception, but a runtime error) occured. This time I'm sure it was caused by clicking on
+	1 spot too fast. Just as the leader arrived there, I got the error. rts14 
+	Also, I couldn't reproduce this bug when all the units were in free space. Instead, this only happened when only the
+	leader was free to move and the rest of the units were blocked by a wall. But, in that scenario, the bug would happen
+	100% of the time. Most units blocked by a wall, leader free to move, clicking too fast on a tile; when the leader got 
+	there and I was still clicking, boom! error
+
+	CONCLUSION: Most of these bugs should be somehow caused by the fast that units get stuck in walls, which is something
+	that shouldn't be happening in the first place. Fix that first and then see if these bugs still persist.
+	*/
+
+	/* TODO
+	Units will go through map borders when following the leader.
 	*/
 
 }
@@ -554,7 +571,7 @@ void Pathfinder::bdJoinDirectionsTogether(PossiblePath& currentBestPath, Tile* t
 
 
 //dijkstra (d)
-void Pathfinder::dAnalyzeAllAvailableTiles(std::queue<Tile*>& openTiles, bool& pathFound, Unit::Type type) {
+void Pathfinder::dAnalyzeAllAvailableTiles(std::queue<Tile*>& openTiles, bool& pathFound, Unit::Type type, int targetId) {
 
 	//Loop through all tiles possible tiles
 	/* TODO: Instead of looping through all tiles, stop the loop prematurely if the target tile gets its G assigned. After
@@ -564,8 +581,12 @@ void Pathfinder::dAnalyzeAllAvailableTiles(std::queue<Tile*>& openTiles, bool& p
 	distances.
 	*/
 	
-	while (!openTiles.empty()) {
-		//Choose the next tile from the queue
+	//while (!openTiles.empty()) {
+	while (!pathFound) {
+		//Choose the next tile from the queue. Break if the queue is empty.
+		if (openTiles.empty()) {
+			break;
+		}
 		Tile* currentTile = openTiles.front();
 
 		//Analyze neighbours
@@ -578,63 +599,68 @@ void Pathfinder::dAnalyzeAllAvailableTiles(std::queue<Tile*>& openTiles, bool& p
 		//Up
 		if (currentTileRow != 0) {
 			Tile* tile = tilesP[_mapP->positionToId(currentTileRow - 1, currentTileColumn)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, currentTileG + 10);
+			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 10);
 		}
 
 		//Left
 		if (currentTileColumn != 0) {
 			Tile* tile = tilesP[_mapP->positionToId(currentTileRow, currentTileColumn - 1)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, currentTileG + 10);
+			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 10);
 		}
 
 		//Right
 		if (currentTileColumn != _mapP->getColumns() - 1) {
 			Tile* tile = tilesP[_mapP->positionToId(currentTileRow, currentTileColumn + 1)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, currentTileG + 10);
+			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 10);
 		}
 
 		//Down
 		if (currentTileRow != _mapP->getRows() - 1) {
 			Tile* tile = tilesP[_mapP->positionToId(currentTileRow + 1, currentTileColumn)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, currentTileG + 10);
+			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 10);
 		}
 
 		//Up left
 		if (currentTileRow != 0 && currentTileColumn != 0) {
 			Tile* tile = tilesP[_mapP->positionToId(currentTileRow - 1, currentTileColumn - 1)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, currentTileG + 14);
+			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 14);
 		}
 
 		//Up right
 		if (currentTileRow != 0 && currentTileColumn != _mapP->getColumns() - 1) {
 			Tile* tile = tilesP[_mapP->positionToId(currentTileRow - 1, currentTileColumn + 1)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, currentTileG + 14);
+			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 14);
 		}
 
 		//Down left
 		if (currentTileRow != _mapP->getRows() - 1 && currentTileColumn != 0) {
 			Tile* tile = tilesP[_mapP->positionToId(currentTileRow + 1, currentTileColumn - 1)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, currentTileG + 14);
+			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 14);
 		}
 
 		//Down right
 		if (currentTileRow != _mapP->getRows() - 1 && currentTileColumn != _mapP->getColumns() - 1) {
 			Tile* tile = tilesP[_mapP->positionToId(currentTileRow + 1, currentTileColumn + 1)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, currentTileG + 14);
+			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 14);
 		}
 
 		//Remove the next tile from the queue
 		openTiles.pop();
-	}
-	
+	}	
 }
 
-void Pathfinder::dAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, Unit::Type type, int newG) {
+void Pathfinder::dAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, Unit::Type type, int targetId, 
+		bool& pathFound, int newG) {
 	if (tile->isAvailableForPathfinding(type)) {
 		if (newG < tile->getG()) {
 			tile->setG(newG);
 			tile->setParentP(parent);
 			openTiles.push(tile);
+
+			//If this is the target tile, set pathFound to true, breaking the loop
+			if (tile->getId() == targetId) {
+				pathFound = true;
+			}
 		}
 	}
 }
