@@ -30,6 +30,11 @@ void Pathfinder::initMap(Map* mapP) {
 }
 
 std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Unit* unit, Tile* target) {
+	//DEPRECATED
+	//This function was outclassed by the Dijkstra pathfinding utilizing normal queue.
+
+	std::cout << "WARNING: uSe Of BiDiReCtIoNaL dIjKsTrA" << std::endl;
+
 	/* Create a vector of analyzed tiles.
 	Will be used after the path is found to loop through all the analyzed tiles to reset them.
 	This is common to both directions.
@@ -121,9 +126,9 @@ std::stack<Tile*> Pathfinder::dijkstra(Unit* unit, Tile* target) {
 	openTiles.push(start);
 	start->setG(0);
 
-	//Begin the main loop
+	//Main loop
 	bool pathFound = false;
-	dAnalyzeAllAvailableTiles(openTiles, pathFound, unit->getType(), target->getId());
+	dTryToFindPath(openTiles, pathFound, unit->getType(), target->getId());
 
 	/* NOTE: I break the main loop after finding the first path available. It's possible that under some conditions,
 	this will not find the best path. But in my testing, it always found the best path, so I'm leaving it like this.
@@ -171,24 +176,23 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	*/
 
 	//Declare vector analyzedTiles and priority queue openTiles
-	std::vector<Tile*> analyzedTiles;
-	std::priority_queue<Tile*, std::vector<Tile*>, Comparator> openTiles;
-
-	//Leader's path will be stored in this stack
-	std::stack<Tile*> leaderPath;
+	std::queue<Tile*> openTiles;
 
 	//Assign groupId to each unit in the group
 	dfgAssignGroupId(units, groupId);
 
-	//Initialize the algorithm - add target tile to analyzed and open tiles, set its G to 0
-	dfgInit(target, analyzedTiles, openTiles);
+	//Initialize the algorithm - add target tile to open tiles, set the G to 0
+	target->setG(0);
+	openTiles.push(target);
 
-	//Analyze all tiles which are occupied by units in the group and create the vector field of pointers to parent tiles
-	bool allTilesAnalyzed = false;			//all tiles (on which a unit from the group stands) analyzed
-	dfgCreateVectorMap(allTilesAnalyzed, target, openTiles, units, analyzedTiles, groupId);
+	/* Main loop. Creates the vector field of pointers to parent tiles. Breaks when all tiles that units from the group are 
+	standing on are analyzed.
+	*/
+	bool allTilesAnalyzed = false;			//all tiles (on which units from the group stand) analyzed
+	dfgCreateVectorMap(openTiles, allTilesAnalyzed, units, target->getId(), groupId);
 
 	//Choose the leader
-	Unit* leader = dfgChooseLeader(units);		
+	Unit* leader = dfgChooseLeader(units);	
 
 	//Return if there is no leader
 	if (leader == nullptr) {
@@ -197,8 +201,8 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 		*/
 		std::cout << "Warning: Leader doesn't exist! Returning." << std::endl;
 
-		//Reset all analyzed tiles
-		resetAnalyzedTiles(analyzedTiles);			//doesn't reset the _groupParent vector
+		//Reset all tiles
+		resetAllTiles();			//doesn't reset the _groupParent vector
 
 		return;
 	}
@@ -209,8 +213,8 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	//Set leader's path to each unit
 	dfgSetLeadersPath(units, leadersPathRelativeIdChange);			//Must happen before resetting analyzed tiles
 
-	//Reset all analyzed tiles
-	resetAnalyzedTiles(analyzedTiles);			//doesn't reset the _groupParent vector
+	//Reset all tiles
+	resetAllTiles();			//doesn't reset the _groupParent vector
 
 	/* At the moment, I'll shift my attention to single unit pathfinder for the last time (hopefully). Using a standard
 	queue instead of a priority queue might save a lot of time.
@@ -571,7 +575,7 @@ void Pathfinder::bdJoinDirectionsTogether(PossiblePath& currentBestPath, Tile* t
 
 
 //dijkstra (d)
-void Pathfinder::dAnalyzeAllAvailableTiles(std::queue<Tile*>& openTiles, bool& pathFound, Unit::Type type, int targetId) {
+void Pathfinder::dTryToFindPath(std::queue<Tile*>& openTiles, bool& pathFound, Unit::Type type, int targetId) {
 
 	//Loop through all tiles possible tiles
 	/* TODO: Instead of looping through all tiles, stop the loop prematurely if the target tile gets its G assigned. After
@@ -581,7 +585,6 @@ void Pathfinder::dAnalyzeAllAvailableTiles(std::queue<Tile*>& openTiles, bool& p
 	distances.
 	*/
 	
-	//while (!openTiles.empty()) {
 	while (!pathFound) {
 		//Choose the next tile from the queue. Break if the queue is empty.
 		if (openTiles.empty()) {
@@ -679,17 +682,15 @@ std::stack<Tile*> Pathfinder::dGetPath(bool& pathFound, Tile* start, Tile* targe
 
 
 //dijkstraForGroups (dfg)
-void Pathfinder::dfgInit(Tile* target, std::vector<Tile*>& analyzedTiles, std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles) {
-	//Set up the initial tile
-	target->setG(0);
-
-	//Add the start tile to openTiles and analyzedTiles
-	analyzedTiles.push_back(target);
-	openTiles.push(target);
+void Pathfinder::dfgAssignGroupId(std::vector<Unit*>& units, int groupId) {
+	for (int i = 0; i < units.size(); i++) {
+		units[i]->setGroupId(groupId);
+	}
 }
 
-void Pathfinder::dfgCreateVectorMap(bool& allTilesAnalyzed, Tile* currentTile, std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, 
-		std::vector<Unit*> unitsCopy, std::vector<Tile*>& analyzedTiles, int groupId) {
+void Pathfinder::dfgCreateVectorMap(std::queue<Tile*>& openTiles, bool& allTilesAnalyzed, std::vector<Unit*> unitsCopy, 
+		int targetId, int groupId) {
+	/*
 	int i = 1;
 	while (!allTilesAnalyzed) {
 		currentTile = dfgInitNewIteration(openTiles);
@@ -707,12 +708,124 @@ void Pathfinder::dfgCreateVectorMap(bool& allTilesAnalyzed, Tile* currentTile, s
 		}
 		i++;
 	}
+	*/
+
+	int i = 1;
+	while (!allTilesAnalyzed) {
+		//Choose the next tile from the queue. Break if the queue is empty.
+		if (openTiles.empty()) {
+			break;
+		}
+		Tile* currentTile = openTiles.front();
+
+		//Analyze neighbours
+		Tile** tilesP = _mapP->getTilesP();
+		int currentTileRow = _mapP->idToRow(currentTile->getId());
+		int currentTileColumn = _mapP->idToColumn(currentTile->getId());
+		int currentTileG = currentTile->getG();
+
+		//I will first analyze straight neighbours, then diagonal neighbours.
+		//Up
+		if (currentTileRow != 0) {
+			Tile* tile = tilesP[_mapP->positionToId(currentTileRow - 1, currentTileColumn)];
+			dfgAnalyzeTile(tile, currentTile, openTiles, groupId, currentTileG + 10);
+		}
+
+		//Left
+		if (currentTileColumn != 0) {
+			Tile* tile = tilesP[_mapP->positionToId(currentTileRow, currentTileColumn - 1)];
+			dfgAnalyzeTile(tile, currentTile, openTiles, groupId, currentTileG + 10);
+		}
+
+		//Right
+		if (currentTileColumn != _mapP->getColumns() - 1) {
+			Tile* tile = tilesP[_mapP->positionToId(currentTileRow, currentTileColumn + 1)];
+			dfgAnalyzeTile(tile, currentTile, openTiles, groupId, currentTileG + 10);
+		}
+
+		//Down
+		if (currentTileRow != _mapP->getRows() - 1) {
+			Tile* tile = tilesP[_mapP->positionToId(currentTileRow + 1, currentTileColumn)];
+			dfgAnalyzeTile(tile, currentTile, openTiles, groupId, currentTileG + 10);
+		}
+
+		//Up left
+		if (currentTileRow != 0 && currentTileColumn != 0) {
+			Tile* tile = tilesP[_mapP->positionToId(currentTileRow - 1, currentTileColumn - 1)];
+			dfgAnalyzeTile(tile, currentTile, openTiles, groupId, currentTileG + 14);
+		}
+
+		//Up right
+		if (currentTileRow != 0 && currentTileColumn != _mapP->getColumns() - 1) {
+			Tile* tile = tilesP[_mapP->positionToId(currentTileRow - 1, currentTileColumn + 1)];
+			dfgAnalyzeTile(tile, currentTile, openTiles, groupId, currentTileG + 14);
+		}
+
+		//Down left
+		if (currentTileRow != _mapP->getRows() - 1 && currentTileColumn != 0) {
+			Tile* tile = tilesP[_mapP->positionToId(currentTileRow + 1, currentTileColumn - 1)];
+			dfgAnalyzeTile(tile, currentTile, openTiles, groupId, currentTileG + 14);
+		}
+
+		//Down right
+		if (currentTileRow != _mapP->getRows() - 1 && currentTileColumn != _mapP->getColumns() - 1) {
+			Tile* tile = tilesP[_mapP->positionToId(currentTileRow + 1, currentTileColumn + 1)];
+			dfgAnalyzeTile(tile, currentTile, openTiles, groupId, currentTileG + 14);
+		}
+
+		//Remove the next tile from the queue
+		openTiles.pop();
+
+		//Break the loop if all units in the group stand on a tile that has been analyzed.
+		if (i % 100 == 0) {
+			/* I'm currently commenting this out, as it only checks if the G of the given tile is not equal to INT_MAX.
+			This was fine when I was using a priority queue and each tile got the G updated only once, but now that I'm
+			using normal queue I can update the G more than once. This could result in creating sub-optimal vector fields.
+			*/
+			//allTilesAnalyzed = dfgAreAllTilesAnalyzed(unitsCopy);
+		}
+		i++;
+	}
 }
 
-Tile* Pathfinder::dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles) {
-	/* Choose the most suitable tile to visit and remove the pointer to the current
-	tile from the openTiles vector, as I'm about to visit the tile.
+void Pathfinder::dfgAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, int groupId, int newG) {
+	Unit::Type type = Unit::Type::LAND;			//currently, I only allow land units to be selected in a group
+	/*
+	if (tile->isAvailableForPathfinding(type)) {
+		if (newG < tile->getG()) {
+			tile->setG(newG);
+			tile->setParentP(parent);
+			openTiles.push(tile);
+		}
+	}
 	*/
+
+	if (tile->getTerrainType() == Tile::TerrainAvailability::ALL && newG < tile->getG()) {
+		if (tile->getLandUnitP() != nullptr) {
+			//This tile contains a land unit
+			Unit* unit = tile->getLandUnitP();
+
+			//I view the unit as a passable terrain if it wants to move (or is moving) or is in the same group
+			if (unit->getWantsToMove() || unit->getGroupId() == groupId) {
+				tile->setG(newG);
+				tile->setParentP(parent);
+				openTiles.push(tile);
+			}
+		}
+		else {
+			//This tile doesn't contain a land unit
+			tile->setG(newG);
+			tile->setParentP(parent);
+			openTiles.push(tile);
+		}
+	}
+}
+
+/*
+Tile* Pathfinder::dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles) {
+	// Choose the most suitable tile to visit and remove the pointer to the current
+	//tile from the openTiles vector, as I'm about to visit the tile.
+	
 	Tile* currentTile;
 	if (!openTiles.empty()) {
 		currentTile = openTiles.top();
@@ -733,16 +846,10 @@ void Pathfinder::dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& ana
 	std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId) {
 	std::vector<Tile*>* neighbours = currentTile->getNeighboursP();
 	for (int i = 0; i < neighbours->size(); i++) {
-		/* If the neighbour tile was already checked (G is less than INT_MAX), skip it.
-		If the unit cannot access the neighbour tile because of the terrain, also skip it.
-		*/
-
+		// If the neighbour tile was already checked (G is less than INT_MAX), skip it.
+		//If the unit cannot access the neighbour tile because of the terrain, also skip it.
+		
 		Unit::Type type = Unit::Type::LAND;		//Currently, I only allow group pathfinding of land units
-
-		/* TODO
-		This needs to be changed. The current version views all units as a passable terrain. But I need to view 
-		stationary units that aren't from the group as obstacles.
-		*/
 
 		if ((*neighbours)[i]->getTerrainType() == Tile::TerrainAvailability::ALL && (*neighbours)[i]->getG() == INT_MAX) {
 			if ((*neighbours)[i]->getLandUnitP() != nullptr) {
@@ -766,15 +873,6 @@ void Pathfinder::dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& ana
 
 void Pathfinder::dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour, int neighbourIndex, int groupId) {
 	//Set G value
-	/* 
-	POSSIBLE OPTIMIZATION:
-	Instead of checking this all the time, I can assign another vector to each tile
-	that contains information about each neighbour (whether or not it's diagonal).
-	I would access this infomation based on the index in the vector.
-	Is neighbour[i] diagonal? I look at isDiagonal[i] and boom! I don't need to calculate
-	it over and over again.
-	I tested it and found out that this would speed it up by 10%.
-	*/
 	int G_increase = currentTile->isNeighbourDiagonal(neighbourIndex) ? 14 : 10;
 	neighbour->setG(currentTile->getG() + G_increase);
 
@@ -788,6 +886,7 @@ void Pathfinder::dfgPushTile(Tile* neighbour, std::vector<Tile*>& analyzedTiles,
 	analyzedTiles.push_back(neighbour);
 	openTiles.push(neighbour);
 }
+*/
 
 bool Pathfinder::dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy) {
 	//Loop through all units in the group
@@ -799,12 +898,6 @@ bool Pathfinder::dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy) {
 		}
 	}
 	return (unitsCopy.size() == 0);		
-}
-
-void Pathfinder::dfgAssignGroupId(std::vector<Unit*>& units, int groupId) {
-	for (int i = 0; i < units.size(); i++) {
-		units[i]->setGroupId(groupId);
-	}
 }
 
 Unit* Pathfinder::dfgChooseLeader(std::vector<Unit*> units) {
@@ -837,6 +930,9 @@ std::stack<int> Pathfinder::dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile
 	Tile* currentTile = leader->getCurrentTileP()->getGroupParent(groupId);
 	int idOld = leader->getCurrentTileP()->getId();
 	while (currentTile->getId() != target->getId()) {
+		/* Somewhere in here is a problem that causes an exception to be thrown when calling getId()
+		TODO: Fix
+		*/
 		int idNew = currentTile->getId();
 		relativeIdChangeReversed.push(idNew - idOld);
 		idOld = currentTile->getId();

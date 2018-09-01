@@ -126,7 +126,7 @@ private:
 
 
 	//dijkstra (d)
-	void dAnalyzeAllAvailableTiles(std::queue<Tile*>& openTiles, bool& pathFound, Unit::Type type, int targetId);
+	void dTryToFindPath(std::queue<Tile*>& openTiles, bool& pathFound, Unit::Type type, int targetId);
 
 	void dAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, Unit::Type type, int targetId, bool& pathFound, int newG);
 
@@ -134,13 +134,20 @@ private:
 
 
 	//dijkstraForGroups (dfg)
-	//Sets G of the target tile, adds it to the analyzedTiles vector and to openTiles priority queue.
-	void dfgInit(Tile* target, std::vector<Tile*>& analyzedTiles, std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
+	//Assign groupId to each unit in the group
+	void dfgAssignGroupId(std::vector<Unit*>& units, int groupId);
 
 	//Analyzes all tiles which are occupied by units in the group and creates the vector field of pointers to parent tiles
-	void dfgCreateVectorMap(bool& allTilesAnalyzed, Tile* currentTile, std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, 
-		std::vector<Unit*> unitsCopy, std::vector<Tile*>& analyzedTiles, int groupId);
+	/*
+	void dfgCreateVectorMap(bool& allTilesAnalyzed, Tile* currentTile, std::queue<Tile*>& openTiles, 
+		std::vector<Unit*> unitsCopy, int groupId);
+		*/
+	void dfgCreateVectorMap(std::queue<Tile*>& openTiles, bool& allTilesAnalyzed, std::vector<Unit*> unitsCopy, int targetId, 
+		int groupId);
 
+	void dfgAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, int groupId, int newG);
+
+	/*
 	//Initializes a new iteration. Returns next tile in the priority queue and sets it as visited.
 	Tile* dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
 
@@ -154,12 +161,10 @@ private:
 	//Pushes currentTile to the analyzedTiles vector and the openTiles queue.
 	void dfgPushTile(Tile* neighbour, std::vector<Tile*>& analyzedTiles,
 		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
+		*/
 
 	//Check if all tiles that units in the group stand on are analyzed. 
 	bool dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy);
-
-	//Assign groupId to each unit in the group
-	void dfgAssignGroupId(std::vector<Unit*>& units, int groupId);
 
 	//Choose the leader
 	Unit* dfgChooseLeader(std::vector<Unit*> units);
