@@ -100,11 +100,12 @@ void Unit::update() {
 Tile* Unit::chooseNextTile() {
 	Tile* nextTile = nullptr;
 	if (_groupId == -1) {
-		nextTile = _path.top();
+		nextTile = _path.top();		//THIS COULD BE CAUSING THE ERROR		//but it probably isn't because the units shouldn't have id == -1
 	}
 	else {
 		if (_followingLeader) {
-			int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();
+			//TODO: Check if this is causing the error
+			int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();		//THIS COULD BE CAUSING THE ERROR
 			nextTile = _tiles[newTileId];
 		}
 		else {

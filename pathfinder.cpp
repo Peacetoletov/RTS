@@ -267,13 +267,22 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	Units will go through map borders when following the leader.
 	*/
 
+	/* TODO - fix a runtime error
+	rts15. This happened when I had the square of units selected and I was clicking 1 space too fast. It's most likely 
+	the same bug mentioned above but this time it happened when all units were in free space (or surrounded by other units).
+
+	The best way to reproduce this bug is to select the group of 9 units and send them 3 tiles down so that the left-most unit
+	is the leader. Click very fast on that tile until they are there. Once they are there and nothing happened, repeat. Doesn't
+	always work but often does.
+	*/
+
 }
 
 void Pathfinder::threadStart() {
 
 	while (true) {
 		std::unique_lock<std::mutex> locker(_muWaiter);
-		if (_pathParametersQueue.size() == 0) {
+		if (_pathParametersQueue.empty()) {
 			_cond.wait(locker);
 		}
 		
@@ -789,17 +798,8 @@ void Pathfinder::dfgCreateVectorMap(std::queue<Tile*>& openTiles, bool& allTiles
 }
 
 void Pathfinder::dfgAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, int groupId, int newG) {
-	Unit::Type type = Unit::Type::LAND;			//currently, I only allow land units to be selected in a group
-	/*
-	if (tile->isAvailableForPathfinding(type)) {
-		if (newG < tile->getG()) {
-			tile->setG(newG);
-			tile->setParentP(parent);
-			openTiles.push(tile);
-		}
-	}
-	*/
 
+	Unit::Type type = Unit::Type::LAND;			//currently, I only allow land units to be selected in a group
 	if (tile->getTerrainType() == Tile::TerrainAvailability::ALL && newG < tile->getG()) {
 		if (tile->getLandUnitP() != nullptr) {
 			//This tile contains a land unit
@@ -808,14 +808,14 @@ void Pathfinder::dfgAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& ope
 			//I view the unit as a passable terrain if it wants to move (or is moving) or is in the same group
 			if (unit->getWantsToMove() || unit->getGroupId() == groupId) {
 				tile->setG(newG);
-				tile->setParentP(parent);
+				tile->setGroupParent(parent, groupId);
 				openTiles.push(tile);
 			}
 		}
 		else {
 			//This tile doesn't contain a land unit
 			tile->setG(newG);
-			tile->setParentP(parent);
+			tile->setGroupParent(parent, groupId);
 			openTiles.push(tile);
 		}
 	}
@@ -927,7 +927,8 @@ std::stack<int> Pathfinder::dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile
 	}
 
 	//Put all tiles of the path into a stack. But because I stack from the unit and end at the target, the path will be reversed.
-	Tile* currentTile = leader->getCurrentTileP()->getGroupParent(groupId);
+	Tile* currentTile = leader->getCurrentTileP()->getGroupParent(groupId);		//FIX: This returns nullptr
+	std::cout << "Leader has id = " << currentTile->getId() << std::endl;
 	int idOld = leader->getCurrentTileP()->getId();
 	while (currentTile->getId() != target->getId()) {
 		/* Somewhere in here is a problem that causes an exception to be thrown when calling getId()
