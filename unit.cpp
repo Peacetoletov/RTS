@@ -32,62 +32,68 @@ void Unit::update() {
 	calculate the distance it needs to travel (diagonal distance is longer).
 	*/
 
+	//Update variables (needed because the variables can be changed from another thread)
+	updateVariables();
+
 	if (_wantsToMove && !_moving) {
-		//Define the next tile
-		/*
-		Tile* nextTile = nullptr;
-		if (_groupId == -1) {
-			nextTile = _path.top();
-		}
-		else {
-			int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();
-			nextTile = _tiles[newTileId];
-		}
-		*/
 		Tile* nextTile = chooseNextTile();
-
-		//Check whether the next tile is occupied by a unit of the same type
-		if (!nextTile->isAvailable(_type)) {
-
-			//Desired tile is occupied, unit cannot move.
-			//std::cout << "Next tile is occupied!" << std::endl;
-
-			/* If the unit is following a leader and got stuck on a stationary obstacle, 
-			now it's time to start following the vector field	
+		if (nextTile == nullptr) {
+			/* Under some conditions, the next tile can be a nullptr. In that case, the unit ia already on the target tile, and doesn't 
+			need to move.
+			I think this is because of the asynchonization. But maybe it's caused by a bug.
 			*/
-			if (_followingLeader && nextTile->getLandUnitP() != nullptr) {		
-				if (nextTile->getLandUnitP()->getMoving()) {			//Again, this works because I only allow land units to be grouped
-					_followingLeader = false;
-				}
-			}
-			
-
-			/* The unit on its way will probably encounter other units. This function handles how the unit reacts when
-			one gets in the way.
-			*/
-			//avoidDynamicObstacle();		//Currently commented out because it wouldn't work with group pathfinding
+			_wantsToMove = false;
+			std::cout << "Something is wrong. If this keeps showing, it's a bug and I need to look into it" << std::endl;
 		}
 		else {
-			//Next tile isn't occupied, unit can start moving.
-			_moving = true;
+			//Check whether the next tile is occupied by a unit of the same type
+			if (!nextTile->isAvailable(_type)) {
 
-			//Set distance
-			_distance = _currentTileP->isNeighbourDiagonal(nextTile) ?
-				globals::TILE_DIAGONAL_DISTANCE : globals::TILE_STRAIGHT_DISTANCE;
+				//Desired tile is occupied, unit cannot move.
+				//std::cout << "Next tile is occupied!" << std::endl;
 
-			//Set pointers to this unit in the current tile and the next tile
-			setPointersToThisUnit(nextTile);
+				/* If the unit is following a leader and got stuck on a stationary obstacle,
+				now it's time to start following the vector field
+				*/
+				if (_followingLeader && nextTile->getLandUnitP() != nullptr) {
+					if (nextTile->getLandUnitP()->getMoving()) {			//Again, this works because I only allow land units to be grouped
+						_followingLeader = false;
+					}
+				}
 
-			//Set the current tile to the tile the unit is moving onto
-			_currentTileP = nextTile;
 
-			//Remove the top element of the corresponding stack
-			if (_groupId == -1) {
-				_path.pop();
+				/* The unit on its way will probably encounter other units. This function handles how the unit reacts when
+				one gets in the way.
+				*/
+				//avoidDynamicObstacle();		//Currently commented out because it wouldn't work with group pathfinding
 			}
 			else {
-				_leadersPathRelativeIdChange.pop();
-			}			
+				//Next tile isn't occupied, unit can start moving.
+				_moving = true;
+
+				//Set distance
+				_distance = _currentTileP->isNeighbourDiagonal(nextTile) ?
+					globals::TILE_DIAGONAL_DISTANCE : globals::TILE_STRAIGHT_DISTANCE;
+
+				//Set pointers to this unit in the current tile and the next tile
+				setPointersToThisUnit(nextTile);
+
+				//Set the current tile to the tile the unit is moving onto
+				_currentTileP = nextTile;
+
+				//Remove the top element of the corresponding stack
+				if (_groupId == -1) {
+					_path.pop();
+				}
+				else {
+					if (_leadersPathRelativeIdChange.empty()) {
+						std::cout << "I have no fucking idea how this could happen but apparently it does." << std::endl;
+						//Ok fuck this shit. This break point just got hit but I refuse to believe it. There is no fucking way this can happen.
+						//There must be some quantum physics messing with me. Reality is not real. 
+					}
+					_leadersPathRelativeIdChange.pop();
+				}
+			}
 		}
 	}
 
@@ -97,20 +103,62 @@ void Unit::update() {
 	}
 }
 
+void Unit::updateVariables() {
+	/* Variables _wantsToMove, _followingLeader, _path, _leadersPathRelativeIdChange and _groupId are shared between 2 threads.
+	To prevent possible changes to some of the values while this function is running, I assign the values of the variables
+	into temporary variables called "variable_name + New". At the start of this function, I assign the values from these
+	temporary variables into the normal variables.
+	*/
+	if (_shouldUpdatePath) {
+		_path = _pathNew;
+		_shouldUpdatePath = false;
+	}
+	if (_shouldUpdateLeadersPathRelativeIdChange) {
+		_leadersPathRelativeIdChange = _leadersPathRelativeIdChangeNew;
+		_shouldUpdateLeadersPathRelativeIdChange = false;
+	}
+	if (_shouldUpdateFollowingLeaderNew) {
+		_followingLeader = _followingLeaderNew;
+		_shouldUpdateFollowingLeaderNew = false;
+	}
+	if (_shouldUpdateWantsToMoveNew) {
+		_wantsToMove = _wantsToMoveNew;
+		_shouldUpdateWantsToMoveNew = false;
+	}
+	if (_shouldUpdateGroupIdNew) {
+		_groupId = _groupIdNew;
+		_shouldUpdateGroupIdNew = false;
+	}
+}
+
 Tile* Unit::chooseNextTile() {
 	Tile* nextTile = nullptr;
-	if (_groupId == -1) {
-		nextTile = _path.top();		//THIS COULD BE CAUSING THE ERROR		//but it probably isn't because the units shouldn't have id == -1
-	}
-	else {
-		if (_followingLeader) {
-			//TODO: Check if this is causing the error
-			int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();		//THIS COULD BE CAUSING THE ERROR
-			nextTile = _tiles[newTileId];
+	try {
+		if (_groupId == -1) {
+			if (_path.empty()) {
+				throw "Error in unit.cpp! _path is empty.";
+			}
+			nextTile = _path.top();
 		}
 		else {
-			nextTile = _currentTileP->getGroupParent(_groupId);
+			if (_followingLeader) {
+				if (_leadersPathRelativeIdChange.empty()) {
+					throw "Error in unit.cpp! _leadersPathRelativeIdChange is empty.";
+				}
+				int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();
+				nextTile = _tiles[newTileId];
+			}
+			else {
+				nextTile = _currentTileP->getGroupParent(_groupId);
+			}
 		}
+	}
+	catch(const char* msg) {
+		std::cout << msg << std::endl;
+	}
+
+	if (nextTile == nullptr) {
+		//std::cout << "kokot" << std::endl;
 	}
 	return nextTile;
 }
@@ -166,7 +214,7 @@ void Unit::avoidDynamicObstacle() {
 				std::cout << "This block of code should happen extremely rarely" << std::endl;
 				//Stop both units
 				_wantsToMove = false;
-				blockingUnit->setWantsToMove(false);		
+				blockingUnit->setWantsToMove(false, false);		
 				//I actually haven't tested this block of code yet because it's hard to simulate this situation.
 			}
 			//Add the current tile to the _path stack, then add the available neighbour tile
@@ -258,8 +306,13 @@ void Unit::move() {
 	}
 }
 
-int Unit::getGroupId() {
-	return _groupId;
+int Unit::getGroupId(bool isNew) {
+	if (isNew) {
+		return _groupIdNew;
+	}
+	else {
+		return _groupId;
+	}
 }
 
 Unit::Type Unit::getType() {
@@ -294,28 +347,58 @@ bool Unit::getSelected() {
 	return _selected;
 }
 
-void Unit::setGroupId(int groupId) {
-	_groupId = groupId;
+void Unit::setGroupId(int groupId, bool isFromOtherThread) {
+	if (isFromOtherThread) {
+		_groupIdNew = groupId;
+		_shouldUpdateGroupIdNew = true;
+	}
+	else {
+		_groupId = groupId;
+	}
 }
 
-void Unit::setWantsToMove(bool wantsToMove) {
-	_wantsToMove = wantsToMove;
+void Unit::setWantsToMove(bool wantsToMove, bool isFromOtherThread) {
+	if (isFromOtherThread) {
+		_wantsToMoveNew = wantsToMove;
+		_shouldUpdateWantsToMoveNew = true;
+	}
+	else {
+		_wantsToMove = wantsToMove;
+	}
 }
 
 void Unit::setMoving(bool moving) {
 	_moving = moving;
 }
 
-void Unit::setPath(std::stack<Tile*> path) {
-	_path = path;
+void Unit::setPath(std::stack<Tile*> path, bool isFromOtherThread) {
+	if (isFromOtherThread) {
+		_pathNew = path;
+		_shouldUpdatePath = true;
+	}
+	else {
+		_path = path;
+	}
 }
 
-void Unit::setLeadersPathRelativeIdChange(std::stack<int> path) {
-	_leadersPathRelativeIdChange = path;
+void Unit::setLeadersPathRelativeIdChange(std::stack<int> path, bool isFromOtherThread) {
+	if (isFromOtherThread) {
+		_leadersPathRelativeIdChangeNew = path;
+		_shouldUpdateLeadersPathRelativeIdChange = true;
+	}
+	else {
+		_leadersPathRelativeIdChange = path;
+	}
 }
 
-void Unit::setFollowingLeader(bool followingLeader) {
-	_followingLeader = followingLeader;
+void Unit::setFollowingLeader(bool followingLeader, bool isFromOtherThread) {
+	if (isFromOtherThread) {
+		_followingLeaderNew = followingLeader;
+		_shouldUpdateFollowingLeaderNew = true;
+	}
+	else {
+		_followingLeader = followingLeader;
+	}
 }
 
 void Unit::setDistance(int distance) {

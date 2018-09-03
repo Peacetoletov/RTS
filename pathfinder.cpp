@@ -66,7 +66,7 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Unit* unit, Tile* target) {
 	std::stack<Tile*> finalPath;
 
 	//Assign groupId of -1 to the unit, since this isn't a group
-	unit->setGroupId(-1);
+	unit->setGroupId(-1, true);
 
 	//Initialize the algorithm - add start and target to analyzed and open tiles, set their G to 0
 	Tile* start = _mapP->getTilesP()[unit->getCurrentTileP()->getId()];
@@ -119,7 +119,7 @@ std::stack<Tile*> Pathfinder::dijkstra(Unit* unit, Tile* target) {
 	std::queue<Tile*> openTiles;
 
 	//Assign groupId of -1 to the unit, since this isn't a group
-	unit->setGroupId(-1);
+	unit->setGroupId(-1, true);
 
 	//Initialize the algorithm - add the start tile to open tiles, set the G to 0
 	Tile* start = unit->getCurrentTileP();
@@ -190,6 +190,7 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	*/
 	bool allTilesAnalyzed = false;			//all tiles (on which units from the group stand) analyzed
 	dfgCreateVectorMap(openTiles, allTilesAnalyzed, units, target->getId(), groupId);
+	units[0]->getGroupId(true);
 
 	//Choose the leader
 	Unit* leader = dfgChooseLeader(units);	
@@ -212,7 +213,7 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 
 	//Set leader's path to each unit
 	dfgSetLeadersPath(units, leadersPathRelativeIdChange);			//Must happen before resetting analyzed tiles
-
+	
 	//Reset all tiles
 	resetAllTiles();			//doesn't reset the _groupParent vector
 
@@ -276,6 +277,14 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	always work but often does.
 	*/
 
+	/* TODO
+	rts16. No idea.
+	*/
+
+	/* KNOWS ISSUE
+	If I select a group of units and select a very distant target, it will say that there is no leader.
+	*/
+
 }
 
 void Pathfinder::threadStart() {
@@ -296,7 +305,7 @@ void Pathfinder::threadStart() {
 		PathParameters* parameters = getFrontPathParameters();
 		std::vector<Unit*>* unitsP = parameters->getUnitsP();
 		for (int i = 0; i < unitsP->size(); i++) {
-			(*unitsP)[i]->setWantsToMove(false);
+			(*unitsP)[i]->setWantsToMove(false, true);
 		}
 
 		if (unitsP->size() == 1) {
@@ -306,8 +315,8 @@ void Pathfinder::threadStart() {
 			std::stack<Tile*> path = dijkstra((*unitsP)[0], parameters->getTargetP());
 
 			if (path.size() != 0) {
-				(*unitsP)[0]->setPath(path);
-				(*unitsP)[0]->setWantsToMove(true);
+				(*unitsP)[0]->setPath(path, true);
+				(*unitsP)[0]->setWantsToMove(true, true);
 			}
 		}
 		else {
@@ -693,7 +702,7 @@ std::stack<Tile*> Pathfinder::dGetPath(bool& pathFound, Tile* start, Tile* targe
 //dijkstraForGroups (dfg)
 void Pathfinder::dfgAssignGroupId(std::vector<Unit*>& units, int groupId) {
 	for (int i = 0; i < units.size(); i++) {
-		units[i]->setGroupId(groupId);
+		units[i]->setGroupId(groupId, true);
 	}
 }
 
@@ -806,7 +815,7 @@ void Pathfinder::dfgAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& ope
 			Unit* unit = tile->getLandUnitP();
 
 			//I view the unit as a passable terrain if it wants to move (or is moving) or is in the same group
-			if (unit->getWantsToMove() || unit->getGroupId() == groupId) {
+			if (unit->getWantsToMove() || unit->getGroupId(true) == groupId) {		//THIS IS CAUSING A BUG
 				tile->setG(newG);
 				tile->setGroupParent(parent, groupId);
 				openTiles.push(tile);
@@ -962,9 +971,17 @@ void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> le
 	for (int i = 0; i < units.size(); i++) {
 		//Skip the unit if the tile hasn't been analyzed (it's impossible to get to the target from that tile)
 		if (units[i]->getCurrentTileP()->getG() != INT_MAX) {			//Must happen before resetting analyzed tiles
-			units[i]->setLeadersPathRelativeIdChange(leadersPathRelativeIdChange);
-			units[i]->setFollowingLeader(true);
-			units[i]->setWantsToMove(true);
+			units[i]->setLeadersPathRelativeIdChange(leadersPathRelativeIdChange, true);
+			if (leadersPathRelativeIdChange.empty()) {
+				/* If the leader's path is empty (leader is on the target destination), other units have no reason to try to
+				follow the leader. It could result in errors because of trying to get values from an empty stack.
+				*/
+				units[i]->setFollowingLeader(false, true);
+			}
+			else {
+				units[i]->setFollowingLeader(true, true);
+			}
+			units[i]->setWantsToMove(true, true);
 		}
 	}
 }
