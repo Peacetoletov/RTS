@@ -50,9 +50,6 @@ public:
 		Tile* path2End;
 	};
 
-	//A* pathfinding algorithm - deprecated
-	std::stack<Tile*> A_Star(Tile* start, Tile* target, bool canFly);
-
 	//This is where the pathfinder thread starts.
 	void threadStart();
 
@@ -174,15 +171,6 @@ private:
 
 	//Set leader's path to each unit
 	void dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> leadersPathRelativeIdChange);
-
-	//Deprecated
-	/* Takes a Tile* and inserts it into an already sorted vector of Tile*s (sorted by F) so that the vector remains 
-	sorted after the insertion. Basically just puts in into the right place.
-	*/
-	void sortedTileInsert(std::vector<Tile*>& openTiles, Tile* tile);		
-
-	// After updating tile's G, I call this function to update its position in the openTiles vector
-	void updateTileInVector(std::vector<Tile*>& openTiles, int tileId);
 
 };
 

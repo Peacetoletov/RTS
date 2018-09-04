@@ -81,7 +81,7 @@ void Unit::update() {
 				//Set the current tile to the tile the unit is moving onto
 				_currentTileP = nextTile;
 
-				//Remove the top element of the corresponding stack
+				//Remove the top element of the corresponding stackw
 				if (_groupId == -1) {
 					_path.pop();
 				}
@@ -90,6 +90,14 @@ void Unit::update() {
 						std::cout << "I have no fucking idea how this could happen but apparently it does." << std::endl;
 						//Ok fuck this shit. This break point just got hit but I refuse to believe it. There is no fucking way this can happen.
 						//There must be some quantum physics messing with me. Reality is not real. 
+
+						/* Maybe, just maybe it's caused by the groupId looping after reaching 99 and using the previous ids. Because the previous paths
+						are still there, this could be causing some problems. I'll try to reproduce the bug when I increase the maximum id before it loops
+						back from 99 to 99999.
+						If I don't reproduce the bug within 10 minutes, it's probably gone.
+
+						Alright, this test is done. Nope, this is not the cause.
+						*/
 					}
 					_leadersPathRelativeIdChange.pop();
 				}
