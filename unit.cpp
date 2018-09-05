@@ -35,6 +35,18 @@ void Unit::update() {
 	//Update variables (needed because the variables can be changed from another thread)
 	updateVariables();
 
+	/* DEBUGGING
+	Just in case something changes from the other thread in the middle of the function, I will create copies of all the variables
+	that can be changed from the other thread. Once the bug happens, I will look at the copies and compare them with the actual 
+	variables.
+	*/
+	std::stack<Tile*> pathCopy = _path;
+	std::stack<int> leadersPathRelativeIdChangeCopy = _leadersPathRelativeIdChange;
+	bool followingLeaderCopy = _followingLeader;
+	bool wantsToMoveCopy = _wantsToMove;
+	int groupIdCopy = _groupId;
+
+
 	if (_wantsToMove && !_moving) {
 		Tile* nextTile = chooseNextTile();
 		if (nextTile == nullptr) {
@@ -55,6 +67,7 @@ void Unit::update() {
 				/* If the unit is following a leader and got stuck on a stationary obstacle,
 				now it's time to start following the vector field
 				*/
+				//TODO: I completely forgot to include walls as stationary obstacles here
 				if (_followingLeader && nextTile->getLandUnitP() != nullptr) {
 					if (nextTile->getLandUnitP()->getMoving()) {			//Again, this works because I only allow land units to be grouped
 						_followingLeader = false;
@@ -81,13 +94,24 @@ void Unit::update() {
 				//Set the current tile to the tile the unit is moving onto
 				_currentTileP = nextTile;
 
-				//Remove the top element of the corresponding stackw
+				//Remove the top element of the corresponding stack
 				if (_groupId == -1) {
 					_path.pop();
 				}
 				else {
 					if (_leadersPathRelativeIdChange.empty()) {
 						std::cout << "I have no fucking idea how this could happen but apparently it does." << std::endl;
+
+						//I will put the same conditions (that had to be true in order to get here) here and see what happens
+						Tile* nextTile = chooseNextTile();
+						if (nextTile != nullptr) {
+							if (nextTile->isAvailable(_type)) {
+								std::cout << "I should have no problems getting here." << std::endl;
+							}
+						}
+
+						std::cout << "If I get here without hitting the previous comment, something is seriously wrong." << std::endl;
+
 						//Ok fuck this shit. This break point just got hit but I refuse to believe it. There is no fucking way this can happen.
 						//There must be some quantum physics messing with me. Reality is not real. 
 
@@ -97,8 +121,18 @@ void Unit::update() {
 						If I don't reproduce the bug within 10 minutes, it's probably gone.
 
 						Alright, this test is done. Nope, this is not the cause.
+
+						OK I THINK I FOUND THE CAUSE!
+						Hypothesis: It happens when the unit is in a group, but isn't folowing a leader anymore. Instead, it is following the
+						vector field, which apparently points to another tile, which is why chooseNextTile() doesn't return nullptr. But the
+						stack of leaders relative id change is empty, maybe because of asynchronization? No matter the cause, whenever the unit
+						isn't following the leader, it shouldn't try to pop leader's stack. Leader's stack doesn't matter anymore as the unit
+						will not use it anymore anyway.
 						*/
+
+						//TODO: Find out why chooseNextTile() can return a nullptr.
 					}
+					//TODO: Here, create a condition and if the unit isn't following the leader, don't pop.
 					_leadersPathRelativeIdChange.pop();
 				}
 			}

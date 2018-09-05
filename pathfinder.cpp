@@ -340,7 +340,7 @@ void Pathfinder::threadStart() {
 
 int Pathfinder::getIncrementedCurrentGroupId() {
 	//currentGroupId ranges from 0 to 99, then loops back to 0.
-	if (_currentGroupId < 100) {
+	if (_currentGroupId < 99) {
 		_currentGroupId++;
 	}
 	else {
