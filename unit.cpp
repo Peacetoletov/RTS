@@ -46,16 +46,20 @@ void Unit::update() {
 	bool wantsToMoveCopy = _wantsToMove;
 	int groupIdCopy = _groupId;
 
+	/* TODO - fix a bug
+	Sometimes, when I tell a group of units to go to a close tile and I keep clicking the tile, the formation of the group 
+	unexpectedly changes. This can be easily replicated by creating a group of 4 units like this:
+	............
+	............
+	and then keep clicking on any of the close tiles. The formation won't remain in this position for too long.
+	*/
+
 
 	if (_wantsToMove && !_moving) {
 		Tile* nextTile = chooseNextTile();
 		if (nextTile == nullptr) {
-			/* Under some conditions, the next tile can be a nullptr. In that case, the unit ia already on the target tile, and doesn't 
-			need to move.
-			I think this is because of the asynchonization. But maybe it's caused by a bug.
-			*/
+			//In case nextTile is nullptr, it most likely means that the unit is following the vector field and reached the target tile.
 			_wantsToMove = false;
-			std::cout << "Something is wrong. If this keeps showing, it's a bug and I need to look into it" << std::endl;
 		}
 		else {
 			//Check whether the next tile is occupied by a unit of the same type
@@ -99,41 +103,13 @@ void Unit::update() {
 					_path.pop();
 				}
 				else {
-					if (_leadersPathRelativeIdChange.empty()) {
-						std::cout << "I have no fucking idea how this could happen but apparently it does." << std::endl;
-
-						//I will put the same conditions (that had to be true in order to get here) here and see what happens
-						Tile* nextTile = chooseNextTile();
-						if (nextTile != nullptr) {
-							if (nextTile->isAvailable(_type)) {
-								std::cout << "I should have no problems getting here." << std::endl;
-							}
+					//Only pop the tile if the unit is following the leader
+					if (_followingLeader) {
+						if (_leadersPathRelativeIdChange.empty()) {
+							std::cout << "This should never happen" << std::endl;
 						}
-
-						std::cout << "If I get here without hitting the previous comment, something is seriously wrong." << std::endl;
-
-						//Ok fuck this shit. This break point just got hit but I refuse to believe it. There is no fucking way this can happen.
-						//There must be some quantum physics messing with me. Reality is not real. 
-
-						/* Maybe, just maybe it's caused by the groupId looping after reaching 99 and using the previous ids. Because the previous paths
-						are still there, this could be causing some problems. I'll try to reproduce the bug when I increase the maximum id before it loops
-						back from 99 to 99999.
-						If I don't reproduce the bug within 10 minutes, it's probably gone.
-
-						Alright, this test is done. Nope, this is not the cause.
-
-						OK I THINK I FOUND THE CAUSE!
-						Hypothesis: It happens when the unit is in a group, but isn't folowing a leader anymore. Instead, it is following the
-						vector field, which apparently points to another tile, which is why chooseNextTile() doesn't return nullptr. But the
-						stack of leaders relative id change is empty, maybe because of asynchronization? No matter the cause, whenever the unit
-						isn't following the leader, it shouldn't try to pop leader's stack. Leader's stack doesn't matter anymore as the unit
-						will not use it anymore anyway.
-						*/
-
-						//TODO: Find out why chooseNextTile() can return a nullptr.
+						_leadersPathRelativeIdChange.pop();
 					}
-					//TODO: Here, create a condition and if the unit isn't following the leader, don't pop.
-					_leadersPathRelativeIdChange.pop();
 				}
 			}
 		}
@@ -174,33 +150,38 @@ void Unit::updateVariables() {
 }
 
 Tile* Unit::chooseNextTile() {
+	/* This function can reutrn a nullptr but that's fine because that only happens
+	when the unit isn't following the leader and is on the target tile of the vector field.
+
+	In very rare scenarios, it could also return a nullptr when the leader leads the unit
+	to a tile that was previously occupied by an unmoving unit and therefore the tile isn't
+	in the vector field. Given how rare this is, I think it's fine to just leave it and
+	just accept the fact that the unit will stop on that tile in that situation.
+	TODO: Test this situation to make sure this exact behaviour happens.
+	*/
 	Tile* nextTile = nullptr;
 	try {
 		if (_groupId == -1) {
 			if (_path.empty()) {
-				throw "Error in unit.cpp! _path is empty.";
+				throw "Error in unit.cpp! _path is empty.";		//This should never happen
 			}
 			nextTile = _path.top();
 		}
 		else {
 			if (_followingLeader) {
 				if (_leadersPathRelativeIdChange.empty()) {
-					throw "Error in unit.cpp! _leadersPathRelativeIdChange is empty.";
+					throw "Error in unit.cpp! _leadersPathRelativeIdChange is empty.";		//This should never happen
 				}
 				int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();
 				nextTile = _tiles[newTileId];
 			}
 			else {
-				nextTile = _currentTileP->getGroupParent(_groupId);
+				nextTile = _currentTileP->getGroupParent(_groupId);		//This can be a nullptr
 			}
 		}
 	}
 	catch(const char* msg) {
-		std::cout << msg << std::endl;
-	}
-
-	if (nextTile == nullptr) {
-		//std::cout << "kokot" << std::endl;
+		std::cout << msg << std::endl;		//This should never happen
 	}
 	return nextTile;
 }
