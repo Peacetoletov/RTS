@@ -55,6 +55,9 @@ void Unit::update() {
 	....O.......
 	............
 	and then keep clicking on any of the close tiles. The formation won't remain in this position for too long.
+
+	I found out that this happens because the unit that leaves the position stopped following the leader and starte following
+	the vector field. Now the question is why it started to follow the vector field instead of the leader.
 	*/
 
 
@@ -179,6 +182,7 @@ Tile* Unit::chooseNextTile() {
 				nextTile = _tiles[newTileId];
 			}
 			else {
+				//std::cout << "Taking a tile from the vector field. Ignoring the leader." << std::endl;
 				nextTile = _currentTileP->getGroupParent(_groupId);		//This can be a nullptr
 			}
 		}

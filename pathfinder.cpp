@@ -171,10 +171,6 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	This algorithm only works for land units but it wouldn't be difficult to also include air units.	
 	*/
 
-	/* For a detailed documentation of most of the variables declared here, visit Pathfinder::bidirectionalDijkstra() 
-	(they are mostly the same)
-	*/
-
 	//Declare vector analyzedTiles and priority queue openTiles
 	std::queue<Tile*> openTiles;
 
@@ -217,10 +213,6 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	//Reset all tiles
 	resetAllTiles();			//doesn't reset the _groupParent vector
 
-	/* At the moment, I'll shift my attention to single unit pathfinder for the last time (hopefully). Using a standard
-	queue instead of a priority queue might save a lot of time.
-	*/
-
 	/* TODO
 	When a unit following leader's path gets stuck, it will start following the vector field.
 	*/
@@ -242,49 +234,8 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	*/
 
 	/* TODO
-	I was testing moving a group of units. They somehow get stuck when colliding with a wall, but more importantly,
-	this caused an exception once. This was with speed 2.0f.
-
-	After recreating this bug once more, I realized that it happened when the units were as they are captured
-	in screenshot rts12. The leader was the bottom-most unit and it went right and down. 4 units got stuck 
-	in a corner. I think these 4 units are the cause of the problem.
-
-	My hypothesis was incorrect, as I wasn't able to reproduce the bug by doing that. Instead, I managed to reproduce
-	the bug by doing something different, as captured in rts13. I also clicked twice very fast, maybe on the same spot,
-	just as it crashed. This might be the problem.
-
-	Another king of a bug (not exception, but a runtime error) occured. This time I'm sure it was caused by clicking on
-	1 spot too fast. Just as the leader arrived there, I got the error. rts14 
-	Also, I couldn't reproduce this bug when all the units were in free space. Instead, this only happened when only the
-	leader was free to move and the rest of the units were blocked by a wall. But, in that scenario, the bug would happen
-	100% of the time. Most units blocked by a wall, leader free to move, clicking too fast on a tile; when the leader got 
-	there and I was still clicking, boom! error
-
-	CONCLUSION: Most of these bugs should be somehow caused by the fast that units get stuck in walls, which is something
-	that shouldn't be happening in the first place. Fix that first and then see if these bugs still persist.
+	Units will go through map borders when following the leader. Fix this.
 	*/
-
-	/* TODO
-	Units will go through map borders when following the leader.
-	*/
-
-	/* TODO - fix a runtime error
-	rts15. This happened when I had the square of units selected and I was clicking 1 space too fast. It's most likely 
-	the same bug mentioned above but this time it happened when all units were in free space (or surrounded by other units).
-
-	The best way to reproduce this bug is to select the group of 9 units and send them 3 tiles down so that the left-most unit
-	is the leader. Click very fast on that tile until they are there. Once they are there and nothing happened, repeat. Doesn't
-	always work but often does.
-	*/
-
-	/* TODO
-	rts16. No idea.
-	*/
-
-	/* KNOWS ISSUE
-	If I select a group of units and select a very distant target, it will say that there is no leader.
-	*/
-
 }
 
 void Pathfinder::threadStart() {
