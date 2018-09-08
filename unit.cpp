@@ -64,7 +64,8 @@ void Unit::update() {
 	if (_wantsToMove && !_moving) {
 		Tile* nextTile = chooseNextTile();
 		if (nextTile == nullptr) {
-			//In case nextTile is nullptr, it most likely means that the unit is following the vector field and reached the target tile.
+			//If the unit following the vector field reached the tagret, stop the unit.
+			//std::cout << "nextTile = nullptr" << std::endl;
 			_wantsToMove = false;
 		}
 		else {
@@ -182,8 +183,11 @@ Tile* Unit::chooseNextTile() {
 				nextTile = _tiles[newTileId];
 			}
 			else {
-				//std::cout << "Taking a tile from the vector field. Ignoring the leader." << std::endl;
 				nextTile = _currentTileP->getGroupParent(_groupId);		//This can be a nullptr
+				/* nextTile can sometimes be a nullptr.
+				This happens when a non-leader unit reaches the target destionation when following the vector field.
+				This can also occasionally happen to the leader because of asynchonization.
+				*/
 			}
 		}
 	}
@@ -321,13 +325,13 @@ void Unit::move() {
 
 		//Stop the unit if it reached its destination
 		if (_groupId == -1) {
-			if (_path.size() == 0) {
+			if (_path.empty()) {
 				_wantsToMove = false;
 				_moving = false;
 			}
 		}
 		else {
-			if (_leadersPathRelativeIdChange.size() == 0) {
+			if (_followingLeader && _leadersPathRelativeIdChange.empty()) {
 				_wantsToMove = false;
 				_moving = false;
 			}

@@ -134,6 +134,21 @@ std::stack<Tile*> Pathfinder::dijkstra(Unit* unit, Tile* target) {
 	this will not find the best path. But in my testing, it always found the best path, so I'm leaving it like this.
 	*/
 
+	/* TODO
+	I found a way to prove that this doesn't always find the shortest path.
+
+	........
+	..SO....
+	.....T..
+
+	S = start
+	T = target
+	O = obstacle
+	. = free space
+
+	Fix this.
+	*/
+
 	//Create the path
 	std::stack<Tile*> path = dGetPath(pathFound, start, target);
 
@@ -209,6 +224,8 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 
 	//Set leader's path to each unit
 	dfgSetLeadersPath(units, leadersPathRelativeIdChange);			//Must happen before resetting analyzed tiles
+
+	//std::cout << "Target has id = " << target->getId() << std::endl;			//test
 	
 	//Reset all tiles
 	resetAllTiles();			//doesn't reset the _groupParent vector
@@ -235,6 +252,11 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 
 	/* TODO
 	Units will go through map borders when following the leader. Fix this.
+	*/
+
+	/* TODO
+	I temporarily removed the block of code that breaks the vector field creation if all units are already on an analyzed tile.
+	Revert this and make sure everything works.
 	*/
 }
 
@@ -863,7 +885,7 @@ void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> le
 				units[i]->setFollowingLeader(false, true);
 			}
 			else {
-				units[i]->setFollowingLeader(true, true);
+				units[i]->setFollowingLeader(true, true);			
 			}
 			units[i]->setWantsToMove(true, true);
 		}
