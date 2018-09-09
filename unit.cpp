@@ -57,7 +57,11 @@ void Unit::update() {
 				*/
 				if (_followingLeader) {
 					//This works because I only allow land units to be grouped
-					if (nextTile->getLandUnitP() == nullptr) {		//Wall
+					Unit* nextTileUnit = nextTile->getLandUnitP();
+					if (nextTileUnit == nullptr) {		//Wall
+						_followingLeader = false;
+					}
+					else if (!nextTileUnit->getMoving() && nextTileUnit->getGroupId(false) != _groupId) {		//Stationary unit that is not from this group
 						_followingLeader = false;
 					}
 				}
