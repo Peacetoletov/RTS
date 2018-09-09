@@ -128,26 +128,10 @@ std::stack<Tile*> Pathfinder::dijkstra(Unit* unit, Tile* target) {
 
 	//Main loop
 	bool pathFound = false;
-	dTryToFindPath(openTiles, pathFound, unit->getType(), target->getId());
+	dTryToFindPath(openTiles, unit->getType(), target->getId(), pathFound);
 
-	/* NOTE: I break the main loop after finding the first path available. It's possible that under some conditions,
-	this will not find the best path. But in my testing, it always found the best path, so I'm leaving it like this.
-	*/
-
-	/* TODO
-	I found a way to prove that this doesn't always find the shortest path.
-
-	........
-	..SO....
-	.....T..
-
-	S = start
-	T = target
-	O = obstacle
-	. = free space
-
-	Fix this.
-	*/
+	//Secondary loop - when a path is found, this makes sure it's the shortest path
+	dOptimizePath(openTiles, unit->getType(), target->getId());
 
 	//Create the path
 	std::stack<Tile*> path = dGetPath(pathFound, start, target);
@@ -229,10 +213,6 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	
 	//Reset all tiles
 	resetAllTiles();			//doesn't reset the _groupParent vector
-
-	/* TODO
-	When a unit following leader's path gets stuck, it will start following the vector field.
-	*/
 
 	/* TODO
 	Trochu pozmìnit, jak group pathfinding funguje.
@@ -566,96 +546,104 @@ void Pathfinder::bdJoinDirectionsTogether(PossiblePath& currentBestPath, Tile* t
 
 
 //dijkstra (d)
-void Pathfinder::dTryToFindPath(std::queue<Tile*>& openTiles, bool& pathFound, Unit::Type type, int targetId) {
-
-	//Loop through all tiles possible tiles
-	/* TODO: Instead of looping through all tiles, stop the loop prematurely if the target tile gets its G assigned. After
-	that, it isn't yet guaranteed that this is the shortest path, therefore I will need to loop through the rest of tiles
-	in openTiles.
-	This approach will result in much shorter times for closer distances, while it should remain the same for very long
-	distances.
-	*/
-	
+void Pathfinder::dTryToFindPath(std::queue<Tile*>& openTiles, Unit::Type type, int targetId, bool& pathFound) {
+	//Loop through all possible tiles
 	while (!pathFound) {
 		//Choose the next tile from the queue. Break if the queue is empty.
 		if (openTiles.empty()) {
 			break;
 		}
-		Tile* currentTile = openTiles.front();
-
-		//Analyze neighbours
-		Tile** tilesP = _mapP->getTilesP();
-		int currentTileRow = _mapP->idToRow(currentTile->getId());
-		int currentTileColumn = _mapP->idToColumn(currentTile->getId());
-		int currentTileG = currentTile->getG();
-
-		//I will first analyze straight neighbours, then diagonal neighbours.
-		//Up
-		if (currentTileRow != 0) {
-			Tile* tile = tilesP[_mapP->positionToId(currentTileRow - 1, currentTileColumn)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 10);
-		}
-
-		//Left
-		if (currentTileColumn != 0) {
-			Tile* tile = tilesP[_mapP->positionToId(currentTileRow, currentTileColumn - 1)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 10);
-		}
-
-		//Right
-		if (currentTileColumn != _mapP->getColumns() - 1) {
-			Tile* tile = tilesP[_mapP->positionToId(currentTileRow, currentTileColumn + 1)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 10);
-		}
-
-		//Down
-		if (currentTileRow != _mapP->getRows() - 1) {
-			Tile* tile = tilesP[_mapP->positionToId(currentTileRow + 1, currentTileColumn)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 10);
-		}
-
-		//Up left
-		if (currentTileRow != 0 && currentTileColumn != 0) {
-			Tile* tile = tilesP[_mapP->positionToId(currentTileRow - 1, currentTileColumn - 1)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 14);
-		}
-
-		//Up right
-		if (currentTileRow != 0 && currentTileColumn != _mapP->getColumns() - 1) {
-			Tile* tile = tilesP[_mapP->positionToId(currentTileRow - 1, currentTileColumn + 1)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 14);
-		}
-
-		//Down left
-		if (currentTileRow != _mapP->getRows() - 1 && currentTileColumn != 0) {
-			Tile* tile = tilesP[_mapP->positionToId(currentTileRow + 1, currentTileColumn - 1)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 14);
-		}
-
-		//Down right
-		if (currentTileRow != _mapP->getRows() - 1 && currentTileColumn != _mapP->getColumns() - 1) {
-			Tile* tile = tilesP[_mapP->positionToId(currentTileRow + 1, currentTileColumn + 1)];
-			dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, currentTileG + 14);
-		}
+		dAnalyzeNeighbours(openTiles, type, targetId, pathFound, true);
 
 		//Remove the next tile from the queue
 		openTiles.pop();
 	}	
 }
 
+void Pathfinder::dAnalyzeNeighbours(std::queue<Tile*>& openTiles, Unit::Type type, int targetId, bool& pathFound, bool addNewTilesToOpenTiles) {
+	//Analyze neighbours
+	Tile* currentTile = openTiles.front();
+	Tile** tilesP = _mapP->getTilesP();
+	int currentTileRow = _mapP->idToRow(currentTile->getId());
+	int currentTileColumn = _mapP->idToColumn(currentTile->getId());
+	int currentTileG = currentTile->getG();
+
+	//I will first analyze straight neighbours, then diagonal neighbours.
+	//Up
+	if (currentTileRow != 0) {
+		Tile* tile = tilesP[_mapP->positionToId(currentTileRow - 1, currentTileColumn)];
+		dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, addNewTilesToOpenTiles, currentTileG + 10);
+	}
+
+	//Left
+	if (currentTileColumn != 0) {
+		Tile* tile = tilesP[_mapP->positionToId(currentTileRow, currentTileColumn - 1)];
+		dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, addNewTilesToOpenTiles, currentTileG + 10);
+	}
+
+	//Right
+	if (currentTileColumn != _mapP->getColumns() - 1) {
+		Tile* tile = tilesP[_mapP->positionToId(currentTileRow, currentTileColumn + 1)];
+		dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, addNewTilesToOpenTiles, currentTileG + 10);
+	}
+
+	//Down
+	if (currentTileRow != _mapP->getRows() - 1) {
+		Tile* tile = tilesP[_mapP->positionToId(currentTileRow + 1, currentTileColumn)];
+		dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, addNewTilesToOpenTiles, currentTileG + 10);
+	}
+
+	//Up left
+	if (currentTileRow != 0 && currentTileColumn != 0) {
+		Tile* tile = tilesP[_mapP->positionToId(currentTileRow - 1, currentTileColumn - 1)];
+		dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, addNewTilesToOpenTiles, currentTileG + 14);
+	}
+
+	//Up right
+	if (currentTileRow != 0 && currentTileColumn != _mapP->getColumns() - 1) {
+		Tile* tile = tilesP[_mapP->positionToId(currentTileRow - 1, currentTileColumn + 1)];
+		dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, addNewTilesToOpenTiles, currentTileG + 14);
+	}
+
+	//Down left
+	if (currentTileRow != _mapP->getRows() - 1 && currentTileColumn != 0) {
+		Tile* tile = tilesP[_mapP->positionToId(currentTileRow + 1, currentTileColumn - 1)];
+		dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, addNewTilesToOpenTiles, currentTileG + 14);
+	}
+
+	//Down right
+	if (currentTileRow != _mapP->getRows() - 1 && currentTileColumn != _mapP->getColumns() - 1) {
+		Tile* tile = tilesP[_mapP->positionToId(currentTileRow + 1, currentTileColumn + 1)];
+		dAnalyzeTile(tile, currentTile, openTiles, type, targetId, pathFound, addNewTilesToOpenTiles, currentTileG + 14);
+	}
+}
+
 void Pathfinder::dAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, Unit::Type type, int targetId, 
-		bool& pathFound, int newG) {
+		bool& pathFound, bool addNewTilesToOpenTiles, int newG) {
 	if (tile->isAvailableForPathfinding(type)) {
 		if (newG < tile->getG()) {
 			tile->setG(newG);
 			tile->setParentP(parent);
-			openTiles.push(tile);
+			//Add the new tile to openTiles (only in the main loop)
+			if (addNewTilesToOpenTiles) {
+				openTiles.push(tile);
+			}
 
-			//If this is the target tile, set pathFound to true, breaking the loop
+			//If this is the target tile, set pathFound to true, breaking the main loop
 			if (tile->getId() == targetId) {
 				pathFound = true;
 			}
 		}
+	}
+}
+
+void Pathfinder::dOptimizePath(std::queue<Tile*>& openTiles, Unit::Type type, int targetId) {
+	while (!openTiles.empty()) {
+		bool pathFound;
+		dAnalyzeNeighbours(openTiles, type, targetId, pathFound, false);
+
+		//Remove the next tile from the queue
+		openTiles.pop();
 	}
 }
 

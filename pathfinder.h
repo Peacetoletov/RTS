@@ -123,9 +123,14 @@ private:
 
 
 	//dijkstra (d)
-	void dTryToFindPath(std::queue<Tile*>& openTiles, bool& pathFound, Unit::Type type, int targetId);
+	void dTryToFindPath(std::queue<Tile*>& openTiles, Unit::Type type, int targetId, bool& pathFound);
 
-	void dAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, Unit::Type type, int targetId, bool& pathFound, int newG);
+	void dAnalyzeNeighbours(std::queue<Tile*>& openTiles, Unit::Type type, int targetId, bool& pathFound, bool addNewTilesToOpenTiles);
+
+	void dAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, Unit::Type type, int targetId, bool& pathFound, 
+		bool addNewTilesToOpenTiles, int newG);
+
+	void dOptimizePath(std::queue<Tile*>& openTiles, Unit::Type type, int targetId);
 
 	std::stack<Tile*> dGetPath(bool& pathFound, Tile* start, Tile* target);
 
@@ -143,22 +148,6 @@ private:
 		int groupId);
 
 	void dfgAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& openTiles, int groupId, int newG);
-
-	/*
-	//Initializes a new iteration. Returns next tile in the priority queue and sets it as visited.
-	Tile* dfgInitNewIteration(std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
-
-	//Analyzes neighbours of the current tile.
-	void dfgAnalyzeNeighbours(Tile* currentTile, std::vector<Tile*>& analyzedTiles,
-		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles, int groupId);
-
-	//Assigns values to currentTile's variables (G, parent).
-	void dfgAssignValuesToTile(Tile* currentTile, Tile* neighbour, int neighbourIndex, int groupId);
-
-	//Pushes currentTile to the analyzedTiles vector and the openTiles queue.
-	void dfgPushTile(Tile* neighbour, std::vector<Tile*>& analyzedTiles,
-		std::priority_queue<Tile*, std::vector<Tile*>, Comparator>& openTiles);
-		*/
 
 	//Check if all tiles that units in the group stand on are analyzed. 
 	bool dfgAreAllTilesAnalyzed(std::vector<Unit*>& unitsCopy);

@@ -54,6 +54,7 @@ void Unit::update() {
 				*/
 				/* TODO
 				Here, I need to add a way to avoid obstacles that weren't there at the creation of the vector field but are there now.
+				Avoiding dynamic obstacles.
 				*/
 				if (_followingLeader) {
 					//This works because I only allow land units to be grouped
