@@ -35,32 +35,6 @@ void Unit::update() {
 	//Update variables (needed because the variables can be changed from another thread)
 	updateVariables();
 
-	/* DEBUGGING
-	Just in case something changes from the other thread in the middle of the function, I will create copies of all the variables
-	that can be changed from the other thread. Once the bug happens, I will look at the copies and compare them with the actual 
-	variables.
-	*/
-	std::stack<Tile*> pathCopy = _path;
-	std::stack<int> leadersPathRelativeIdChangeCopy = _leadersPathRelativeIdChange;
-	bool followingLeaderCopy = _followingLeader;
-	bool wantsToMoveCopy = _wantsToMove;
-	int groupIdCopy = _groupId;
-
-	/* TODO - fix a bug
-	Sometimes, when I tell a group of units to go to a close tile and I keep clicking the tile, the formation of the group 
-	unexpectedly changes. This can be easily replicated by creating a group of 4 units like this:
-	............
-	....O.......
-	...O.O......
-	....O.......
-	............
-	and then keep clicking on any of the close tiles. The formation won't remain in this position for too long.
-
-	I found out that this happens because the unit that leaves the position stopped following the leader and starte following
-	the vector field. Now the question is why it started to follow the vector field instead of the leader.
-	*/
-
-
 	if (_wantsToMove && !_moving) {
 		Tile* nextTile = chooseNextTile();
 		if (nextTile == nullptr) {
@@ -78,9 +52,12 @@ void Unit::update() {
 				/* If the unit is following a leader and got stuck on a stationary obstacle,
 				now it's time to start following the vector field
 				*/
-				//TODO: I completely forgot to include walls as stationary obstacles here
-				if (_followingLeader && nextTile->getLandUnitP() != nullptr) {
-					if (nextTile->getLandUnitP()->getMoving()) {			//Again, this works because I only allow land units to be grouped
+				/* TODO
+				Here, I need to add a way to avoid obstacles that weren't there at the creation of the vector field but are there now.
+				*/
+				if (_followingLeader) {
+					//This works because I only allow land units to be grouped
+					if (nextTile->getLandUnitP() == nullptr) {		//Wall
 						_followingLeader = false;
 					}
 				}

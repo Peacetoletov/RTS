@@ -843,12 +843,9 @@ std::stack<int> Pathfinder::dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile
 
 	//Put all tiles of the path into a stack. But because I stack from the unit and end at the target, the path will be reversed.
 	Tile* currentTile = leader->getCurrentTileP()->getGroupParent(groupId);		//FIX: This returns nullptr
-	std::cout << "Leader has id = " << currentTile->getId() << std::endl;
+	//std::cout << "Leader has id = " << currentTile->getId() << std::endl;
 	int idOld = leader->getCurrentTileP()->getId();
 	while (currentTile->getId() != target->getId()) {
-		/* Somewhere in here is a problem that causes an exception to be thrown when calling getId()
-		TODO: Fix
-		*/
 		int idNew = currentTile->getId();
 		relativeIdChangeReversed.push(idNew - idOld);
 		idOld = currentTile->getId();

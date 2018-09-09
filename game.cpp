@@ -120,7 +120,7 @@ void Game::draw(Graphics &graphics, Drawer drawer) {
 
 void Game::update(int elapsedTime, InputHandler& inputHandler) {
 	inputHandler.update();
-	_levelP->update(elapsedTime);
+	_levelP->update(elapsedTime);		
 }
 
 Level* Game::getLevelP() {
