@@ -6,6 +6,7 @@
 
 class Tile;
 class Pathfinder;
+class Map;
 
 class Unit {
 public:
@@ -16,7 +17,7 @@ public:
 
 	Unit();		//Won't be used
 
-	Unit(Tile* currentTile, Tile** tiles, Type type, std::vector<Unit*>* unitsP, Pathfinder* pathfinderP);
+	Unit(Tile* currentTile, Tile** tiles, Type type, Pathfinder* pathfinderP, Map* mapP);
 
 	~Unit();		//Not used yet
 
@@ -49,8 +50,8 @@ private:
 	Tile* _currentTileP;
 	Tile** _tiles;
 	Type _type;
-	std::vector<Unit*>* _unitsP;			//vector of all units on the map
 	Pathfinder* _pathfinderP;
+	Map* _mapP;
 	float _speed = 2.25f;					//0.25
 	std::stack<Tile*> _path;
 	std::stack<int> _leadersPathRelativeIdChange;
@@ -96,6 +97,7 @@ private:
 	//METHODS
 	void updateVariables();
 	Tile* chooseNextTile();
+	bool canMoveToNextTile(Tile* nextTile);
 	void setPointersToThisUnit(Tile* nextTile);
 	void move();
 	void avoidDynamicObstacle();

@@ -3,17 +3,18 @@
 #include "globals.h"
 #include "pathfinder.h"
 #include "pathparameters.h"
+#include "map.h"
 
 #include <iostream>
 
 Unit::Unit() {}
 
-Unit::Unit(Tile* currentTileP, Tile** tiles, Unit::Type type, std::vector<Unit*>* unitsP, Pathfinder* pathfinderP) :
+Unit::Unit(Tile* currentTileP, Tile** tiles, Unit::Type type, Pathfinder* pathfinderP, Map* mapP) :
 	_currentTileP(currentTileP),
 	_tiles(tiles),
 	_type(type),
-	_unitsP(unitsP),
-	_pathfinderP(pathfinderP)
+	_pathfinderP(pathfinderP),
+	_mapP(mapP)
 {
 
 }
@@ -32,6 +33,10 @@ void Unit::update() {
 	calculate the distance it needs to travel (diagonal distance is longer).
 	*/
 
+	/* TODO
+	Units will go through map borders when following the leader. Fix this.
+	*/
+
 	//Update variables (needed because the variables can be changed from another thread)
 	updateVariables();
 
@@ -43,8 +48,7 @@ void Unit::update() {
 			_wantsToMove = false;
 		}
 		else {
-			//Check whether the next tile is occupied by a unit of the same type
-			if (!nextTile->isAvailable(_type)) {
+			if (!canMoveToNextTile(nextTile)) {
 
 				//Desired tile is occupied, unit cannot move.
 				//std::cout << "Next tile is occupied!" << std::endl;
@@ -179,6 +183,18 @@ Tile* Unit::chooseNextTile() {
 	return nextTile;
 }
 
+bool Unit::canMoveToNextTile(Tile* nextTile) {
+	if (nextTile->isAvailable(_type)) {
+		int columnDiff = abs(_mapP->idToColumn(_currentTileP->getId()) - _mapP->idToColumn(nextTile->getId()));
+		int rowDiff = abs(_mapP->idToRow(_currentTileP->getId()) - _mapP->idToRow(nextTile->getId()));
+		if (columnDiff <= 1 && rowDiff <= 1) {
+			return true;
+		}
+		return false;
+	}
+	return false;
+}
+
 void Unit::avoidDynamicObstacle() {
 	/* The unit on its way will probably encounter other units. This function handles how the unit reacts when
 	one gets in the way.
@@ -193,6 +209,7 @@ void Unit::avoidDynamicObstacle() {
 
 	//Select the unit that's in the way
 	Unit* blockingUnit = nullptr;
+	std::vector<Unit*>* _unitsP = _mapP->getUnitsP();
 	for (int i = 0; i < _unitsP->size(); i++) {
 		if ((*_unitsP)[i]->getCurrentTileP()->getId() == _path.top()->getId()) {
 			blockingUnit = (*_unitsP)[i];
