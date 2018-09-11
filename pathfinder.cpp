@@ -218,7 +218,7 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	Trochu pozmìnit, jak group pathfinding funguje.
 	Momentálnì když mám 2 jednotka dál od sebe a oznaèím cíl mezi nimi (O - - - - X - - - O), tak jedotka vlevo pùjde 4 políèka
 	doleva, a až potom zjistí, že má vlastnì jít doprava. Proto bych mohl udìlat check, že pokud by první krok jednotky (který
-	by odpovídal kroku leadera) šel výraznì jinam než øíkajá vektory, pak by ignoroval leadera a øídil se jenom vektory.
+	by odpovídal kroku leadera) šel výraznì jinam než øíkají vektory, pak by ignoroval leadera a øídil se jenom vektory.
 	Jelikož i 90stupòový rozdíl by byl pøíliš velký, jediná hodnota, kterou budu tolerovat, je 45 stupòù.
 	*/
 
@@ -231,12 +231,10 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	*/
 
 	/* TODO
-	Units will go through map borders when following the leader. Fix this.
-	*/
-
-	/* TODO
 	I temporarily removed the block of code that breaks the vector field creation if all units are already on an analyzed tile.
 	Revert this and make sure everything works.
+
+	Update: Even if I try really hard, I can't click fast enough to lag the pathfinder. This is fine is it as (so far).
 	*/
 }
 
@@ -863,9 +861,11 @@ void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> le
 		//Skip the unit if the tile hasn't been analyzed (it's impossible to get to the target from that tile)
 		if (units[i]->getCurrentTileP()->getG() != INT_MAX) {			//Must happen before resetting analyzed tiles
 			units[i]->setLeadersPathRelativeIdChange(leadersPathRelativeIdChange, true);
-			if (leadersPathRelativeIdChange.empty()) {
+			if (leadersPathRelativeIdChange.empty() || !dfgShouldBeFollowingLeader(leadersPathRelativeIdChange.top())) {
 				/* If the leader's path is empty (leader is on the target destination), other units have no reason to try to
 				follow the leader. It could result in errors because of trying to get values from an empty stack.
+
+				If following the leader's path meant going in the wrong direction, units won't follow the leader.
 				*/
 				units[i]->setFollowingLeader(false, true);
 			}
@@ -875,4 +875,16 @@ void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> le
 			units[i]->setWantsToMove(true, true);
 		}
 	}
+}
+
+bool Pathfinder::dfgShouldBeFollowingLeader(int leadersNextTileRelativeIdChange) {
+	//If following the leader's path meant going in the wrong direction, units won't follow the leader.
+	//Return false if the difference between leader's path and vector path is more than 45 degrees.
+	int leadersRowChange = leadersNextTileRelativeIdChange / (_mapP->getColumns() - 1);			//Some maths stuff. This should always work unless the map is extremely small.
+	int leadersColumnChange = leadersNextTileRelativeIdChange + leadersRowChange * _mapP->getColumns();		//THIS ONE DOESNT WORK
+	//std::cout << "Row change = " << leadersRowChange << "; column change = " + leadersColumnChange << std::endl;
+	std::cout << "Row change = " << leadersRowChange << "; column change = " << leadersColumnChange << std::endl;
+	std::cout << "Row change = " << leadersRowChange << "; column change = " << leadersColumnChange << std::endl;
+	//TODO: Fix leadersColumnChange and continue here
+	return true;
 }

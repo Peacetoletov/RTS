@@ -158,8 +158,11 @@ private:
 	//Creates leader's path
 	std::stack<int> dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile* target, int groupId);
 
-	//Set leader's path to each unit
+	//Sets leader's path to each unit
 	void dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> leadersPathRelativeIdChange);
+
+	//Returns false if the difference between leader's path and vector path is more than 45 degrees.
+	bool dfgShouldBeFollowingLeader(int leadersNextTileRelativeIdChange);
 
 };
 
