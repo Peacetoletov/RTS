@@ -215,11 +215,7 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	resetAllTiles();			//doesn't reset the _groupParent vector
 
 	/* TODO
-	Trochu pozmìnit, jak group pathfinding funguje.
-	Momentálnì když mám 2 jednotka dál od sebe a oznaèím cíl mezi nimi (O - - - - X - - - O), tak jedotka vlevo pùjde 4 políèka
-	doleva, a až potom zjistí, že má vlastnì jít doprava. Proto bych mohl udìlat check, že pokud by první krok jednotky (který
-	by odpovídal kroku leadera) šel výraznì jinam než øíkají vektory, pak by ignoroval leadera a øídil se jenom vektory.
-	Jelikož i 90stupòový rozdíl by byl pøíliš velký, jediná hodnota, kterou budu tolerovat, je 45 stupòù.
+	When units following the vector field reach the destination (or get blocked by units), they should stop wanting to move.
 	*/
 
 	/* TODO
@@ -228,6 +224,12 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 
 	This will ensure good grouping when I tell many units clump together and it will also make units much less likely to
 	get stuck on an unexpected obstacle in the middle of the path.
+	*/
+
+	/* TODO
+	When units that were following the leader reach the destination (or rather, the leader does), they can be still away from leader.
+	When a following unit stops because the leader stopped, I need to give it a command to start following the vector field and get
+	as close to the leader as possible.
 	*/
 
 	/* TODO

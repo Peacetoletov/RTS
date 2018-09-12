@@ -56,10 +56,6 @@ void Unit::update() {
 				/* If the unit is following a leader and got stuck on a stationary obstacle,
 				now it's time to start following the vector field
 				*/
-				/* TODO
-				Here, I need to add a way to avoid obstacles that weren't there at the creation of the vector field but are there now.
-				Avoiding dynamic obstacles.
-				*/
 				if (_followingLeader) {
 					//This works because I only allow land units to be grouped
 					Unit* nextTileUnit = nextTile->getLandUnitP();
@@ -70,10 +66,35 @@ void Unit::update() {
 						_followingLeader = false;
 					}
 				}
+				else {
+					/* TODO
+					Change this to avoiding units by taking a step 45 degrees from the planned path (next tile) if possible. Only
+					stop the unit if the next tile is occupied and so are the 2 tiles next to it.
+					*/
+					//Stop the unit if it's following a vector field and encounters a stationary obstacle.
+					Unit* nextTileUnit = nextTile->getLandUnitP();
+					if (nextTileUnit == nullptr) {		//Test
+						std::cout << "This shouldn't be possible" << std::endl;
+					}
+					if (!nextTileUnit->getWantsToMove()) {
+						if (_followingLeader) {
+							std::cout << "test" << std::endl;
+						}
+						_wantsToMove = false;
+					}
+					/* TODO
+					This doesn't really work well. I need to test it more and make some changes.
+					*/
+				}
+				
+
 
 
 				/* The unit on its way will probably encounter other units. This function handles how the unit reacts when
 				one gets in the way.
+				*/
+				/* TODO
+				Here, I need to add a way to avoid obstacles that weren't there at the creation of the vector field but are there now.
 				*/
 				//avoidDynamicObstacle();		//Currently commented out because it wouldn't work with group pathfinding
 			}
