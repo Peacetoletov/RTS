@@ -185,7 +185,7 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	*/
 	bool allTilesAnalyzed = false;			//all tiles (on which units from the group stand) analyzed
 	dfgCreateVectorMap(openTiles, allTilesAnalyzed, units, target->getId(), groupId);
-	units[0]->getGroupId(true);
+	//units[0]->getGroupId(true);
 
 	//Choose the leader
 	Unit* leader = dfgChooseLeader(units);	
@@ -207,7 +207,7 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	std::stack<int> leadersPathRelativeIdChange = dfgGetLeadersPathRelativeIdChange(leader, target, groupId);
 
 	//Set leader's path to each unit
-	dfgSetLeadersPath(units, leadersPathRelativeIdChange);			//Must happen before resetting analyzed tiles
+	dfgSetLeadersPath(units, leadersPathRelativeIdChange, groupId);			//Must happen before resetting analyzed tiles
 
 	//std::cout << "Target has id = " << target->getId() << std::endl;			//test
 	
@@ -856,12 +856,12 @@ std::stack<int> Pathfinder::dfgGetLeadersPathRelativeIdChange(Unit* leader, Tile
 	return relativeIdChange;
 }
 
-void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> leadersPathRelativeIdChange) {
+void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> leadersPathRelativeIdChange, int groupId) {
 	for (int i = 0; i < units.size(); i++) {
 		//Skip the unit if the tile hasn't been analyzed (it's impossible to get to the target from that tile)
 		if (units[i]->getCurrentTileP()->getG() != INT_MAX) {			//Must happen before resetting analyzed tiles
 			units[i]->setLeadersPathRelativeIdChange(leadersPathRelativeIdChange, true);
-			if (leadersPathRelativeIdChange.empty() || !dfgShouldBeFollowingLeader(leadersPathRelativeIdChange.top())) {
+			if (leadersPathRelativeIdChange.empty() || !dfgShouldBeFollowingLeader(leadersPathRelativeIdChange.top(), units[i], groupId)) {
 				/* If the leader's path is empty (leader is on the target destination), other units have no reason to try to
 				follow the leader. It could result in errors because of trying to get values from an empty stack.
 
@@ -877,14 +877,20 @@ void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> le
 	}
 }
 
-bool Pathfinder::dfgShouldBeFollowingLeader(int leadersNextTileRelativeIdChange) {
-	//If following the leader's path meant going in the wrong direction, units won't follow the leader.
-	//Return false if the difference between leader's path and vector path is more than 45 degrees.
-	int leadersRowChange = leadersNextTileRelativeIdChange / (_mapP->getColumns() - 1);			//Some maths stuff. This should always work unless the map is extremely small.
-	int leadersColumnChange = leadersNextTileRelativeIdChange + leadersRowChange * _mapP->getColumns();		//THIS ONE DOESNT WORK
-	//std::cout << "Row change = " << leadersRowChange << "; column change = " + leadersColumnChange << std::endl;
-	std::cout << "Row change = " << leadersRowChange << "; column change = " << leadersColumnChange << std::endl;
-	std::cout << "Row change = " << leadersRowChange << "; column change = " << leadersColumnChange << std::endl;
-	//TODO: Fix leadersColumnChange and continue here
-	return true;
+bool Pathfinder::dfgShouldBeFollowingLeader(int leadersNextTileRelativeIdChange, Unit* unit, int groupId) {
+	/* If following the leader's path meant going in the wrong direction, units won't follow the leader.
+	Returns false if the difference between leader's path and vector path is more than 45 degrees.
+	*/
+
+	//Some maths stuff. This should always work unless the map is extremely small.
+	int leadersRowChange = leadersNextTileRelativeIdChange / (_mapP->getColumns() - 1);			
+	int leadersColumnChange = leadersNextTileRelativeIdChange - leadersRowChange * _mapP->getColumns();		
+	
+	int vectorRowChange = _mapP->idToRow(unit->getCurrentTileP()->getGroupParent(groupId)->getId()) - _mapP->idToRow(unit->getCurrentTileP()->getId());
+	int vectorColumnChange = _mapP->idToColumn(unit->getCurrentTileP()->getGroupParent(groupId)->getId()) - _mapP->idToColumn(unit->getCurrentTileP()->getId());
+
+	if (abs(leadersRowChange - vectorRowChange) + abs(leadersColumnChange - vectorColumnChange) <= 1) {
+		return true;
+	}
+	return false;
 }
