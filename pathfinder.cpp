@@ -776,7 +776,7 @@ void Pathfinder::dfgAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& ope
 			Unit* unit = tile->getLandUnitP();
 
 			//I view the unit as a passable terrain if it wants to move (or is moving) or is in the same group
-			if (unit->getWantsToMove() || unit->getGroupId(true) == groupId) {		//THIS IS CAUSING A BUG
+			if (unit->getWantsToMove() || unit->getGroupId(true) == groupId) {	
 				tile->setG(newG);
 				tile->setGroupParent(parent, groupId);
 				openTiles.push(tile);

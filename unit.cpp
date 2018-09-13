@@ -34,7 +34,9 @@ void Unit::update() {
 	*/
 
 	/* TODO
-	Units will go through map borders when following the leader. Fix this.
+	Fix a runtime error. If I send 1 unit next to the border at the top and have a few unit more south, I get an exception when I
+	select all of these units and tell them to go to the top right corner. That's most likely because the units are trying to follow
+	the leader and try to check if the tile up right is occupied. Since they are at the border of the map, there is no tile up right.
 	*/
 
 	//Update variables (needed because the variables can be changed from another thread)
@@ -68,26 +70,32 @@ void Unit::update() {
 				}
 				else {
 					/* TODO
-					Change this to avoiding units by taking a step 45 degrees from the planned path (next tile) if possible. Only
-					stop the unit if the next tile is occupied and so are the 2 tiles next to it.
+					Change this to avoiding units by taking a step 45 degrees from the planned path (next tile) if possible after
+					waiting for the counter to reach the threshold. Only stop the unit if the next tile is still occupied and so 
+					are the 2 tiles next to it.
 					*/
-					//Stop the unit if it's following a vector field and encounters a stationary obstacle.
+					/* Stop the unit if it's following a vector field and encounters a stationary obstacle.
+					This wouldn't be guaranteed to work if I just looked at nextTileUnit->getWantsToMove() because of the time
+					the pathfinder takes to calculate the path. It would sometimes behave in weird ways.
+					A better solution would is to create a counter that goes up by 1 each frame the unit is being blocked by 
+					a stationary unit. When the counter reaches a certain limit (10 frames?) and the blocking unit is still there, 
+					unwilling to move, this unit will finally decide to stop moving as well.
+					*/
 					Unit* nextTileUnit = nextTile->getLandUnitP();
 					if (nextTileUnit == nullptr) {		//Test
 						std::cout << "This shouldn't be possible" << std::endl;
 					}
-					if (!nextTileUnit->getWantsToMove()) {
-						if (_followingLeader) {
-							std::cout << "test" << std::endl;
-						}
-						_wantsToMove = false;
-					}
-					/* TODO
-					This doesn't really work well. I need to test it more and make some changes.
-					*/
-				}
-				
 
+					if (!nextTileUnit->getWantsToMove()) {
+						_shouldStopWantingToMoveCounter++;
+						//std::cout << "Incrementing the counter" << std::endl;
+						if (_shouldStopWantingToMoveCounter == _shouldStopWantingToMoveCounterThreshold) {
+							//std::cout << "Setting _wantsToMove to false" << std::endl;
+							_wantsToMove = false;
+							_shouldStopWantingToMoveCounter = 0;
+						}
+					}
+				}
 
 
 				/* The unit on its way will probably encounter other units. This function handles how the unit reacts when
@@ -101,6 +109,9 @@ void Unit::update() {
 			else {
 				//Next tile isn't occupied, unit can start moving.
 				_moving = true;
+
+				//Reset the counter that determines if the unit should stop (if it's following a vector field)
+				_shouldStopWantingToMoveCounter = 0;
 
 				//Set distance
 				_distance = _currentTileP->isNeighbourDiagonal(nextTile) ?

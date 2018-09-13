@@ -59,6 +59,13 @@ private:
 	bool _wantsToMove = false;
 	int _groupId = -1;				//-1 if the unit isn't in any group; 0-99 if it is in one.
 	bool _moving = false;
+
+	/* A counter that goes up by 1 each frame the unit is being blocked by a stationary unit. When the counter reaches 
+	a certain threshold (10 frames?) and the blocking unit is still there, unwilling to move, this unit will finally
+	decide to stop moving as well.
+	*/
+	int _shouldStopWantingToMoveCounter;
+	const int _shouldStopWantingToMoveCounterThreshold = 10;		//The amount of frames before the unit stops wanting to move.
 	/* These variables are shared between 2 threads. To avoid overriding one while I use it in a function, I will instead 
 	save the values received from the other thread here. When I need the values in a function, I will update them. The point
 	is that the values I will work with will not be updated in the middle of a function.
@@ -73,8 +80,8 @@ private:
 	/* I need to know whether or not I need to update the variables. Since I cannot assign NULL to a stack, I need
 	these helper variables to determine it.
 	*/
-	bool _shouldUpdatePath = false;
-	bool _shouldUpdateLeadersPathRelativeIdChange = false;
+	bool _shouldUpdatePath;
+	bool _shouldUpdateLeadersPathRelativeIdChange;
 	bool _shouldUpdateFollowingLeaderNew;
 	bool _shouldUpdateWantsToMoveNew;
 	bool _shouldUpdateGroupIdNew;
