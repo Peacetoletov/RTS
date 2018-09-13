@@ -271,7 +271,7 @@ void Map::loadTestMap() {
 void Map::loadTestUnits(const int amount, int row[], int column[], Unit::Type type[]) {
 	for (int i = 0; i < amount; i++) {
 		Tile* tile = _tiles[positionToId(row[i], column[i])];
-		Unit* unit = new Unit(tile, _tiles, type[i], _pathfinderP, this);
+		Unit* unit = new Unit(tile, type[i], _pathfinderP, this);
 		if (type[i] == Unit::Type::LAND) {
 			tile->setLandUnitP(unit);
 		}

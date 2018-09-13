@@ -17,7 +17,7 @@ public:
 
 	Unit();		//Won't be used
 
-	Unit(Tile* currentTile, Tile** tiles, Type type, Pathfinder* pathfinderP, Map* mapP);
+	Unit(Tile* currentTile, Type type, Pathfinder* pathfinderP, Map* mapP);
 
 	~Unit();		//Not used yet
 
@@ -48,7 +48,6 @@ public:
 
 private:
 	Tile* _currentTileP;
-	Tile** _tiles;
 	Type _type;
 	Pathfinder* _pathfinderP;
 	Map* _mapP;

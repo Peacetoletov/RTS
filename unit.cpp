@@ -9,9 +9,8 @@
 
 Unit::Unit() {}
 
-Unit::Unit(Tile* currentTileP, Tile** tiles, Unit::Type type, Pathfinder* pathfinderP, Map* mapP) :
+Unit::Unit(Tile* currentTileP, Unit::Type type, Pathfinder* pathfinderP, Map* mapP) :
 	_currentTileP(currentTileP),
-	_tiles(tiles),
 	_type(type),
 	_pathfinderP(pathfinderP),
 	_mapP(mapP)
@@ -33,12 +32,6 @@ void Unit::update() {
 	calculate the distance it needs to travel (diagonal distance is longer).
 	*/
 
-	/* TODO
-	Fix a runtime error. If I send 1 unit next to the border at the top and have a few unit more south, I get an exception when I
-	select all of these units and tell them to go to the top right corner. That's most likely because the units are trying to follow
-	the leader and try to check if the tile up right is occupied. Since they are at the border of the map, there is no tile up right.
-	*/
-
 	//Update variables (needed because the variables can be changed from another thread)
 	updateVariables();
 
@@ -50,6 +43,9 @@ void Unit::update() {
 			_wantsToMove = false;
 		}
 		else {
+			
+			//nextTile = nullptr;
+			
 			if (!canMoveToNextTile(nextTile)) {
 
 				//Desired tile is occupied, unit cannot move.
@@ -198,7 +194,19 @@ Tile* Unit::chooseNextTile() {
 					throw "Error in unit.cpp! _leadersPathRelativeIdChange is empty.";		//This should never happen
 				}
 				int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();
-				nextTile = _tiles[newTileId];
+				/* Sometimes, this can result in an id that's out of bounds of the array. In that case, the unit will stop
+				following the leader and will return the group parent of the current tile.
+				*/
+				int tilesSize = _mapP->getColumns() * _mapP->getRows();
+				if (newTileId > 0 && newTileId < tilesSize) {
+					//Standard situation
+					nextTile = _mapP->getTilesP()[newTileId];
+				}
+				else {
+					//Out of bounds
+					_followingLeader = false;
+					nextTile = _currentTileP->getGroupParent(_groupId);
+				}
 			}
 			else {
 				nextTile = _currentTileP->getGroupParent(_groupId);		//This can be a nullptr
