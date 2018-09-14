@@ -214,8 +214,8 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 	//Reset all tiles
 	resetAllTiles();			//doesn't reset the _groupParent vector
 
-	/* TODO
-	When units following the vector field reach the destination (or get blocked by units), they should stop wanting to move.
+	/* TODO - fix a bug
+	Sometimes, the units will fail to stop moving when they are blocked. This can be seen in the video I recorded.
 	*/
 
 	/* TODO
@@ -224,12 +224,6 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 
 	This will ensure good grouping when I tell many units clump together and it will also make units much less likely to
 	get stuck on an unexpected obstacle in the middle of the path.
-	*/
-
-	/* TODO
-	When units that were following the leader reach the destination (or rather, the leader does), they can be still away from leader.
-	When a following unit stops because the leader stopped, I need to give it a command to start following the vector field and get
-	as close to the leader as possible.
 	*/
 
 	/* TODO

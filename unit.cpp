@@ -366,13 +366,15 @@ void Unit::move() {
 		if (_groupId == -1) {
 			if (_path.empty()) {
 				_wantsToMove = false;
-				_moving = false;
 			}
 		}
 		else {
 			if (_followingLeader && _leadersPathRelativeIdChange.empty()) {
-				_wantsToMove = false;
-				_moving = false;
+				/* If this unit was following the leader and the leader stopped, it's possible that this unit will still be 
+				far away from the leader. When this happens, the unit will switch to following the vector field until it
+				finally reaches the leader or some other unit that are in the way.
+				*/
+				_followingLeader = false;
 			}
 		}
 		
