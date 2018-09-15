@@ -51,7 +51,7 @@ private:
 	Type _type;
 	Pathfinder* _pathfinderP;
 	Map* _mapP;
-	float _speed = 2.25f;					//0.25
+	float _speed = 0.25f;					//0.25
 	std::stack<Tile*> _path;
 	std::stack<int> _leadersPathRelativeIdChange;
 	bool _followingLeader;

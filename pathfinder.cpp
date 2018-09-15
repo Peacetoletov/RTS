@@ -216,6 +216,8 @@ void Pathfinder::dijkstraForGroups(std::vector<Unit*> units, Tile* target, int g
 
 	/* TODO - fix a bug
 	Sometimes, the units will fail to stop moving when they are blocked. This can be seen in the video I recorded.
+
+	It's because 2 opposing units are blocking each other. I need to update the function responsible for unit avoidance.
 	*/
 
 	/* TODO

@@ -43,11 +43,8 @@ void Unit::update() {
 			_wantsToMove = false;
 		}
 		else {
-			
-			//nextTile = nullptr;
-			
 			if (!canMoveToNextTile(nextTile)) {
-
+				
 				//Desired tile is occupied, unit cannot move.
 				//std::cout << "Next tile is occupied!" << std::endl;
 
@@ -65,6 +62,7 @@ void Unit::update() {
 					}
 				}
 				else {
+					std::cout << "This unit wants to move! " << rand() << std::endl;
 					/* TODO
 					Change this to avoiding units by taking a step 45 degrees from the planned path (next tile) if possible after
 					waiting for the counter to reach the threshold. Only stop the unit if the next tile is still occupied and so 
@@ -84,7 +82,14 @@ void Unit::update() {
 
 					if (!nextTileUnit->getWantsToMove()) {
 						_shouldStopWantingToMoveCounter++;
-						//std::cout << "Incrementing the counter" << std::endl;
+						//std::cout << "Incrementing the counter! Now counter = " << _shouldStopWantingToMoveCounter << std::endl;
+						/* I found out that when the units get stuck, they don't get to this point in here.
+
+						I'm sure I found the reason, because it doesn't reach this block, but it reaches the block before this one. That means
+						that !nextTileUnit->getWantsToMove() = false. In other words, the unit blocking this unit also wants to move.
+
+						To fix this, I will need to update avoiding units.
+						*/
 						if (_shouldStopWantingToMoveCounter == _shouldStopWantingToMoveCounterThreshold) {
 							//std::cout << "Setting _wantsToMove to false" << std::endl;
 							_wantsToMove = false;
