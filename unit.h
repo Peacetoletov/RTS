@@ -51,7 +51,7 @@ private:
 	Type _type;
 	Pathfinder* _pathfinderP;
 	Map* _mapP;
-	float _speed = 0.25f;					//0.25
+	float _speed = 2.25f;					//0.25
 	std::stack<Tile*> _path;
 	std::stack<int> _leadersPathRelativeIdChange;
 	bool _followingLeader;
@@ -65,6 +65,17 @@ private:
 	*/
 	int _shouldStopWantingToMoveCounter;
 	const int _shouldStopWantingToMoveCounterThreshold = 10;		//The amount of frames before the unit stops wanting to move.
+	//^^ These variables may need to be renamed
+
+	/* This variable tells the unit if it should try to look at the 2 closest tiles in case the parent of the current tile points to
+	a tile that isn't available. If it is true, then at least 1 of the 2 closest tiles is available. This variable is set to true
+	once the counter reaches the threshold, and is set to false when a new tile is chosen or the unit stops moving because all 3
+	closest tiles are occupied.
+
+	Actually, I don't need this extra variable. Instead, I can just check if the counter is equal to the threshold.
+	*/
+	//bool _shouldTryToAvoidObstacleInVectorField;
+
 	/* These variables are shared between 2 threads. To avoid overriding one while I use it in a function, I will instead 
 	save the values received from the other thread here. When I need the values in a function, I will update them. The point
 	is that the values I will work with will not be updated in the middle of a function.
@@ -103,6 +114,8 @@ private:
 	//METHODS
 	void updateVariables();
 	Tile* chooseNextTile();
+	bool wouldTileBeOutOfBounds(int tileId);
+	Tile* tryToFindCloseAvailableTile();
 	bool canMoveToNextTile(Tile* nextTile);
 	void setPointersToThisUnit(Tile* nextTile);
 	void move();

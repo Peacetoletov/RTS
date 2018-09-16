@@ -90,11 +90,15 @@ void Unit::update() {
 
 						To fix this, I will need to update avoiding units.
 						*/
+
+						//Currently commenting this part out, as I'm planning on solving this differently - in the chooseNextTile() method
+						/*
 						if (_shouldStopWantingToMoveCounter == _shouldStopWantingToMoveCounterThreshold) {
 							//std::cout << "Setting _wantsToMove to false" << std::endl;
 							_wantsToMove = false;
 							_shouldStopWantingToMoveCounter = 0;
 						}
+						*/
 					}
 				}
 
@@ -202,8 +206,7 @@ Tile* Unit::chooseNextTile() {
 				/* Sometimes, this can result in an id that's out of bounds of the array. In that case, the unit will stop
 				following the leader and will return the group parent of the current tile.
 				*/
-				int tilesSize = _mapP->getColumns() * _mapP->getRows();
-				if (newTileId > 0 && newTileId < tilesSize) {
+				if (wouldTileBeOutOfBounds(newTileId)) {
 					//Standard situation
 					nextTile = _mapP->getTilesP()[newTileId];
 				}
@@ -214,11 +217,25 @@ Tile* Unit::chooseNextTile() {
 				}
 			}
 			else {
-				nextTile = _currentTileP->getGroupParent(_groupId);		//This can be a nullptr
-				/* nextTile can sometimes be a nullptr.
-				This happens when a non-leader unit reaches the target destionation when following the vector field.
-				This can also occasionally happen to the leader because of asynchonization.
-				*/
+				//Following the vector field
+				if (_shouldStopWantingToMoveCounter != _shouldStopWantingToMoveCounterThreshold) {
+					//Normal situation
+					nextTile = _currentTileP->getGroupParent(_groupId);		//This can be a nullptr
+					/* nextTile can sometimes be a nullptr.
+					This happens when a non-leader unit reaches the target destionation when following the vector field.
+					This can also occasionally happen to the leader because of asynchonization.
+					*/
+				}
+				else {
+					/* The tile that is pointed to by current tile's parent is blocked by a non-moving unit. Check the 2 closest tiles and if 
+					at least one of them is available, assign nextTile to that tile. Otherwise, stop the unit by assigning nullptr to nextTile.
+					(the update function assigns false to _wantsToMove if nextTile is nullptr)
+					*/
+					nextTile = tryToFindCloseAvailableTile();
+					_shouldStopWantingToMoveCounter = 0;
+					/* ^^ this might be kinda wrong. What if the tile is available for pathfinding, but right now there's a moving unit?
+					*/
+				}				
 			}
 		}
 	}
@@ -226,6 +243,71 @@ Tile* Unit::chooseNextTile() {
 		std::cout << msg << std::endl;		//This should never happen
 	}
 	return nextTile;
+}
+
+bool Unit::wouldTileBeOutOfBounds(int tileId) {
+	int tilesSize = _mapP->getColumns() * _mapP->getRows();
+	return !(tileId > 0 && tileId < tilesSize);
+}
+
+Tile* Unit::tryToFindCloseAvailableTile() {
+	/* The tile that is pointed to by current tile's parent is blocked by a non-moving unit. Check the 2 closest tiles and if
+	at least one of them is available, assign nextTile to that tile. Otherwise, stop the unit by assigning nullptr to nextTile.
+	(the update function assigns false to _wantsToMove if nextTile is nullptr)
+	*/
+
+	/* I need a way to find out which tiles are close. Close tile is the one that has a 45 degree angle between the parent vector
+	and the vector to this tile. A few examples:
+	....C..........UC.........COC......................
+	...UO..........CO..........U...........CU..........
+	....C..................................OC..........
+	U = unit, O = obstacle, C = close tile
+	*/
+
+	int currentRow = _mapP->idToRow(_currentTileP->getId());
+	int currentColumn = _mapP->idToColumn(_currentTileP->getId());
+	int rowChange = _mapP->idToRow(_currentTileP->getGroupParent(_groupId)->getId()) - currentRow;
+	int columnChange = _mapP->idToColumn(_currentTileP->getGroupParent(_groupId)->getId()) - currentColumn;
+
+	int tile1id;
+	int tile2id;
+
+	if (rowChange == 0 && columnChange == 0) {
+		std::cout << "This should never happen" << std::endl;
+	}
+	if (rowChange == 0 || columnChange == 0) {
+		//Original next tile is straight from the current tile
+		//To get the close tiles in this case, I need to add or subtract 1 from the variable that equals 0
+		if (rowChange == 0) {
+			tile1id = _mapP->positionToId(currentRow + 1, currentColumn + columnChange);
+			tile2id = _mapP->positionToId(currentRow - 1, currentColumn + columnChange);
+		}
+		else {
+			tile1id = _mapP->positionToId(currentRow + rowChange, currentColumn + 1);
+			tile2id = _mapP->positionToId(currentRow + rowChange, currentColumn - 1);
+		}
+		
+	}
+	else {
+		//Original next tile is diagonal from the current tile
+		//To get the close tiles in this case, I need to set one of the differences to 0
+		tile1id = _mapP->positionToId(currentRow, currentColumn + columnChange);
+		tile2id = _mapP->positionToId(currentRow + rowChange, currentColumn);
+	}
+
+	//TODO: Continue here
+
+	//Add a condition that checks if the close tile is occupied
+	//I also need to add a condition that prevents crossing the borders of the map
+	Tile* closeTile1 = nullptr;
+	/* code here; if closeTile1 isn't nullptr at the end of this code, return it, otherwise continue down here
+	*/
+
+	Tile* closeTile2 = nullptr;
+	/* code here; 
+	*/
+
+
 }
 
 bool Unit::canMoveToNextTile(Tile* nextTile) {
