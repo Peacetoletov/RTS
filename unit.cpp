@@ -62,7 +62,7 @@ void Unit::update() {
 					}
 				}
 				else {
-					std::cout << "This unit wants to move! " << rand() << std::endl;
+					//std::cout << "This unit wants to move! " << rand() << std::endl;
 					/* TODO
 					Change this to avoiding units by taking a step 45 degrees from the planned path (next tile) if possible after
 					waiting for the counter to reach the threshold. Only stop the unit if the next tile is still occupied and so 
@@ -297,8 +297,13 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 
 	//TODO: Continue here
 
+	std::cout << "Trying to find close available tile" << std::endl;
+
 	//Add a condition that checks if the close tile is occupied
 	//I also need to add a condition that prevents crossing the borders of the map
+	if (wouldCloseTileCrossBorder(tile1id)) {
+
+	}
 	Tile* closeTile1 = nullptr;
 	/* code here; if closeTile1 isn't nullptr at the end of this code, return it, otherwise continue down here
 	*/
@@ -308,6 +313,19 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 	*/
 
 
+	return closeTile1;		//test
+}
+
+bool Unit::wouldCloseTileCrossBorder(int tileId) {
+	//Check if it leaves array bounds (= crossing on the top or bottom side)
+	if (!wouldTileBeOutOfBounds(tileId)) {
+		//Check if it crosses on the left or right side
+		//TODO: CONDITION HERE
+		if (!) {
+			return false;
+		}
+	}
+	return true;
 }
 
 bool Unit::canMoveToNextTile(Tile* nextTile) {

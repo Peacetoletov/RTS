@@ -116,6 +116,7 @@ private:
 	Tile* chooseNextTile();
 	bool wouldTileBeOutOfBounds(int tileId);
 	Tile* tryToFindCloseAvailableTile();
+	bool wouldCloseTileCrossBorder(int tileId);
 	bool canMoveToNextTile(Tile* nextTile);
 	void setPointersToThisUnit(Tile* nextTile);
 	void move();
