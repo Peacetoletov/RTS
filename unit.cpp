@@ -302,7 +302,7 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 	//Add a condition that checks if the close tile is occupied
 	//I also need to add a condition that prevents crossing the borders of the map
 	if (wouldCloseTileCrossBorder(tile1id)) {
-
+		//TODO: Continue here
 	}
 	Tile* closeTile1 = nullptr;
 	/* code here; if closeTile1 isn't nullptr at the end of this code, return it, otherwise continue down here
@@ -320,8 +320,8 @@ bool Unit::wouldCloseTileCrossBorder(int tileId) {
 	//Check if it leaves array bounds (= crossing on the top or bottom side)
 	if (!wouldTileBeOutOfBounds(tileId)) {
 		//Check if it crosses on the left or right side
-		//TODO: CONDITION HERE
-		if (!) {
+		int columnDiff = abs(_mapP->idToColumn(_currentTileP->getId()) - _mapP->idToColumn(tileId));
+		if (columnDiff <= 1) {
 			return false;
 		}
 	}
