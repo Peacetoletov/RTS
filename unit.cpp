@@ -230,11 +230,24 @@ Tile* Unit::chooseNextTile() {
 					/* The tile that is pointed to by current tile's parent is blocked by a non-moving unit. Check the 2 closest tiles and if 
 					at least one of them is available, assign nextTile to that tile. Otherwise, stop the unit by assigning nullptr to nextTile.
 					(the update function assigns false to _wantsToMove if nextTile is nullptr)
+
+					If the parent of the current tile is the target tile, stop moving. Otherwise, it would create an infinite loop of jumping
+					around the target tile.
 					*/
-					nextTile = tryToFindCloseAvailableTile();
-					_shouldStopWantingToMoveCounter = 0;
-					/* ^^ this might be kinda wrong. What if the tile is available for pathfinding, but right now there's a moving unit?
-					*/
+					if (_currentTileP->getGroupParent(_groupId)->getGroupParent(_groupId) == nullptr) {
+						std::cout << "Reached the target tile." << std::endl;
+						_wantsToMove = false;
+						_shouldStopWantingToMoveCounter = 0;
+					}
+					else {
+						nextTile = tryToFindCloseAvailableTile();
+						_shouldStopWantingToMoveCounter = 0;
+						/* ^^ this might be kinda wrong. What if the tile is available for pathfinding, but right now there's a moving unit?
+
+						TODO: Fix this. A simple fix could be to set the counter to 0 only is the nextTile isn't nullptr
+						*/
+					}
+					
 				}				
 			}
 		}
@@ -295,25 +308,29 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 		tile2id = _mapP->positionToId(currentRow + rowChange, currentColumn);
 	}
 
-	//TODO: Continue here
-
 	std::cout << "Trying to find close available tile" << std::endl;
 
-	//Add a condition that checks if the close tile is occupied
-	//I also need to add a condition that prevents crossing the borders of the map
-	if (wouldCloseTileCrossBorder(tile1id)) {
-		//TODO: Continue here
+	//Check if the first close tile fits the requirements
+	if (!wouldCloseTileCrossBorder(tile1id)) {
+		Tile* closeTile1 = _mapP->getTilesP()[tile1id];
+		//This condition works because I only allow group pathfinding for land units. Also, the order is important here. 
+		//Anyway, even though I think this should be fine if getLandUnitP() returns nullptr, I still need to test it. And delete this comment.
+		if (closeTile1->getLandUnitP() == nullptr || closeTile1->getLandUnitP()->getWantsToMove()) {			
+			return closeTile1;
+		}
 	}
-	Tile* closeTile1 = nullptr;
-	/* code here; if closeTile1 isn't nullptr at the end of this code, return it, otherwise continue down here
-	*/
+	
+	//closeTile1 would either cross the border or the tile isn't available (it is occupied). I need to check the other tile now.
+	if (!wouldCloseTileCrossBorder(tile2id)) {
+		Tile* closeTile2 = _mapP->getTilesP()[tile2id];
+		//This condition works because I only allow group pathfinding for land units. Also, the order is important here. 
+		if (closeTile2->getLandUnitP() == nullptr || closeTile2->getLandUnitP()->getWantsToMove()) {
+			return closeTile2;
+		}
+	}
 
-	Tile* closeTile2 = nullptr;
-	/* code here; 
-	*/
-
-
-	return closeTile1;		//test
+	//Neither one of the close tiles fits the requirements. Return nullptr.
+	return nullptr;		
 }
 
 bool Unit::wouldCloseTileCrossBorder(int tileId) {
