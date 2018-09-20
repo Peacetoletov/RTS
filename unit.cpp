@@ -32,6 +32,11 @@ void Unit::update() {
 	calculate the distance it needs to travel (diagonal distance is longer).
 	*/
 
+	/* TODO
+	Fix bugs. When I select a large group of units and tell them to keep going from one side of the T section to the other one, they often get stuck,
+	and sometimes trigger a block of code that should never happen.
+	*/
+
 	//Update variables (needed because the variables can be changed from another thread)
 	updateVariables();
 
@@ -78,6 +83,7 @@ void Unit::update() {
 					Unit* nextTileUnit = nextTile->getLandUnitP();
 					if (nextTileUnit == nullptr) {		//Test
 						std::cout << "This shouldn't be possible" << std::endl;
+						//THIS SOMETIMES HAPPENS
 					}
 
 					if (!nextTileUnit->getWantsToMove()) {
@@ -206,7 +212,7 @@ Tile* Unit::chooseNextTile() {
 				/* Sometimes, this can result in an id that's out of bounds of the array. In that case, the unit will stop
 				following the leader and will return the group parent of the current tile.
 				*/
-				if (wouldTileBeOutOfBounds(newTileId)) {
+				if (!wouldTileBeOutOfBounds(newTileId)) {
 					//Standard situation
 					nextTile = _mapP->getTilesP()[newTileId];
 				}
@@ -235,7 +241,7 @@ Tile* Unit::chooseNextTile() {
 					around the target tile.
 					*/
 					if (_currentTileP->getGroupParent(_groupId)->getGroupParent(_groupId) == nullptr) {
-						std::cout << "Reached the target tile." << std::endl;
+						//std::cout << "Reached the target tile." << std::endl;
 						_wantsToMove = false;
 						_shouldStopWantingToMoveCounter = 0;
 					}
@@ -308,14 +314,15 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 		tile2id = _mapP->positionToId(currentRow + rowChange, currentColumn);
 	}
 
-	std::cout << "Trying to find close available tile" << std::endl;
+	//std::cout << "Trying to find close available tile" << std::endl;
 
 	//Check if the first close tile fits the requirements
 	if (!wouldCloseTileCrossBorder(tile1id)) {
 		Tile* closeTile1 = _mapP->getTilesP()[tile1id];
 		//This condition works because I only allow group pathfinding for land units. Also, the order is important here. 
 		//Anyway, even though I think this should be fine if getLandUnitP() returns nullptr, I still need to test it. And delete this comment.
-		if (closeTile1->getLandUnitP() == nullptr || closeTile1->getLandUnitP()->getWantsToMove()) {			
+		if (closeTile1->getLandUnitP() == nullptr || closeTile1->getLandUnitP()->getWantsToMove()) {	
+			std::cout << "Close tile 1" << std::endl;
 			return closeTile1;
 		}
 	}
@@ -325,11 +332,13 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 		Tile* closeTile2 = _mapP->getTilesP()[tile2id];
 		//This condition works because I only allow group pathfinding for land units. Also, the order is important here. 
 		if (closeTile2->getLandUnitP() == nullptr || closeTile2->getLandUnitP()->getWantsToMove()) {
+			std::cout << "Close tile 2" << std::endl;
 			return closeTile2;
 		}
 	}
 
 	//Neither one of the close tiles fits the requirements. Return nullptr.
+	std::cout << "No close tile." << std::endl;
 	return nullptr;		
 }
 
