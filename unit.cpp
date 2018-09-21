@@ -83,7 +83,6 @@ void Unit::update() {
 					Unit* nextTileUnit = nextTile->getLandUnitP();
 					if (nextTileUnit == nullptr) {		//Test
 						std::cout << "This shouldn't be possible" << std::endl;
-						//THIS SOMETIMES HAPPENS
 					}
 
 					if (!nextTileUnit->getWantsToMove()) {
@@ -319,9 +318,8 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 	//Check if the first close tile fits the requirements
 	if (!wouldCloseTileCrossBorder(tile1id)) {
 		Tile* closeTile1 = _mapP->getTilesP()[tile1id];
-		//This condition works because I only allow group pathfinding for land units. Also, the order is important here. 
-		//Anyway, even though I think this should be fine if getLandUnitP() returns nullptr, I still need to test it. And delete this comment.
-		if (closeTile1->getLandUnitP() == nullptr || closeTile1->getLandUnitP()->getWantsToMove()) {	
+		//This condition works because I only allow group pathfinding for land units.
+		if (closeTile1->isAvailableForPathfinding(Unit::Type::LAND)) {	
 			std::cout << "Close tile 1" << std::endl;
 			return closeTile1;
 		}
@@ -330,8 +328,8 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 	//closeTile1 would either cross the border or the tile isn't available (it is occupied). I need to check the other tile now.
 	if (!wouldCloseTileCrossBorder(tile2id)) {
 		Tile* closeTile2 = _mapP->getTilesP()[tile2id];
-		//This condition works because I only allow group pathfinding for land units. Also, the order is important here. 
-		if (closeTile2->getLandUnitP() == nullptr || closeTile2->getLandUnitP()->getWantsToMove()) {
+		//This condition works because I only allow group pathfinding for land units.
+		if (closeTile2->isAvailableForPathfinding(Unit::Type::LAND)) {
 			std::cout << "Close tile 2" << std::endl;
 			return closeTile2;
 		}

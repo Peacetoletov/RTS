@@ -105,6 +105,7 @@ bool Tile::isAvailableForPathfinding(Unit::Type unitType) {
 	//Land
 	if (unitType == Unit::Type::LAND) {
 		if (_terrainType == TerrainAvailability::ALL) {
+			/*
 			if (_landUnitP == nullptr) {
 				return true;
 			}
@@ -113,11 +114,16 @@ bool Tile::isAvailableForPathfinding(Unit::Type unitType) {
 					return true;
 				}
 			}
+			*/
+			if (_landUnitP == nullptr || _landUnitP->getWantsToMove()) {
+				return true;
+			}
 		}
 	}
 	//Air
 	else {
 		if (_terrainType == TerrainAvailability::ALL || _terrainType == TerrainAvailability::AIR) {
+			/*
 			if (_airUnitP == nullptr) {
 				return true;
 			}
@@ -125,6 +131,10 @@ bool Tile::isAvailableForPathfinding(Unit::Type unitType) {
 				if (_airUnitP->getMoving()) {
 					return true;
 				}
+			}
+			*/
+			if (_airUnitP == nullptr || _airUnitP->getWantsToMove()) {
+				return true;
 			}
 		}
 	}
