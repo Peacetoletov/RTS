@@ -51,7 +51,7 @@ private:
 	Type _type;
 	Pathfinder* _pathfinderP;
 	Map* _mapP;
-	float _speed = 1.25f;					//0.25 for debugging, 2.25 for supersonic
+	float _speed = 0.25f;					//0.25 for debugging, 1.25 for fast, 2.25 for supersonic
 	std::stack<Tile*> _path;
 	std::stack<int> _leadersPathRelativeIdChange;
 	bool _followingLeader;

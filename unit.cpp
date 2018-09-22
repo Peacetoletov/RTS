@@ -35,6 +35,27 @@ void Unit::update() {
 	/* TODO
 	Fix bugs. When I select a large group of units and tell them to keep going from one side of the T section to the other one, they often get stuck,
 	and sometimes trigger a block of code that should never happen.
+
+	I found out that this happens because some units start following the vector field, while other units keep following the leader.
+	These units then collide, each one wanting to go the other way, ultimately blocking each other. What I need to implement:
+	1) If a unit follows the leader and would move onto a tile that is incorrect path-wise as a result of that, the unit should stop
+	following the leader. That means that whenever a unit that's following the leader moves, I need to check the tile it wants to move onto
+	and compare the direction it's coming from with the parent vector of that tile. If there is a big difference (135 degrees? 90?),
+	the unit will stop following the leader.
+	2) The harder part - implement an efficient unit avoidance if 2 units are blocking each other. I will probably need to check if the unit 
+	is following the leader, because if one is and the other one isn't, it should probably be the one that isn't following that moves back
+	and creates space. If both are following their leaders (in order for this to happen, they must be from 2 different groups), then I will
+	set one unit to start following the vector field, and then I can work with it like in the previous scenario - the vector field unit
+	will create space. If both units are folowing the vector field, then it doesn't matter which unit creates space, so it will be the one
+	that reaches the block of code first. As for the avoidance itself, the units should try to get as close as possible to the occupied tile.
+	In the old version, I chose the first available tile, which was often very inefficient. Instead, the unti should move to a tile with a 
+	45 degree difference, if possible, and if it's not possible, continue increasing the amount by 45 degrees.
+	*/
+
+	/* TODO
+	Test a scenario where I select a group of units and tell them to move somewhere, and selecting and moving another group of units while 
+	the first group is still moving. That way, there will be a blind spot in the vector field. I need to test various interactions with this
+	blind spot.
 	*/
 
 	//Update variables (needed because the variables can be changed from another thread)
@@ -320,7 +341,7 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 		Tile* closeTile1 = _mapP->getTilesP()[tile1id];
 		//This condition works because I only allow group pathfinding for land units.
 		if (closeTile1->isAvailableForPathfinding(Unit::Type::LAND)) {	
-			std::cout << "Close tile 1" << std::endl;
+			//std::cout << "Close tile 1" << std::endl;
 			return closeTile1;
 		}
 	}
@@ -330,13 +351,13 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 		Tile* closeTile2 = _mapP->getTilesP()[tile2id];
 		//This condition works because I only allow group pathfinding for land units.
 		if (closeTile2->isAvailableForPathfinding(Unit::Type::LAND)) {
-			std::cout << "Close tile 2" << std::endl;
+			//std::cout << "Close tile 2" << std::endl;
 			return closeTile2;
 		}
 	}
 
 	//Neither one of the close tiles fits the requirements. Return nullptr.
-	std::cout << "No close tile." << std::endl;
+	//std::cout << "No close tile." << std::endl;
 	return nullptr;		
 }
 
