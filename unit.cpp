@@ -116,15 +116,6 @@ void Unit::update() {
 
 						To fix this, I will need to update avoiding units.
 						*/
-
-						//Currently commenting this part out, as I'm planning on solving this differently - in the chooseNextTile() method
-						/*
-						if (_shouldStopWantingToMoveCounter == _shouldStopWantingToMoveCounterThreshold) {
-							//std::cout << "Setting _wantsToMove to false" << std::endl;
-							_wantsToMove = false;
-							_shouldStopWantingToMoveCounter = 0;
-						}
-						*/
 					}
 				}
 
@@ -206,14 +197,17 @@ void Unit::updateVariables() {
 }
 
 Tile* Unit::chooseNextTile() {
-	/* This function can reutrn a nullptr but that's fine because that only happens
+	/* This function can return a nullptr but that's fine because that only happens
 	when the unit isn't following the leader and is on the target tile of the vector field.
 
 	In very rare scenarios, it could also return a nullptr when the leader leads the unit
 	to a tile that was previously occupied by an unmoving unit and therefore the tile isn't
 	in the vector field. Given how rare this is, I think it's fine to just leave it and
 	just accept the fact that the unit will stop on that tile in that situation.
-	TODO: Test this situation to make sure this exact behaviour happens.
+	
+	The same can happen when the unit is following the vector field and avoids a stationary 
+	unit by going 45 degrees from the next planned tile (this tile can be can be absent in 
+	the vector field)
 	*/
 	Tile* nextTile = nullptr;
 	try {
@@ -266,12 +260,9 @@ Tile* Unit::chooseNextTile() {
 						_shouldStopWantingToMoveCounter = 0;
 					}
 					else {
+						//std::cout << "Trying to find close available tile" << rand() << std::endl;
 						nextTile = tryToFindCloseAvailableTile();
 						_shouldStopWantingToMoveCounter = 0;
-						/* ^^ this might be kinda wrong. What if the tile is available for pathfinding, but right now there's a moving unit?
-
-						TODO: Fix this. A simple fix could be to set the counter to 0 only is the nextTile isn't nullptr
-						*/
 					}
 					
 				}				
