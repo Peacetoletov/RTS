@@ -114,7 +114,15 @@ private:
 	//METHODS
 	void updateVariables();
 	Tile* chooseNextTile();
+	Tile* getNextTileIfFollowingVectorField();
+	Tile* getNextTileIfFollowingLeader();
+
 	bool wouldTileBeOutOfBounds(int tileId);
+
+	/* When following the leader, if going the in same direction as the leader would result in going to a tile that
+	has a huge difference between the tile's parent vector and the leader's relative vector, returns true.
+	*/
+	bool wouldFollowingLeaderResultInWrongDirection(Tile* untestedNextTile);
 	Tile* tryToFindCloseAvailableTile();
 	bool wouldCloseTileCrossBorder(int tileId);
 	bool canMoveToNextTile(Tile* nextTile);

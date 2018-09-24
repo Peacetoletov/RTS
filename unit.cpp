@@ -88,22 +88,16 @@ void Unit::update() {
 					}
 				}
 				else {
-					//std::cout << "This unit wants to move! " << rand() << std::endl;
-					/* TODO
-					Change this to avoiding units by taking a step 45 degrees from the planned path (next tile) if possible after
-					waiting for the counter to reach the threshold. Only stop the unit if the next tile is still occupied and so 
-					are the 2 tiles next to it.
-					*/
-					/* Stop the unit if it's following a vector field and encounters a stationary obstacle.
-					This wouldn't be guaranteed to work if I just looked at nextTileUnit->getWantsToMove() because of the time
-					the pathfinder takes to calculate the path. It would sometimes behave in weird ways.
-					A better solution would is to create a counter that goes up by 1 each frame the unit is being blocked by 
-					a stationary unit. When the counter reaches a certain limit (10 frames?) and the blocking unit is still there, 
-					unwilling to move, this unit will finally decide to stop moving as well.
+					/* If the unit is following the vector field and encounters an obstacle, increment a counter. If this happens
+					multiple frames in a row, it probably means that the unit is stationary. When the counter reaches a threshold,
+					chooseNextTile() will return a tile next to the original tile (the one being occupied by another unit). This way,
+					the unit will avoid stationary obstacles.
 					*/
 					Unit* nextTileUnit = nextTile->getLandUnitP();
 					if (nextTileUnit == nullptr) {		//Test
 						std::cout << "This shouldn't be possible" << std::endl;
+
+						// ^^ THIS HAPPENED IN THE NEW VERSION 
 					}
 
 					if (!nextTileUnit->getWantsToMove()) {
@@ -209,6 +203,12 @@ Tile* Unit::chooseNextTile() {
 	unit by going 45 degrees from the next planned tile (this tile can be can be absent in 
 	the vector field)
 	*/
+
+	/* I BROKE EVERYTHING. 
+	TODO: Before implementing wouldFollowingLeaderResultInWrongDirection(), I need to repair
+	the damage I've done.
+	*/
+
 	Tile* nextTile = nullptr;
 	try {
 		if (_groupId == -1) {
@@ -219,53 +219,10 @@ Tile* Unit::chooseNextTile() {
 		}
 		else {
 			if (_followingLeader) {
-				if (_leadersPathRelativeIdChange.empty()) {
-					throw "Error in unit.cpp! _leadersPathRelativeIdChange is empty.";		//This should never happen
-				}
-				int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();
-				/* Sometimes, this can result in an id that's out of bounds of the array. In that case, the unit will stop
-				following the leader and will return the group parent of the current tile.
-				*/
-				if (!wouldTileBeOutOfBounds(newTileId)) {
-					//Standard situation
-					nextTile = _mapP->getTilesP()[newTileId];
-				}
-				else {
-					//Out of bounds
-					_followingLeader = false;
-					nextTile = _currentTileP->getGroupParent(_groupId);
-				}
+				nextTile = getNextTileIfFollowingLeader();
 			}
 			else {
-				//Following the vector field
-				if (_shouldStopWantingToMoveCounter != _shouldStopWantingToMoveCounterThreshold) {
-					//Normal situation
-					nextTile = _currentTileP->getGroupParent(_groupId);		//This can be a nullptr
-					/* nextTile can sometimes be a nullptr.
-					This happens when a non-leader unit reaches the target destionation when following the vector field.
-					This can also occasionally happen to the leader because of asynchonization.
-					*/
-				}
-				else {
-					/* The tile that is pointed to by current tile's parent is blocked by a non-moving unit. Check the 2 closest tiles and if 
-					at least one of them is available, assign nextTile to that tile. Otherwise, stop the unit by assigning nullptr to nextTile.
-					(the update function assigns false to _wantsToMove if nextTile is nullptr)
-
-					If the parent of the current tile is the target tile, stop moving. Otherwise, it would create an infinite loop of jumping
-					around the target tile.
-					*/
-					if (_currentTileP->getGroupParent(_groupId)->getGroupParent(_groupId) == nullptr) {
-						//std::cout << "Reached the target tile." << std::endl;
-						_wantsToMove = false;
-						_shouldStopWantingToMoveCounter = 0;
-					}
-					else {
-						//std::cout << "Trying to find close available tile" << rand() << std::endl;
-						nextTile = tryToFindCloseAvailableTile();
-						_shouldStopWantingToMoveCounter = 0;
-					}
-					
-				}				
+				nextTile = getNextTileIfFollowingVectorField();
 			}
 		}
 	}
@@ -275,9 +232,77 @@ Tile* Unit::chooseNextTile() {
 	return nextTile;
 }
 
+Tile* Unit::getNextTileIfFollowingVectorField() {
+	Tile* nextTile = nullptr;
+	if (_leadersPathRelativeIdChange.empty()) {
+		throw "Error in unit.cpp! _leadersPathRelativeIdChange is empty.";		//This should never happen
+	}
+	int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();
+	/* Sometimes, this can result in an id that's out of bounds of the array. In that case, the unit will stop
+	following the leader and will return the group parent of the current tile.
+	*/
+	if (!wouldTileBeOutOfBounds(newTileId)) {
+		//Standard situation
+		nextTile = _mapP->getTilesP()[newTileId];
+	}
+	else {
+		//Out of bounds
+		_followingLeader = false;
+		nextTile = getNextTileIfFollowingLeader();
+	}
+
+	//Stop following the leader if it would mean going in the wrong direction.
+	if (_followingLeader && wouldFollowingLeaderResultInWrongDirection(nextTile)) {
+		_followingLeader = false;
+		nextTile = getNextTileIfFollowingLeader();	
+	}
+
+	return nextTile;
+}
+
+Tile* Unit::getNextTileIfFollowingLeader() {
+	Tile* nextTile = nullptr;
+	//Following the vector field
+	if (_shouldStopWantingToMoveCounter != _shouldStopWantingToMoveCounterThreshold) {
+		//Normal situation
+		nextTile = _currentTileP->getGroupParent(_groupId);		//This can be a nullptr
+		/* nextTile can sometimes be a nullptr.
+		This happens when a non-leader unit reaches the target destionation when following the vector field.
+		This can also occasionally happen to the leader because of asynchonization.
+		*/
+	}
+	else {
+		/* The tile that is pointed to by current tile's parent is blocked by a non-moving unit. Check the 2 closest tiles and if
+		at least one of them is available, assign nextTile to that tile. Otherwise, stop the unit by assigning nullptr to nextTile.
+		(the update function assigns false to _wantsToMove if nextTile is nullptr)
+
+		If the parent of the current tile is the target tile, stop moving. Otherwise, it would create an infinite loop of jumping
+		around the target tile.
+		*/
+		if (_currentTileP->getGroupParent(_groupId)->getGroupParent(_groupId) == nullptr) {
+			//std::cout << "Reached the target tile." << std::endl;
+			_wantsToMove = false;
+			_shouldStopWantingToMoveCounter = 0;
+		}
+		else {
+			//std::cout << "Trying to find close available tile" << rand() << std::endl;
+			nextTile = tryToFindCloseAvailableTile();
+			_shouldStopWantingToMoveCounter = 0;
+		}
+
+	}
+
+	return nextTile;
+}
+
 bool Unit::wouldTileBeOutOfBounds(int tileId) {
 	int tilesSize = _mapP->getColumns() * _mapP->getRows();
 	return !(tileId > 0 && tileId < tilesSize);
+}
+
+bool Unit::wouldFollowingLeaderResultInWrongDirection(Tile* untestedNextTile) {
+	//TODO: This (after repairing the damage)
+	return false;
 }
 
 Tile* Unit::tryToFindCloseAvailableTile() {

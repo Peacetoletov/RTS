@@ -880,6 +880,10 @@ bool Pathfinder::dfgShouldBeFollowingLeader(int leadersNextTileRelativeIdChange,
 	Returns false if the difference between leader's path and vector path is more than 45 degrees.
 	*/
 
+	/* TODO - check if this needs to exist. I'm creating something very similar in unit.cpp. Maybe both could
+	be handeled by that function.
+	*/
+
 	//Some maths stuff. This should always work unless the map is extremely small.
 	int leadersRowChange = leadersNextTileRelativeIdChange / (_mapP->getColumns() - 1);			
 	int leadersColumnChange = leadersNextTileRelativeIdChange - leadersRowChange * _mapP->getColumns();		
