@@ -38,11 +38,7 @@ void Unit::update() {
 
 	I found out that this happens because some units start following the vector field, while other units keep following the leader.
 	These units then collide, each one wanting to go the other way, ultimately blocking each other. What I need to implement:
-	1) If a unit follows the leader and would move onto a tile that is incorrect path-wise as a result of that, the unit should stop
-	following the leader. That means that whenever a unit that's following the leader moves, I need to check the tile it wants to move onto
-	and compare the direction it's coming from with the parent vector of that tile. If there is a big difference (135 degrees? 90?),
-	the unit will stop following the leader.
-	2) The harder part - implement an efficient unit avoidance if 2 units are blocking each other. I will probably need to check if the unit 
+	An efficient unit avoidance if 2 units are blocking each other. I will probably need to check if the unit 
 	is following the leader, because if one is and the other one isn't, it should probably be the one that isn't following that moves back
 	and creates space. If both are following their leaders (in order for this to happen, they must be from 2 different groups), then I will
 	set one unit to start following the vector field, and then I can work with it like in the previous scenario - the vector field unit
@@ -50,6 +46,10 @@ void Unit::update() {
 	that reaches the block of code first. As for the avoidance itself, the units should try to get as close as possible to the occupied tile.
 	In the old version, I chose the first available tile, which was often very inefficient. Instead, the unti should move to a tile with a 
 	45 degree difference, if possible, and if it's not possible, continue increasing the amount by 45 degrees.
+
+	Another bug:
+	Sometimes, when I select a big group of units and tell them to move through a tight corridor, they arrive at the target location but
+	don't arrange themselves in the way I want. Instead, they stay in the long žížala-like formation. This only happens sometimes.
 	*/
 
 	/* TODO
@@ -96,8 +96,6 @@ void Unit::update() {
 					Unit* nextTileUnit = nextTile->getLandUnitP();
 					if (nextTileUnit == nullptr) {		//Test
 						std::cout << "This shouldn't be possible" << std::endl;
-
-						// ^^ THIS HAPPENED IN THE NEW VERSION 
 					}
 
 					if (!nextTileUnit->getWantsToMove()) {
@@ -204,11 +202,6 @@ Tile* Unit::chooseNextTile() {
 	the vector field)
 	*/
 
-	/* I BROKE EVERYTHING. 
-	TODO: Before implementing wouldFollowingLeaderResultInWrongDirection(), I need to repair
-	the damage I've done.
-	*/
-
 	Tile* nextTile = nullptr;
 	try {
 		if (_groupId == -1) {
@@ -232,7 +225,7 @@ Tile* Unit::chooseNextTile() {
 	return nextTile;
 }
 
-Tile* Unit::getNextTileIfFollowingVectorField() {
+Tile* Unit::getNextTileIfFollowingLeader() {
 	Tile* nextTile = nullptr;
 	if (_leadersPathRelativeIdChange.empty()) {
 		throw "Error in unit.cpp! _leadersPathRelativeIdChange is empty.";		//This should never happen
@@ -248,21 +241,21 @@ Tile* Unit::getNextTileIfFollowingVectorField() {
 	else {
 		//Out of bounds
 		_followingLeader = false;
-		nextTile = getNextTileIfFollowingLeader();
+		nextTile = getNextTileIfFollowingVectorField();
 	}
 
 	//Stop following the leader if it would mean going in the wrong direction.
 	if (_followingLeader && wouldFollowingLeaderResultInWrongDirection(nextTile)) {
+		std::cout << "Following leader would result in wrong direction!" << std::endl;
 		_followingLeader = false;
-		nextTile = getNextTileIfFollowingLeader();	
+		nextTile = getNextTileIfFollowingVectorField();
 	}
 
 	return nextTile;
 }
 
-Tile* Unit::getNextTileIfFollowingLeader() {
+Tile* Unit::getNextTileIfFollowingVectorField() {
 	Tile* nextTile = nullptr;
-	//Following the vector field
 	if (_shouldStopWantingToMoveCounter != _shouldStopWantingToMoveCounterThreshold) {
 		//Normal situation
 		nextTile = _currentTileP->getGroupParent(_groupId);		//This can be a nullptr
@@ -301,8 +294,35 @@ bool Unit::wouldTileBeOutOfBounds(int tileId) {
 }
 
 bool Unit::wouldFollowingLeaderResultInWrongDirection(Tile* untestedNextTile) {
-	//TODO: This (after repairing the damage)
-	return false;
+	/* Wrong direction means having a difference of 135 or more degrees:
+	If following the leader's path means going in the wrong direction, units won't follow the leader.
+	Returns true if the difference between leader's path and vector path is 135 or more degrees.
+	*/
+
+	
+	//Some maths stuff. This should always work unless the map is extremely small.
+	int leadersRowChange = _leadersPathRelativeIdChange.top() / (_mapP->getColumns() - 1);
+	int leadersColumnChange = _leadersPathRelativeIdChange.top() - leadersRowChange * _mapP->getColumns();
+
+	int vectorRowChange = _mapP->idToRow(_currentTileP->getGroupParent(_groupId)->getId()) - _mapP->idToRow(_currentTileP->getId());
+	int vectorColumnChange = _mapP->idToColumn(_currentTileP->getGroupParent(_groupId)->getId()) - _mapP->idToColumn(_currentTileP->getId());
+
+	if (leadersRowChange == 0 && leadersColumnChange == 0) {
+		std::cout << "This should never happen" << std::endl;
+	}
+	if (leadersRowChange == 1 && leadersColumnChange == 1) {
+		//Leader moved diagonally
+		if (abs(leadersRowChange - vectorRowChange) + abs(leadersColumnChange - vectorColumnChange) <= 2) {
+			return false;
+		}
+	}
+	else {
+		//Leader moved straight
+		if (abs(leadersRowChange - vectorRowChange) < 2 && abs(leadersColumnChange - vectorColumnChange) < 2) {
+			return false;
+		}
+	}
+	return true;
 }
 
 Tile* Unit::tryToFindCloseAvailableTile() {

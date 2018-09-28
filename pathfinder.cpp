@@ -876,7 +876,7 @@ void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> le
 }
 
 bool Pathfinder::dfgShouldBeFollowingLeader(int leadersNextTileRelativeIdChange, Unit* unit, int groupId) {
-	/* If following the leader's path meant going in the wrong direction, units won't follow the leader.
+	/* If following the leader's path means going in the wrong direction, units won't follow the leader.
 	Returns false if the difference between leader's path and vector path is more than 45 degrees.
 	*/
 
