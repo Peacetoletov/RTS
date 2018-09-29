@@ -63,8 +63,8 @@ private:
 	a certain threshold (10 frames?) and the blocking unit is still there, unwilling to move, this unit will finally
 	decide to stop moving as well.
 	*/
-	int _shouldStopWantingToMoveCounter;
-	const int _shouldStopWantingToMoveCounterThreshold = 10;		//The amount of frames before the unit stops wanting to move.
+	int _shouldTryToAvoidStationaryObstacleCounter;
+	const int _shouldTryToAvoidStationaryObstacleThreshold = 10;		//The amount of frames before the unit stops wanting to move.
 	//^^ These variables may need to be renamed
 
 	/* This variable tells the unit if it should try to look at the 2 closest tiles in case the parent of the current tile points to
