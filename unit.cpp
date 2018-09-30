@@ -46,11 +46,6 @@ void Unit::update() {
 	that reaches the block of code first. As for the avoidance itself, the units should try to get as close as possible to the occupied tile.
 	In the old version, I chose the first available tile, which was often very inefficient. Instead, the unti should move to a tile with a 
 	45 degree difference, if possible, and if it's not possible, continue increasing the amount by 45 degrees.
-
-	Another bug:
-	Sometimes, when I select a big group of units and tell them to move through a tight corridor, they arrive at the target location but
-	don't arrange themselves in the way I want. Instead, they stay in the long žížala-like formation. This only happens sometimes.
-	I found out that the units don't stop wanting to move. So why don't they do what they are supposed to do?
 	*/
 
 	/* TODO
@@ -73,13 +68,12 @@ void Unit::update() {
 			if (!canMoveToNextTile(nextTile)) {
 				
 				//Desired tile is occupied, unit cannot move.
-				//std::cout << "Next tile is occupied! " << rand() << std::endl;		//The code gets to this part in the žížala bug
+				//std::cout << "Next tile is occupied! " << rand() << std::endl;
 
 				/* If the unit is following a leader and got stuck on a stationary obstacle,
 				now it's time to start following the vector field
 				*/
 				if (_followingLeader) {
-					std::cout << "Leader. Testing zizala " << rand() << std::endl;		//THIS IS THE PROBLEM WITH THE ŽÍŽALA BUG
 					//This works because I only allow land units to be grouped
 					Unit* nextTileUnit = nextTile->getLandUnitP();
 					if (nextTileUnit == nullptr) {		//Wall
@@ -87,6 +81,21 @@ void Unit::update() {
 					}
 					else if (!nextTileUnit->getWantsToMove() && nextTileUnit->getGroupId(false) != _groupId) {		//Stationary unit that is not from this group
 						_followingLeader = false;
+					}
+					else if (!nextTileUnit->getWantsToMove()) {
+						/* Sometimes, when the units follow the leader, they might get stuck and they wouldn't form the cluster after 
+						arriving at the target location, and remain in a long "tail" instead. This here fixes that problem: if this unit
+						is being blocked by a stationary unit from this group, increment a counter. When the counter reaches a certain 
+						threshold, stop following the leader.
+						The counter needs to be here because this block of code can happen in normal situations, e. g. when a big, 
+						clustered group of units is ordered to move. When the unit successfuly moves, the counter resets,
+						therefore only the units that are really stuck stop following the leader.
+						*/
+						_shouldStopFollowingLeaderCounter++;
+						if (_shouldStopFollowingLeaderCounter == _shouldStopFollowingLeaderThreshold) {
+							_followingLeader = false;		
+							_shouldStopFollowingLeaderCounter = 0;
+						}
 					}
 				}
 				else {
@@ -127,7 +136,10 @@ void Unit::update() {
 				//Next tile isn't occupied, unit can start moving.
 				_moving = true;
 
-				//Reset the counter that determines if the unit should stop (if it's following a vector field)
+				/* Reset the counter that determines if the unit should stop following the leader (if it's following the leader).
+				Reset the counter that determines if the unit should try to avoid an obstacle (if it's following a vector field).
+				*/
+				_shouldStopFollowingLeaderCounter = 0;
 				_shouldTryToAvoidStationaryObstacleCounter = 0;
 
 				//Set distance
@@ -249,7 +261,6 @@ Tile* Unit::getNextTileIfFollowingLeader() {
 
 	//Stop following the leader if it would mean going in the wrong direction.
 	if (_followingLeader && wouldFollowingLeaderResultInWrongDirection(nextTile)) {
-		std::cout << "Following leader would result in wrong direction!" << std::endl;
 		_followingLeader = false;
 		nextTile = getNextTileIfFollowingVectorField();
 	}
@@ -266,7 +277,6 @@ Tile* Unit::getNextTileIfFollowingVectorField() {
 		This happens when a non-leader unit reaches the target destionation when following the vector field.
 		This can also occasionally happen to the leader because of asynchonization.
 		*/
-		//Žížala bug: The unit gets to this part. _shouldStopWantingToMoveCounter is always 0 when the bug happens.
 	}
 	else {
 		/* The tile that is pointed to by current tile's parent is blocked by a non-moving unit. Check the 2 closest tiles and if
@@ -276,14 +286,12 @@ Tile* Unit::getNextTileIfFollowingVectorField() {
 		If the parent of the current tile is the target tile, stop moving. Otherwise, it would create an infinite loop of jumping
 		around the target tile.
 		*/
-		std::cout << "Unit is trying to move " << std::endl;		/* Žížala bug: The unit doesn't even get to this part of the code. */
 		if (_currentTileP->getGroupParent(_groupId)->getGroupParent(_groupId) == nullptr) {
 			//std::cout << "Reached the target tile." << std::endl;
 			_wantsToMove = false;
 			_shouldTryToAvoidStationaryObstacleCounter = 0;
 		}
 		else {
-			std::cout << "Trying to find close available tile" << rand() << std::endl;
 			nextTile = tryToFindCloseAvailableTile();
 			_shouldTryToAvoidStationaryObstacleCounter = 0;
 		}

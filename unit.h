@@ -59,13 +59,23 @@ private:
 	int _groupId = -1;				//-1 if the unit isn't in any group; 0-99 if it is in one.
 	bool _moving = false;
 
-	/* A counter that goes up by 1 each frame the unit is being blocked by a stationary unit. When the counter reaches 
-	a certain threshold (10 frames?) and the blocking unit is still there, unwilling to move, this unit will finally
-	decide to stop moving as well.
+	/* A counter that goes up by 1 each frame the unit is being blocked by a stationary unit (which can be wanting to move, but
+	unable to) while following the leader. When the counter reaches a certain threshold (10 frames?) and the blocking unit 
+	is still there, this unit will stop following the leader. The reason for having the counter in the first place is because
+	the part of code that triggers it can happen for 1 frame even in normal scenarios - e. g. when a big, clustered group of
+	units is ordered to move. When the unit successfuly moves, the counter resets.
+	*/
+	int _shouldStopFollowingLeaderCounter;
+	const int _shouldStopFollowingLeaderThreshold = 10;		//The amount of frames before the unit stops wanting to move.
+
+	/* A counter that goes up by 1 each frame the unit is being blocked by a stationary unit while following the vector field. 
+	When the counter reaches a certain threshold (10 frames?) and the blocking unit is still there, unwilling to move, 
+	this unit will decide to avoid the obstacle by going 45 degrees from the original path, if possible. If it isn't
+	possible because both tiles 45 degrees from the original next tile are occupied, the chooseNextTile() method will
+	return nullptr, meaning the unit will stop trying to move.
 	*/
 	int _shouldTryToAvoidStationaryObstacleCounter;
-	const int _shouldTryToAvoidStationaryObstacleThreshold = 10;		//The amount of frames before the unit stops wanting to move.
-	//^^ These variables may need to be renamed
+	const int _shouldTryToAvoidStationaryObstacleThreshold = 10;		//The amount of frames before the unit tried to avoid the obstacle
 
 	/* This variable tells the unit if it should try to look at the 2 closest tiles in case the parent of the current tile points to
 	a tile that isn't available. If it is true, then at least 1 of the 2 closest tiles is available. This variable is set to true
