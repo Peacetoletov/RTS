@@ -33,11 +33,7 @@ void Unit::update() {
 	*/
 
 	/* TODO
-	Fix bugs. When I select a large group of units and tell them to keep going from one side of the T section to the other one, they often get stuck,
-	and sometimes trigger a block of code that should never happen.
-
-	I found out that this happens because some units start following the vector field, while other units keep following the leader.
-	These units then collide, each one wanting to go the other way, ultimately blocking each other. What I need to implement:
+	What I need to implement:
 	An efficient unit avoidance if 2 units are blocking each other. I will probably need to check if the unit 
 	is following the leader, because if one is and the other one isn't, it should probably be the one that isn't following that moves back
 	and creates space. If both are following their leaders (in order for this to happen, they must be from 2 different groups), then I will
@@ -49,9 +45,7 @@ void Unit::update() {
 	*/
 
 	/* TODO
-	Test a scenario where I select a group of units and tell them to move somewhere, and selecting and moving another group of units while 
-	the first group is still moving. That way, there will be a blind spot in the vector field. I need to test various interactions with this
-	blind spot.
+	Once the unit avoidance is done, I will implement unit rotation and fluent movement (animation).
 	*/
 
 	//Update variables (needed because the variables can be changed from another thread)
@@ -61,15 +55,11 @@ void Unit::update() {
 		Tile* nextTile = chooseNextTile();
 		if (nextTile == nullptr) {
 			//If the unit following the vector field reached the tagret, stop the unit.
-			//std::cout << "nextTile = nullptr" << std::endl;
 			_wantsToMove = false;
 		}
 		else {
-			if (!canMoveToNextTile(nextTile)) {
-				
+			if (!canMoveToNextTile(nextTile)) {		
 				//Desired tile is occupied, unit cannot move.
-				//std::cout << "Next tile is occupied! " << rand() << std::endl;
-
 				/* If the unit is following a leader and got stuck on a stationary obstacle,
 				now it's time to start following the vector field
 				*/
@@ -99,7 +89,6 @@ void Unit::update() {
 					}
 				}
 				else {
-					//std::cout << "Vector. Testing zizala " << rand() << std::endl;
 					/* If the unit is following the vector field and encounters an obstacle, increment a counter. If this happens
 					multiple frames in a row, it probably means that the unit is stationary. When the counter reaches a threshold,
 					chooseNextTile() will return a tile next to the original tile (the one being occupied by another unit). This way,
@@ -112,14 +101,6 @@ void Unit::update() {
 
 					if (!nextTileUnit->getWantsToMove()) {
 						_shouldTryToAvoidStationaryObstacleCounter++;
-						//std::cout << "Incrementing the counter! Now counter = " << _shouldStopWantingToMoveCounter << std::endl;
-						/* I found out that when the units get stuck, they don't get to this point in here.
-
-						I'm sure I found the reason, because it doesn't reach this block, but it reaches the block before this one. That means
-						that !nextTileUnit->getWantsToMove() = false. In other words, the unit blocking this unit also wants to move.
-
-						To fix this, I will need to update avoiding units.
-						*/
 					}
 				}
 
@@ -443,7 +424,7 @@ void Unit::avoidDynamicObstacle() {
 	*/
 
 	/* TODO
-	This function needs to get updated to work with group pathfinding as well.
+	Completely rework this function.
 	*/
 
 	//Select the unit that's in the way
