@@ -138,7 +138,7 @@ private:
 	bool canMoveToNextTile(Tile* nextTile);
 	void setPointersToThisUnit(Tile* nextTile);
 	void move();
-	void avoidDynamicObstacle();
+	void avoidDynamicObstacle(Tile* nextTile);
 };
 
 #endif

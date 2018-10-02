@@ -111,7 +111,7 @@ void Unit::update() {
 				/* TODO
 				Here, I need to add a way to avoid obstacles that weren't there at the creation of the vector field but are there now.
 				*/
-				//avoidDynamicObstacle();		//Currently commented out because it wouldn't work with group pathfinding
+				avoidDynamicObstacle(nextTile);		//Currently commented out because it wouldn't work with group pathfinding
 			}
 			else {
 				//Next tile isn't occupied, unit can start moving.
@@ -415,7 +415,7 @@ bool Unit::canMoveToNextTile(Tile* nextTile) {
 	return false;
 }
 
-void Unit::avoidDynamicObstacle() {
+void Unit::avoidDynamicObstacle(Tile* nextTile) {
 	/* The unit on its way will probably encounter other units. This function handles how the unit reacts when
 	one gets in the way.
 	*/
@@ -425,37 +425,90 @@ void Unit::avoidDynamicObstacle() {
 
 	/* TODO
 	Completely rework this function.
+
+	What this function needs to do:
+	1) If the unit is not in a group:
+		a) When it encounters a unit that is not moving, find another path to the target.
 	*/
 
 	//Select the unit that's in the way
 	Unit* blockingUnit = nullptr;
-	std::vector<Unit*>* _unitsP = _mapP->getUnitsP();
-	for (int i = 0; i < _unitsP->size(); i++) {
-		if ((*_unitsP)[i]->getCurrentTileP()->getId() == _path.top()->getId()) {
-			blockingUnit = (*_unitsP)[i];
-			break;
-		}
+	if (_type == Unit::Type::LAND) {
+		blockingUnit = nextTile->getLandUnitP();
+	}
+	else {
+		blockingUnit = nextTile->getAirUnitP();
 	}
 
 	if (blockingUnit == nullptr) {
 		std::cout << "Error in Unit::avoidDynamicObstacle()" << std::endl;
 		return;
 	}
+
+	//Check if the other unit stopped and doesn't want to move anymore
+	if (blockingUnit->getWantsToMove()) {
+		//Unit hasn't stopped yet, wants to move.
+
+	}
+	else {
+		/* Unit has stopped, doesn't want to move.
+
+		If this unit is in a group, stationary unit avoidance is already taken care of in the chooseNextTile() function,
+		therefore here I only need to work with units which aren't in a group.
+		*/
+		if (_groupId == -1) {
+			//Find a new path to the target
+			_wantsToMove = false;		//Stop this unit, in case a path cannot be found or the target isn't available anymore
+
+			//Select the target tile
+			while (_path.size() != 1) {
+				_path.pop();
+			}
+			Tile* targetTileP = _path.top();
+
+			//Check if the target tile is available
+			/* TODO - IMPORTANT
+			Instead if checking whether the target tile is available and completely stopping the unit if it isn't, I should always
+			find a path. If the target tile isn't available, then the new target will be the closest tile to it.
+			*/
+			if (targetTileP->isAvailableForPathfinding(_type)) {
+				//Set the path parameters
+				std::vector<Unit*> unitGroup;		//group of 1 unit
+				unitGroup.push_back(this);
+				PathParameters* parameters = new PathParameters(targetTileP, unitGroup, -1);		//Deletion is handled in Pathfinder
+				_pathfinderP->pushPathParameters(parameters);
+
+				//Notify the other thread
+				_pathfinderP->getCondP()->notify_one();
+			}
+
+			/* POSSIBLE OPTIMIZATION
+			Right now, if I get blocked by a unit, I recalculate the whole path from the current point to the intended target.
+			Instead, I could only calculate the path to the nearest available tile on the original path, then add the rest out the
+			original path to the new path. That way, I would only calculate just enough to get past the obstacle and wouldn't have to
+			calculate what has been calculated before. But this could be pretty tricky to implement.
+
+			I will only do this if I need to get abolutely perfect performace, as this would really be hard to implement.
+			*/
+		}
+	}
 	
+	//WHY THE FEHUE WAS I DOING IT LIKE THIS?! IT MAKES NO SENSE AT ALL
+	/*
 	//Check if the blocking unit hasn't finished its path yet
 	if (!blockingUnit->getPathP()->empty()) {
-		/* Check if the blocking unit intends to move to the tile that this unit currently stands on. If both units waited
-		on each other to make a move, it would result in a deadlock. I need to handle the situation, therefore one unit
-		will get out of the way, let the other one pass and then go back and continue in the original path.
+		// Check if the blocking unit intends to move to the tile that this unit currently stands on. If both units waited
+		//on each other to make a move, it would result in a deadlock. I need to handle the situation, therefore one unit
+		//will get out of the way, let the other one pass and then go back and continue in the original path.
 
-		If the blocking unit intends to move to another tile (not this one), then I won't do anything and I will just wait.
-		*/
+		//If the blocking unit intends to move to another tile (not this one), then I won't do anything and I will just wait.
+		
 		if (blockingUnit->getPathP()->top()->getId() == _currentTileP->getId()) {
 			//Units are blocking each other
 
-			/* Loop through neighbours of this tile until I find one that is available. If I don't find any (extremely unlikely),
-			stop both units.
-			*/
+			// Loop through neighbours of this tile until I find one that is available. If I don't find any (extremely unlikely),
+			//stop both units.
+			//
 			Tile* availableTile = nullptr;
 			std::vector<Tile*>* neighbours = _currentTileP->getNeighboursP();
 			for (int i = 0; i < neighbours->size(); i++) {
@@ -498,13 +551,14 @@ void Unit::avoidDynamicObstacle() {
 		}
 		
 
-		/* POSSIBLE OPTIMIZATION
-		Right now, if I get blocked by a unit, I recalculate the whole path from the current point to the intended target.
-		Instead, I could only calculate the path to the nearest available tile on the original path, then add the rest out the
-		original path to the new path. That way, I would only calculate just enough to get past the obstacle and wouldn't have to
-		calculate what has been calculated before. But this could be pretty tricky to implement.
-		*/
+		// POSSIBLE OPTIMIZATION
+		//Right now, if I get blocked by a unit, I recalculate the whole path from the current point to the intended target.
+		//Instead, I could only calculate the path to the nearest available tile on the original path, then add the rest out the
+		//original path to the new path. That way, I would only calculate just enough to get past the obstacle and wouldn't have to
+		//calculate what has been calculated before. But this could be pretty tricky to implement.
+		//
 	}
+	*/
 }
 
 void Unit::setPointersToThisUnit(Tile* nextTile) {
