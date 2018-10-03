@@ -445,13 +445,33 @@ void Unit::avoidDynamicObstacle(Tile* nextTile) {
 		return;
 	}
 
-	//Check if the other unit stopped and doesn't want to move anymore
+	//Check if the blocking stopped and doesn't want to move anymore
 	if (blockingUnit->getWantsToMove()) {
-		//Unit hasn't stopped yet, wants to move.
+		/* Blocking unit hasn't finished its path yet, wants to move.
 
+		First, this unit will wait. The blocking unit is either going somewhere a will soon go away and this
+		unit can continue in its way, or wants to go to this tile. If it wants to go to this tile, it will 
+		stop moving soon but will still want to move.
+		*/
+		if (!blockingUnit->getMoving()) {
+			//The blocking unit stopped because of an obstacle, but it still doesn't have to be this unit that's blocking it
+			/* I should be able to use the chooseNextTile() function because _wantsToMove is true, _moving is false and
+			a situation where it returns nullptr shouldn't be possible.
+
+			If I'm wrong, this will need a lot more work.
+			*/
+			Tile* blockingUnitNextTile = blockingUnit->chooseNextTile();		
+			if (blockingUnitNextTile == nullptr) {
+				std::cout << "Something went wrong" << std::endl;		//Shit. This code was reached when I made a group of units move.
+			}
+			int blockingUnitNextTileId = blockingUnitNextTile->getId();
+			if (blockingUnitNextTileId == _currentTileP->getId()) {
+				std::cout << "Units are blocking each other" << std::endl;
+			}
+		}
 	}
 	else {
-		/* Unit has stopped, doesn't want to move.
+		/* Blockung unit has stopped, doesn't want to move.
 
 		If this unit is in a group, stationary unit avoidance is already taken care of in the chooseNextTile() function,
 		therefore here I only need to work with units which aren't in a group.
@@ -616,6 +636,7 @@ void Unit::move() {
 }
 
 int Unit::getGroupId(bool isNew) {
+	//Use isNew = false for standard calls of this function
 	if (isNew) {
 		return _groupIdNew;
 	}
