@@ -463,6 +463,7 @@ void Unit::avoidDynamicObstacle(Tile* nextTile) {
 			Tile* blockingUnitNextTile = blockingUnit->chooseNextTile();		
 			if (blockingUnitNextTile == nullptr) {
 				std::cout << "Something went wrong" << std::endl;		//Shit. This code was reached when I made a group of units move.
+				//This happened when I select 3 units in a row and tell them to go somewhere so that they remain in the line --- when they move.
 			}
 			int blockingUnitNextTileId = blockingUnitNextTile->getId();
 			if (blockingUnitNextTileId == _currentTileP->getId()) {
