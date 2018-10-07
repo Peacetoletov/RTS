@@ -47,26 +47,30 @@ void Unit::update() {
 	/* TODO
 	Once the unit avoidance is done, I will implement unit rotation and fluent movement (animation).
 	*/
+	
+	/* TODO
+	Test what happens when I create more than 100 vector fields while some units are following one.
+	*/
 
 	//Update variables (needed because the variables can be changed from another thread)
 	updateVariables();
 
 	if (_wantsToMove && !_moving) {
 		//Tile* nextTile = chooseNextTile();
-		intendedNextTile = chooseNextTile();
-		if (intendedNextTile == nullptr) {
+		_intendedNextTile = chooseNextTile();
+		if (_intendedNextTile == nullptr) {
 			//If the unit following the vector field reached the tagret, stop the unit.
 			_wantsToMove = false;
 		}
 		else {
-			if (!canMoveToNextTile(intendedNextTile)) {
+			if (!canMoveToNextTile(_intendedNextTile)) {
 				//Desired tile is occupied, unit cannot move.
 				/* If the unit is following a leader and got stuck on a stationary obstacle,
 				now it's time to start following the vector field
 				*/
 				if (_followingLeader) {
 					//This works because I only allow land units to be grouped
-					Unit* nextTileUnit = intendedNextTile->getLandUnitP();
+					Unit* nextTileUnit = _intendedNextTile->getLandUnitP();
 					if (nextTileUnit == nullptr) {		//Wall
 						_followingLeader = false;
 					}
@@ -95,7 +99,7 @@ void Unit::update() {
 					chooseNextTile() will return a tile next to the original tile (the one being occupied by another unit). This way,
 					the unit will avoid stationary obstacles.
 					*/
-					Unit* nextTileUnit = intendedNextTile->getLandUnitP();
+					Unit* nextTileUnit = _intendedNextTile->getLandUnitP();
 					if (nextTileUnit == nullptr) {		//Test
 						std::cout << "This shouldn't be possible" << std::endl;
 					}
@@ -112,11 +116,12 @@ void Unit::update() {
 				/* TODO
 				Here, I need to add a way to avoid obstacles that weren't there at the creation of the vector field but are there now.
 				*/
-				if (intendedNextTile->canUnitMoveOnThisTerrain(_type)) {		//This prevents calling the function if this unit intends to go into a wall
-					avoidDynamicObstacle(intendedNextTile);		
+				if (_intendedNextTile->canUnitMoveOnThisTerrain(_type)) {		//This prevents calling the function if this unit intends to go into a wall
+					//This function can change _intendedNextTile
+					avoidDynamicObstacle();
 				}
 			}
-			else {
+			if (canMoveToNextTile(_intendedNextTile)) {		//I'm using this condition instead of a simple else because _intendedNextTile can change
 				//Next tile isn't occupied, unit can start moving.
 				_moving = true;
 
@@ -127,14 +132,14 @@ void Unit::update() {
 				_shouldTryToAvoidStationaryObstacleCounter = 0;
 
 				//Set distance
-				_distance = _currentTileP->isNeighbourDiagonal(intendedNextTile) ?
+				_distance = _currentTileP->isNeighbourDiagonal(_intendedNextTile) ?
 					globals::TILE_DIAGONAL_DISTANCE : globals::TILE_STRAIGHT_DISTANCE;
 
 				//Set pointers to this unit in the current tile and the next tile
-				setPointersToThisUnit(intendedNextTile);
+				setPointersToThisUnit(_intendedNextTile);
 
 				//Set the current tile to the tile the unit is moving onto
-				_currentTileP = intendedNextTile;
+				_currentTileP = _intendedNextTile;
 
 				//Remove the top element of the corresponding stack
 				if (_groupId == -1) {
@@ -418,7 +423,7 @@ bool Unit::canMoveToNextTile(Tile* nextTile) {
 	return false;
 }
 
-void Unit::avoidDynamicObstacle(Tile* nextTile) {
+void Unit::avoidDynamicObstacle() {
 	/* The unit on its way will probably encounter other units. This function handles how the unit reacts when
 	one gets in the way.
 	*/
@@ -437,16 +442,15 @@ void Unit::avoidDynamicObstacle(Tile* nextTile) {
 	//Select the unit that's in the way
 	Unit* blockingUnit = nullptr;
 	if (_type == Unit::Type::LAND) {
-		blockingUnit = nextTile->getLandUnitP();
+		blockingUnit = _intendedNextTile->getLandUnitP();
 	}
 	else {
-		blockingUnit = nextTile->getAirUnitP();
+		blockingUnit = _intendedNextTile->getAirUnitP();
 	}
 
 	if (blockingUnit == nullptr) {
 		std::cout << "Error in Unit::avoidDynamicObstacle()" << std::endl;
 		return;
-		// THIS HAPPENED!
 	}
 
 	//Check if the blocking stopped and doesn't want to move anymore
@@ -455,12 +459,40 @@ void Unit::avoidDynamicObstacle(Tile* nextTile) {
 
 		Check if the blocking unit intends to go to this tile
 		*/
+		if (blockingUnit->getIntentedNextTile()->getId() == _currentTileP->getId()) {
+			//std::cout << "Units are blocking each other!" << std::endl;
+			/* Priority list (which one of the 2 units will be going to the side to make room for the other one):
+			1. If one unit is not in a group and the other one is, the one in the group will make room. It doesn't matter
+			whether the group unit is following the leader or the vector field.
+			2. If neither unit is in a group, the first unit to reach this code will make room.
+			3. If both units are in a group, the first unit to reach this code will make room.
+			*/
+			
+			if (_groupId == -1 && blockingUnit->getGroupId(false) != -1) {
+				/* This unit has a higher priority; the other unit will make room.
+				No code here.
+				*/
+			}
+			else {
+				/* The blocking unit has a higher priority or both units have the same priority but this unit
+				reached this code first; this unit will make room.
+				*/
+				if (_groupId == -1) {
+					/* Go to any neighbour tile, wait for the other unit to pass, then get back to this tile
+					and continue in the original direction.
 
-		/* TODO
-		Before doing this, figure out why I got an error a few lines above this code
-		*/
-		if (true) {
+					This is done this way so that I don't need to calculate a new path.
+					*/
+					Tile* newTile = getAnyAvailableNeighbourTile();		//TODO: This
+					if (newTile != nullptr) {		
 
+					}
+					else {
+						//If there is no available neighbour tile, stop the unit.
+						_wantsToMove = false;
+					}
+				}
+			}
 		}
 
 	}
@@ -575,6 +607,11 @@ void Unit::avoidDynamicObstacle(Tile* nextTile) {
 	*/
 }
 
+Tile* Unit::getAnyAvailableNeighbourTile() {
+	//Loop through all neighbour tiles. If any of them is available, return it.
+	//TODO: This
+}
+
 void Unit::setPointersToThisUnit(Tile* nextTile) {
 	//This tile
 	if (_type == Unit::Type::LAND) {
@@ -629,6 +666,10 @@ void Unit::move() {
 	}
 }
 
+Tile* Unit::getCurrentTileP() {
+	return _currentTileP;
+}
+
 int Unit::getGroupId(bool isNew) {
 	//Use isNew = false for standard calls of this function
 	if (isNew) {
@@ -643,8 +684,8 @@ Unit::Type Unit::getType() {
 	return _type;
 }
 
-Tile* Unit::getCurrentTileP() {
-	return _currentTileP;
+Tile* Unit::getIntentedNextTile() {
+	return _intendedNextTile;
 }
 
 std::stack<Tile*>* Unit::getPathP() {

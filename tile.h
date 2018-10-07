@@ -105,14 +105,14 @@ private:
 	Map* _mapP;
 
 	//Pathfinding variables
-	std::vector<Tile*> _neighbours;		//Vector holding pointers to neighbour tiles
+	std::vector<Tile*> _neighbours;		//Vector holding pointers to neighbour tiles			//POSSIBLY DEPRECATED
 	/* Whether the neighbour tile at the specific index is diagonal or not.
 	Contains pointers instead of raw booleans because that would take too much time to create.
 	*/
-	std::vector<const bool*> _neighboursDiagonal;		
+	std::vector<const bool*> _neighboursDiagonal;												//POSSIBLY DEPRECATED
 	bool _wasVisited;
-	int _G;								//Distance from start
-	int _H;								//Minimal distance to end
+	int _G;								//Distance from start			//DEPRECATED
+	int _H;								//Minimal distance to end		//DEPRECATED
 	//int _F doesn't have to be stored, as I can get it by summing up _G and _H
 	Tile* _parentP;
 

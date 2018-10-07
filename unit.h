@@ -24,9 +24,10 @@ public:
 	void update();
 
 	//Getters
+	Tile* getCurrentTileP();
 	int getGroupId(bool isNew);
 	Type getType();
-	Tile* getCurrentTileP();
+	Tile* getIntentedNextTile();
 	std::stack<Tile*>* getPathP();
 	bool getWantsToMove();
 	bool getMoving();
@@ -48,16 +49,16 @@ public:
 
 private:
 	Tile* _currentTileP;
-	Type _type;
 	Pathfinder* _pathfinderP;
 	Map* _mapP;
+	int _groupId = -1;				//-1 if the unit isn't in any group; 0-99 if it is in one.
+	Type _type;
 	float _speed = 1.25f;					//0.25 for debugging, 1.25 for fast, 2.25 for supersonic
-	Tile* intendedNextTile;					//What tile this unit wants to go to
+	Tile* _intendedNextTile;					//What tile this unit wants to go to
 	std::stack<Tile*> _path;
 	std::stack<int> _leadersPathRelativeIdChange;
 	bool _followingLeader;
 	bool _wantsToMove = false;
-	int _groupId = -1;				//-1 if the unit isn't in any group; 0-99 if it is in one.
 	bool _moving = false;
 
 	/* A counter that goes up by 1 each frame the unit is being blocked by a stationary unit (which can be wanting to move, but
@@ -139,7 +140,8 @@ private:
 	bool canMoveToNextTile(Tile* nextTile);
 	void setPointersToThisUnit(Tile* nextTile);
 	void move();
-	void avoidDynamicObstacle(Tile* nextTile);
+	void avoidDynamicObstacle();
+	Tile* getAnyAvailableNeighbourTile();
 };
 
 #endif
