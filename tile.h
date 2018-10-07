@@ -56,6 +56,11 @@ public:
 	*/
 	bool isAvailable(Unit::Type unitType);
 
+	/* Determines (based on TerrainAvailability) whether this tile is theoretically available
+	for a unit of the specified type. This doesn't take into account possible unit on this tile.
+	*/
+	bool canUnitMoveOnThisTerrain(Unit::Type unitType);
+
 	/* Similar to isAvailable(Unit::Type unitType), but this one returns true if the tile is occupied
 	by a unit that is moving.
 	*/

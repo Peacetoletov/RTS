@@ -52,20 +52,21 @@ void Unit::update() {
 	updateVariables();
 
 	if (_wantsToMove && !_moving) {
-		Tile* nextTile = chooseNextTile();
-		if (nextTile == nullptr) {
+		//Tile* nextTile = chooseNextTile();
+		intendedNextTile = chooseNextTile();
+		if (intendedNextTile == nullptr) {
 			//If the unit following the vector field reached the tagret, stop the unit.
 			_wantsToMove = false;
 		}
 		else {
-			if (!canMoveToNextTile(nextTile)) {		
+			if (!canMoveToNextTile(intendedNextTile)) {
 				//Desired tile is occupied, unit cannot move.
 				/* If the unit is following a leader and got stuck on a stationary obstacle,
 				now it's time to start following the vector field
 				*/
 				if (_followingLeader) {
 					//This works because I only allow land units to be grouped
-					Unit* nextTileUnit = nextTile->getLandUnitP();
+					Unit* nextTileUnit = intendedNextTile->getLandUnitP();
 					if (nextTileUnit == nullptr) {		//Wall
 						_followingLeader = false;
 					}
@@ -94,7 +95,7 @@ void Unit::update() {
 					chooseNextTile() will return a tile next to the original tile (the one being occupied by another unit). This way,
 					the unit will avoid stationary obstacles.
 					*/
-					Unit* nextTileUnit = nextTile->getLandUnitP();
+					Unit* nextTileUnit = intendedNextTile->getLandUnitP();
 					if (nextTileUnit == nullptr) {		//Test
 						std::cout << "This shouldn't be possible" << std::endl;
 					}
@@ -111,7 +112,9 @@ void Unit::update() {
 				/* TODO
 				Here, I need to add a way to avoid obstacles that weren't there at the creation of the vector field but are there now.
 				*/
-				avoidDynamicObstacle(nextTile);		//Currently commented out because it wouldn't work with group pathfinding
+				if (intendedNextTile->canUnitMoveOnThisTerrain(_type)) {		//This prevents calling the function if this unit intends to go into a wall
+					avoidDynamicObstacle(intendedNextTile);		
+				}
 			}
 			else {
 				//Next tile isn't occupied, unit can start moving.
@@ -124,14 +127,14 @@ void Unit::update() {
 				_shouldTryToAvoidStationaryObstacleCounter = 0;
 
 				//Set distance
-				_distance = _currentTileP->isNeighbourDiagonal(nextTile) ?
+				_distance = _currentTileP->isNeighbourDiagonal(intendedNextTile) ?
 					globals::TILE_DIAGONAL_DISTANCE : globals::TILE_STRAIGHT_DISTANCE;
 
 				//Set pointers to this unit in the current tile and the next tile
-				setPointersToThisUnit(nextTile);
+				setPointersToThisUnit(intendedNextTile);
 
 				//Set the current tile to the tile the unit is moving onto
-				_currentTileP = nextTile;
+				_currentTileP = intendedNextTile;
 
 				//Remove the top element of the corresponding stack
 				if (_groupId == -1) {
@@ -443,36 +446,26 @@ void Unit::avoidDynamicObstacle(Tile* nextTile) {
 	if (blockingUnit == nullptr) {
 		std::cout << "Error in Unit::avoidDynamicObstacle()" << std::endl;
 		return;
+		// THIS HAPPENED!
 	}
 
 	//Check if the blocking stopped and doesn't want to move anymore
 	if (blockingUnit->getWantsToMove()) {
 		/* Blocking unit hasn't finished its path yet, wants to move.
 
-		First, this unit will wait. The blocking unit is either going somewhere a will soon go away and this
-		unit can continue in its way, or wants to go to this tile. If it wants to go to this tile, it will 
-		stop moving soon but will still want to move.
+		Check if the blocking unit intends to go to this tile
 		*/
-		if (!blockingUnit->getMoving()) {
-			//The blocking unit stopped because of an obstacle, but it still doesn't have to be this unit that's blocking it
-			/* I should be able to use the chooseNextTile() function because _wantsToMove is true, _moving is false and
-			a situation where it returns nullptr shouldn't be possible.
 
-			If I'm wrong, this will need a lot more work.
-			*/
-			Tile* blockingUnitNextTile = blockingUnit->chooseNextTile();		
-			if (blockingUnitNextTile == nullptr) {
-				std::cout << "Something went wrong" << std::endl;		//Shit. This code was reached when I made a group of units move.
-				//This happened when I select 3 units in a row and tell them to go somewhere so that they remain in the line --- when they move.
-			}
-			int blockingUnitNextTileId = blockingUnitNextTile->getId();
-			if (blockingUnitNextTileId == _currentTileP->getId()) {
-				std::cout << "Units are blocking each other" << std::endl;
-			}
+		/* TODO
+		Before doing this, figure out why I got an error a few lines above this code
+		*/
+		if (true) {
+
 		}
+
 	}
 	else {
-		/* Blockung unit has stopped, doesn't want to move.
+		/* Blocking unit has stopped, doesn't want to move.
 
 		If this unit is in a group, stationary unit avoidance is already taken care of in the chooseNextTile() function,
 		therefore here I only need to work with units which aren't in a group.

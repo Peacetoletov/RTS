@@ -79,20 +79,30 @@ void Tile::reset() {
 }
 
 bool Tile::isAvailable(Unit::Type unitType) {
+	if (canUnitMoveOnThisTerrain(unitType)) {
+		//Land
+		if (unitType == Unit::Type::LAND && _landUnitP == nullptr) {
+			return true;
+		}
+		//Air
+		if (unitType == Unit::Type::AIR && _airUnitP == nullptr) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Tile::canUnitMoveOnThisTerrain(Unit::Type unitType) {
 	//Land
 	if (unitType == Unit::Type::LAND) {
 		if (_terrainType == TerrainAvailability::ALL) {
-			if (_landUnitP == nullptr) {
-				return true;
-			}
+			return true;
 		}
 	}
 	//Air
 	else {
 		if (_terrainType == TerrainAvailability::ALL || _terrainType == TerrainAvailability::AIR) {
-			if (_airUnitP == nullptr) {
-				return true;
-			}
+			return true;
 		}
 	}
 	return false;
@@ -102,19 +112,10 @@ bool Tile::isAvailableForPathfinding(Unit::Type unitType) {
 	/* Similar to isAvailable(Unit::Type unitType), but this one returns true if the tile is occupied
 	by a unit that is moving.
 	*/
+	/*
 	//Land
 	if (unitType == Unit::Type::LAND) {
 		if (_terrainType == TerrainAvailability::ALL) {
-			/*
-			if (_landUnitP == nullptr) {
-				return true;
-			}
-			else {
-				if (_landUnitP->getMoving()) {
-					return true;
-				}
-			}
-			*/
 			if (_landUnitP == nullptr || _landUnitP->getWantsToMove()) {
 				return true;
 			}
@@ -123,19 +124,21 @@ bool Tile::isAvailableForPathfinding(Unit::Type unitType) {
 	//Air
 	else {
 		if (_terrainType == TerrainAvailability::ALL || _terrainType == TerrainAvailability::AIR) {
-			/*
-			if (_airUnitP == nullptr) {
-				return true;
-			}
-			else {
-				if (_airUnitP->getMoving()) {
-					return true;
-				}
-			}
-			*/
 			if (_airUnitP == nullptr || _airUnitP->getWantsToMove()) {
 				return true;
 			}
+		}
+	}
+	return false;
+	*/
+	if (canUnitMoveOnThisTerrain(unitType)) {
+		//Land
+		if (unitType == Unit::Type::LAND && (_landUnitP == nullptr || _landUnitP->getWantsToMove())) {
+			return true;
+		}
+		//Air
+		if (unitType == Unit::Type::AIR && (_airUnitP == nullptr || _airUnitP->getWantsToMove())) {
+			return true;
 		}
 	}
 	return false;
