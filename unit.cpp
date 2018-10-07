@@ -470,6 +470,7 @@ void Unit::avoidDynamicObstacle() {
 			
 			if (_groupId == -1 && blockingUnit->getGroupId(false) != -1) {
 				/* This unit has a higher priority; the other unit will make room.
+				This is so that I don't have to find a new path.
 				No code here.
 				*/
 			}
@@ -485,7 +486,9 @@ void Unit::avoidDynamicObstacle() {
 					*/
 					Tile* newTile = getAnyAvailableNeighbourTile();		//TODO: This
 					if (newTile != nullptr) {		
-
+						_path.push(_currentTileP);
+						_path.push(newTile);
+						//TODO: This is broken and needs to be fixed.
 					}
 					else {
 						//If there is no available neighbour tile, stop the unit.
@@ -608,8 +611,78 @@ void Unit::avoidDynamicObstacle() {
 }
 
 Tile* Unit::getAnyAvailableNeighbourTile() {
-	//Loop through all neighbour tiles. If any of them is available, return it.
-	//TODO: This
+	/* Go through all neighbour tiles. If any of them is available, return it.
+	Start with straight neighbours, as the distance is shorter.
+	*/
+	int thisTileId = _currentTileP->getId();
+	int neighbourId;
+
+	//Up
+	neighbourId = thisTileId - _mapP->getColumns();
+	if (!wouldCloseTileCrossBorder(neighbourId)) {
+		Tile* neighbour = _mapP->getTilesP()[neighbourId];
+		if (neighbour->isAvailable(_type)) {
+			return neighbour;
+		}
+	}
+	//Left
+	neighbourId = thisTileId - 1;
+	if (!wouldCloseTileCrossBorder(neighbourId)) {
+		Tile* neighbour = _mapP->getTilesP()[neighbourId];
+		if (neighbour->isAvailable(_type)) {
+			return neighbour;
+		}
+	}
+	//Right
+	neighbourId = thisTileId + 1;
+	if (!wouldCloseTileCrossBorder(neighbourId)) {
+		Tile* neighbour = _mapP->getTilesP()[neighbourId];
+		if (neighbour->isAvailable(_type)) {
+			return neighbour;
+		}
+	}
+	//Down
+	neighbourId = thisTileId + _mapP->getColumns();
+	if (!wouldCloseTileCrossBorder(neighbourId)) {
+		Tile* neighbour = _mapP->getTilesP()[neighbourId];
+		if (neighbour->isAvailable(_type)) {
+			return neighbour;
+		}
+	}
+	//Up + left
+	neighbourId = thisTileId - _mapP->getColumns() - 1;
+	if (!wouldCloseTileCrossBorder(neighbourId)) {
+		Tile* neighbour = _mapP->getTilesP()[neighbourId];
+		if (neighbour->isAvailable(_type)) {
+			return neighbour;
+		}
+	}
+	//Up + right
+	neighbourId = thisTileId - _mapP->getColumns() + 1;
+	if (!wouldCloseTileCrossBorder(neighbourId)) {
+		Tile* neighbour = _mapP->getTilesP()[neighbourId];
+		if (neighbour->isAvailable(_type)) {
+			return neighbour;
+		}
+	}
+	//Down + left
+	neighbourId = thisTileId + _mapP->getColumns() - 1;
+	if (!wouldCloseTileCrossBorder(neighbourId)) {
+		Tile* neighbour = _mapP->getTilesP()[neighbourId];
+		if (neighbour->isAvailable(_type)) {
+			return neighbour;
+		}
+	}
+	//Down + right
+	neighbourId = thisTileId + _mapP->getColumns() + 1;
+	if (!wouldCloseTileCrossBorder(neighbourId)) {
+		Tile* neighbour = _mapP->getTilesP()[neighbourId];
+		if (neighbour->isAvailable(_type)) {
+			return neighbour;
+		}
+	}
+	
+	return nullptr;
 }
 
 void Unit::setPointersToThisUnit(Tile* nextTile) {
