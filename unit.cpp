@@ -484,11 +484,18 @@ void Unit::avoidDynamicObstacle() {
 
 					This is done this way so that I don't need to calculate a new path.
 					*/
-					Tile* newTile = getAnyAvailableNeighbourTile();		//TODO: This
+					Tile* newTile = getAnyAvailableNeighbourTile();	
 					if (newTile != nullptr) {		
-						_path.push(_currentTileP);
-						_path.push(newTile);
-						//TODO: This is broken and needs to be fixed.
+						if (!blockingUnit->getCanMakeRoomForOtherUnit()) {
+							//The other unit has the priority; this unit will make room
+							_path.push(_currentTileP);
+							_path.push(newTile);
+							blockingUnit->setCanMakeRoomForOtherUnit(true);		//reset the priority variable
+						}
+						else {
+							//This unit has the priority; the other unit will make room
+							_canMakeRoomForOtherUnit = false;					//set the priority variable
+						}
 					}
 					else {
 						//If there is no available neighbour tile, stop the unit.
@@ -773,6 +780,10 @@ bool Unit::getMoving() {
 	return _moving;
 }
 
+bool Unit::getCanMakeRoomForOtherUnit() {
+	return _canMakeRoomForOtherUnit;
+}
+
 int Unit::getDistance() {
 	return _distance;
 }
@@ -793,20 +804,6 @@ void Unit::setGroupId(int groupId, bool isFromOtherThread) {
 	else {
 		_groupId = groupId;
 	}
-}
-
-void Unit::setWantsToMove(bool wantsToMove, bool isFromOtherThread) {
-	if (isFromOtherThread) {
-		_wantsToMoveNew = wantsToMove;
-		_shouldUpdateWantsToMoveNew = true;
-	}
-	else {
-		_wantsToMove = wantsToMove;
-	}
-}
-
-void Unit::setMoving(bool moving) {
-	_moving = moving;
 }
 
 void Unit::setPath(std::stack<Tile*> path, bool isFromOtherThread) {
@@ -837,6 +834,24 @@ void Unit::setFollowingLeader(bool followingLeader, bool isFromOtherThread) {
 	else {
 		_followingLeader = followingLeader;
 	}
+}
+
+void Unit::setWantsToMove(bool wantsToMove, bool isFromOtherThread) {
+	if (isFromOtherThread) {
+		_wantsToMoveNew = wantsToMove;
+		_shouldUpdateWantsToMoveNew = true;
+	}
+	else {
+		_wantsToMove = wantsToMove;
+	}
+}
+
+void Unit::setMoving(bool moving) {
+	_moving = moving;
+}
+
+void Unit::setCanMakeRoomForOtherUnit(bool isMakingRoomForOtherUnit) {
+	_canMakeRoomForOtherUnit = isMakingRoomForOtherUnit;
 }
 
 void Unit::setDistance(int distance) {

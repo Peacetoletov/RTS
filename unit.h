@@ -31,6 +31,7 @@ public:
 	std::stack<Tile*>* getPathP();
 	bool getWantsToMove();
 	bool getMoving();
+	bool getCanMakeRoomForOtherUnit();
 	int getDistance();
 	bool getHovered();
 	bool getSelected();
@@ -43,6 +44,7 @@ public:
 	void setFollowingLeader(bool followingLeader, bool isFromOtherThread);
 	void setWantsToMove(bool wantsToMove, bool isFromOtherThread);
 	void setMoving(bool moving);
+	void setCanMakeRoomForOtherUnit(bool isMakingRoomForOtherUnit);
 	void setDistance(int distance);
 	void setHovered(bool hovered);
 	void setSelected(bool selected);
@@ -53,7 +55,7 @@ private:
 	Map* _mapP;
 	int _groupId = -1;				//-1 if the unit isn't in any group; 0-99 if it is in one.
 	Type _type;
-	float _speed = 1.25f;					//0.25 for debugging, 1.25 for fast, 2.25 for supersonic
+	float _speed = 0.25f;					//0.25 for debugging, 1.25 for fast, 2.25 for supersonic
 	Tile* _intendedNextTile;					//What tile this unit wants to go to
 	std::stack<Tile*> _path;
 	std::stack<int> _leadersPathRelativeIdChange;
@@ -79,14 +81,11 @@ private:
 	int _shouldTryToAvoidStationaryObstacleCounter;
 	const int _shouldTryToAvoidStationaryObstacleThreshold = 10;		//The amount of frames before the unit tried to avoid the obstacle
 
-	/* This variable tells the unit if it should try to look at the 2 closest tiles in case the parent of the current tile points to
-	a tile that isn't available. If it is true, then at least 1 of the 2 closest tiles is available. This variable is set to true
-	once the counter reaches the threshold, and is set to false when a new tile is chosen or the unit stops moving because all 3
-	closest tiles are occupied.
-
-	Actually, I don't need this extra variable. Instead, I can just check if the counter is equal to the threshold.
+	/* Used in avoidDynamicObstacle(). When 2 units are blocking each other, the first one to reach that code will switch this
+	variable to false and will have the priority, meaning that the other unit is the one to make room for this unit. The other 
+	unit will see that this variable is false and won't try to make take the priority as well, and instead will make room.
 	*/
-	//bool _shouldTryToAvoidObstacleInVectorField;
+	bool _canMakeRoomForOtherUnit = true;
 
 	/* These variables are shared between 2 threads. To avoid overriding one while I use it in a function, I will instead 
 	save the values received from the other thread here. When I need the values in a function, I will update them. The point
