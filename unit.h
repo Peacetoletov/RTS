@@ -31,7 +31,7 @@ public:
 	std::stack<Tile*>* getPathP();
 	bool getWantsToMove();
 	bool getMoving();
-	bool getCanMakeRoomForOtherUnit();
+	bool getHasHigherPriority();
 	int getDistance();
 	bool getHovered();
 	bool getSelected();
@@ -44,7 +44,7 @@ public:
 	void setFollowingLeader(bool followingLeader, bool isFromOtherThread);
 	void setWantsToMove(bool wantsToMove, bool isFromOtherThread);
 	void setMoving(bool moving);
-	void setCanMakeRoomForOtherUnit(bool isMakingRoomForOtherUnit);
+	void setHasHigherPriority(bool isMakingRoomForOtherUnit);
 	void setDistance(int distance);
 	void setHovered(bool hovered);
 	void setSelected(bool selected);
@@ -85,7 +85,14 @@ private:
 	variable to false and will have the priority, meaning that the other unit is the one to make room for this unit. The other 
 	unit will see that this variable is false and won't try to make take the priority as well, and instead will make room.
 	*/
-	bool _canMakeRoomForOtherUnit = true;
+	bool _hasHigherPriority = false;
+
+	/* Used in avoidDynamicObstacle(). If 2 units are blocking each other and one of them is following the vector field, I can't
+	just add 2 additional tiles to the stack that the unit is taking its path tiles from, because a unit that is following the
+	vector field doesn't have any stack of that kind. So when this situation happens, the next call of the function
+	getNextTileIfFollowingVectorField() will return this tile instead of the parent tile.
+	*/
+	Tile* _higherPriorityTileInVectorField;
 
 	/* These variables are shared between 2 threads. To avoid overriding one while I use it in a function, I will instead 
 	save the values received from the other thread here. When I need the values in a function, I will update them. The point

@@ -45,6 +45,11 @@ void Unit::update() {
 	*/
 
 	/* TODO
+	Once the unit avoidance is done, I will refactor a lot of this code. I will create a class called Gps, Wheel, Engine or something like 
+	that and put everything that has something to do with movement and pathfinding in there.
+	*/
+
+	/* TODO
 	Once the unit avoidance is done, I will implement unit rotation and fluent movement (animation).
 	*/
 	
@@ -259,7 +264,11 @@ Tile* Unit::getNextTileIfFollowingLeader() {
 
 Tile* Unit::getNextTileIfFollowingVectorField() {
 	Tile* nextTile = nullptr;
-	if (_shouldTryToAvoidStationaryObstacleCounter != _shouldTryToAvoidStationaryObstacleThreshold) {
+	if (_higherPriorityTileInVectorField != nullptr) {
+		nextTile = _higherPriorityTileInVectorField;
+		_higherPriorityTileInVectorField = nullptr;
+	}
+	else if (_shouldTryToAvoidStationaryObstacleCounter != _shouldTryToAvoidStationaryObstacleThreshold) {
 		//Normal situation
 		nextTile = _currentTileP->getGroupParent(_groupId);		//This can be a nullptr
 		/* nextTile can sometimes be a nullptr.
@@ -460,47 +469,68 @@ void Unit::avoidDynamicObstacle() {
 		Check if the blocking unit intends to go to this tile
 		*/
 		if (blockingUnit->getIntentedNextTile()->getId() == _currentTileP->getId()) {
-			//std::cout << "Units are blocking each other!" << std::endl;
-			/* Priority list (which one of the 2 units will be going to the side to make room for the other one):
+			/* Units are blocking each other
+
+			Rule list (which one of the 2 units will be going to the side to make room for the other one):
 			1. If one unit is not in a group and the other one is, the one in the group will make room. It doesn't matter
 			whether the group unit is following the leader or the vector field.
-			2. If neither unit is in a group, the first unit to reach this code will make room.
-			3. If both units are in a group, the first unit to reach this code will make room.
+			2. If neither unit is in a group, the second unit to reach this code will make room.
+			3. If both units are in a group, the second unit to reach this code will make room.
+
+			Priority variable: when the rule states that the second unit will make room,
+			(therefore the first unit has a higher priority), the first unit will switch
+			its priority variable.
 			*/
 			
 			if (_groupId == -1 && blockingUnit->getGroupId(false) != -1) {
-				/* This unit has a higher priority; the other unit will make room.
-				This is so that I don't have to find a new path.
-				No code here.
+				/* The other unit will make room. This is so that I don't have to find a new path.
+				No code here.		//I know this code is pointless but I find it more readable
+
+				Nevermind I actually need code here.
 				*/
+
+
+				//This unit has the priority; the other unit will make room
+				_hasHigherPriority = true;					//set the priority variable
 			}
 			else {
-				/* The blocking unit has a higher priority or both units have the same priority but this unit
-				reached this code first; this unit will make room.
-				*/
-				if (_groupId == -1) {
-					/* Go to any neighbour tile, wait for the other unit to pass, then get back to this tile
-					and continue in the original direction.
+				/* Go to any neighbour tile, wait for the other unit to pass, then get back to this tile
+				and continue in the original direction.
 
-					This is done this way so that I don't need to calculate a new path.
-					*/
-					Tile* newTile = getAnyAvailableNeighbourTile();	
-					if (newTile != nullptr) {		
-						if (!blockingUnit->getCanMakeRoomForOtherUnit()) {
-							//The other unit has the priority; this unit will make room
+				This is done this way so that I don't need to calculate a new path.
+				*/
+
+				Tile* newTile = getAnyAvailableNeighbourTile();
+				if (newTile != nullptr) {
+					if (blockingUnit->getHasHigherPriority()) {
+						//The other unit has the priority; this unit will make room
+						blockingUnit->setHasHigherPriority(false);		//reset the priority variable
+
+						//Push the additional tiles to the corresponding stack
+						if (_groupId == -1) {
 							_path.push(_currentTileP);
 							_path.push(newTile);
-							blockingUnit->setCanMakeRoomForOtherUnit(true);		//reset the priority variable
 						}
 						else {
-							//This unit has the priority; the other unit will make room
-							_canMakeRoomForOtherUnit = false;					//set the priority variable
+							if (_followingLeader) {
+								int idDifference = newTile->getId() - _currentTileP->getId();
+								_leadersPathRelativeIdChange.push(-idDifference);
+								_leadersPathRelativeIdChange.push(idDifference);
+							}
+							else {
+								_higherPriorityTileInVectorField = newTile;
+							}
 						}
+						
 					}
 					else {
-						//If there is no available neighbour tile, stop the unit.
-						_wantsToMove = false;
+						//This unit has the priority; the other unit will make room
+						_hasHigherPriority = true;					//set the priority variable
 					}
+				}
+				else {
+					//If there is no available neighbour tile, stop the unit.
+					_wantsToMove = false;
 				}
 			}
 		}
@@ -548,76 +578,14 @@ void Unit::avoidDynamicObstacle() {
 			*/
 		}
 	}
-	
-	//WHY THE FEHUE WAS I DOING IT LIKE THIS?! IT MAKES NO SENSE AT ALL
-	/*
-	//Check if the blocking unit hasn't finished its path yet
-	if (!blockingUnit->getPathP()->empty()) {
-		// Check if the blocking unit intends to move to the tile that this unit currently stands on. If both units waited
-		//on each other to make a move, it would result in a deadlock. I need to handle the situation, therefore one unit
-		//will get out of the way, let the other one pass and then go back and continue in the original path.
-
-		//If the blocking unit intends to move to another tile (not this one), then I won't do anything and I will just wait.
-		
-		if (blockingUnit->getPathP()->top()->getId() == _currentTileP->getId()) {
-			//Units are blocking each other
-
-			// Loop through neighbours of this tile until I find one that is available. If I don't find any (extremely unlikely),
-			//stop both units.
-			//
-			Tile* availableTile = nullptr;
-			std::vector<Tile*>* neighbours = _currentTileP->getNeighboursP();
-			for (int i = 0; i < neighbours->size(); i++) {
-				if ((*neighbours)[i]->isAvailable(_type)) {
-					availableTile = (*neighbours)[i];
-				}
-			}
-			if (availableTile == nullptr) {
-				std::cout << "This block of code should happen extremely rarely" << std::endl;
-				//Stop both units
-				_wantsToMove = false;
-				blockingUnit->setWantsToMove(false, false);		
-				//I actually haven't tested this block of code yet because it's hard to simulate this situation.
-			}
-			//Add the current tile to the _path stack, then add the available neighbour tile
-			_path.push(_currentTileP);
-			_path.push(availableTile);
-		}
-	}
-	else {
-		//If the unit that's blocking this unit stopped moving, I need to find a new path.
-		_wantsToMove = false;		//Stop this unit, in case a path cannot be found
-
-		//Check if the target tile is available
-		while (_path.size() != 1) {
-			_path.pop();
-		}
-		Tile* targetTileP = _path.top();
-		if (targetTileP->isAvailableForPathfinding(_type)) {
-			//Set the path parameters
-			
-			std::vector<Unit*> unitGroup;		//group of 1 unit
-			unitGroup.push_back(this);
-			PathParameters* parameters = new PathParameters(targetTileP, unitGroup, -1);		//Deletion is handled in Pathfinder
-			_pathfinderP->pushPathParameters(parameters);
-
-			//Notify the other thread
-			_pathfinderP->getCondP()->notify_one();
-			
-		}
-		
-
-		// POSSIBLE OPTIMIZATION
-		//Right now, if I get blocked by a unit, I recalculate the whole path from the current point to the intended target.
-		//Instead, I could only calculate the path to the nearest available tile on the original path, then add the rest out the
-		//original path to the new path. That way, I would only calculate just enough to get past the obstacle and wouldn't have to
-		//calculate what has been calculated before. But this could be pretty tricky to implement.
-		//
-	}
-	*/
 }
 
 Tile* Unit::getAnyAvailableNeighbourTile() {
+	/* TODO: This could be improved. In the current situation, if 2 units block each other
+	vertically, there is a chance that the unit making room will be forced to make room
+	for a much longer time (many tiles) than is needed (1 tile).
+	*/
+
 	/* Go through all neighbour tiles. If any of them is available, return it.
 	Start with straight neighbours, as the distance is shorter.
 	*/
@@ -780,8 +748,8 @@ bool Unit::getMoving() {
 	return _moving;
 }
 
-bool Unit::getCanMakeRoomForOtherUnit() {
-	return _canMakeRoomForOtherUnit;
+bool Unit::getHasHigherPriority() {
+	return _hasHigherPriority;
 }
 
 int Unit::getDistance() {
@@ -850,8 +818,8 @@ void Unit::setMoving(bool moving) {
 	_moving = moving;
 }
 
-void Unit::setCanMakeRoomForOtherUnit(bool isMakingRoomForOtherUnit) {
-	_canMakeRoomForOtherUnit = isMakingRoomForOtherUnit;
+void Unit::setHasHigherPriority(bool hasHigherPriority) {
+	_hasHigherPriority = hasHigherPriority;
 }
 
 void Unit::setDistance(int distance) {
