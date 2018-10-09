@@ -44,7 +44,7 @@ Level::Level(std::string levelName, int rows, int columns, Graphics* graphicsP, 
 }
 
 Level::~Level() {
-	delete this->_mapP;
+	delete _mapP;
 	//delete this->_pathfinderP;
 	std::cout << "Destryoing level!" << std::endl;
 }

@@ -1,42 +1,36 @@
+#include "engine.h"
 #include "unit.h"
+#include "pathfinder.h"
+#include "map.h"
 #include "tile.h"
 #include "globals.h"
-#include "pathfinder.h"
-#include "pathparameters.h"
-#include "map.h"
-#include "engine.h"
 
 #include <iostream>
 
-Unit::Unit() {}
+Engine::Engine() {}
 
-Unit::Unit(Tile* currentTileP, Unit::Type type, Pathfinder* pathfinderP, Map* mapP) :
-	_currentTileP(currentTileP),
-	_type(type),
+Engine::Engine(Unit* unit, Pathfinder* pathfinderP, Map* mapP) :
+	_unit(unit),
+	_pathfinderP(pathfinderP),
 	_mapP(mapP)
 {
-	_engine = new Engine(this, pathfinderP, mapP);
+
 }
 
-Unit::~Unit() {
-	delete _engine;
-	std::cout << "Destryoing unit!" << std::endl;
-}
-
-void Unit::update() {
+void Engine::update() {
 	/* If the unit wants to move and isn't moving yet, set moving to true (if it's possible) and
 	calculate the distance it needs to travel (diagonal distance is longer).
 	*/
 
 	/* TODO
-	Once the unit avoidance is done, I will refactor a lot of this code. I will create a class called Gps, Wheel, Engine or something like 
+	Once the unit avoidance is done, I will refactor a lot of this code. I will create a class called Gps, Wheel, Engine or something like
 	that and put everything that has something to do with movement and pathfinding in there.
 	*/
 
 	/* TODO
 	Once refactoring, I will implement unit rotation and fluent movement (animation).
 	*/
-	
+
 	/* TODO
 	Test what happens when I create more than 100 vector fields while some units are following one.
 	*/
@@ -59,25 +53,25 @@ void Unit::update() {
 				*/
 				if (_followingLeader) {
 					//This works because I only allow land units to be grouped
-					Unit* nextTileUnit = _intendedNextTile->getLandUnitP();
-					if (nextTileUnit == nullptr) {		//Wall
+					Engine* nextTileUnitEngine = _intendedNextTile->getLandUnitP()->getEngineP();
+					if (nextTileUnitEngine == nullptr) {		//Wall
 						_followingLeader = false;
 					}
-					else if (!nextTileUnit->getWantsToMove() && nextTileUnit->getGroupId(false) != _groupId) {		//Stationary unit that is not from this group
+					else if (!nextTileUnitEngine->getWantsToMove() && nextTileUnitEngine->getGroupId(false) != _groupId) {		//Stationary unit that is not from this group
 						_followingLeader = false;
 					}
-					else if (!nextTileUnit->getWantsToMove()) {
-						/* Sometimes, when the units follow the leader, they might get stuck and they wouldn't form the cluster after 
+					else if (!nextTileUnitEngine->getWantsToMove()) {
+						/* Sometimes, when the units follow the leader, they might get stuck and they wouldn't form the cluster after
 						arriving at the target location, and remain in a long "tail" instead. This here fixes that problem: if this unit
-						is being blocked by a stationary unit from this group, increment a counter. When the counter reaches a certain 
+						is being blocked by a stationary unit from this group, increment a counter. When the counter reaches a certain
 						threshold, stop following the leader.
-						The counter needs to be here because this block of code can happen in normal situations, e. g. when a big, 
+						The counter needs to be here because this block of code can happen in normal situations, e. g. when a big,
 						clustered group of units is ordered to move. When the unit successfuly moves, the counter resets,
 						therefore only the units that are really stuck stop following the leader.
 						*/
 						_shouldStopFollowingLeaderCounter++;
 						if (_shouldStopFollowingLeaderCounter == _shouldStopFollowingLeaderThreshold) {
-							_followingLeader = false;		
+							_followingLeader = false;
 							_shouldStopFollowingLeaderCounter = 0;
 						}
 					}
@@ -88,12 +82,12 @@ void Unit::update() {
 					chooseNextTile() will return a tile next to the original tile (the one being occupied by another unit). This way,
 					the unit will avoid stationary obstacles.
 					*/
-					Unit* nextTileUnit = _intendedNextTile->getLandUnitP();
-					if (nextTileUnit == nullptr) {		//Test
+					Engine* nextTileUnitEngine = _intendedNextTile->getLandUnitP()->getEngineP();
+					if (nextTileUnitEngine == nullptr) {		//Test
 						std::cout << "This shouldn't be possible" << std::endl;
 					}
 
-					if (!nextTileUnit->getWantsToMove()) {
+					if (!nextTileUnitEngine->getWantsToMove()) {
 						_shouldTryToAvoidStationaryObstacleCounter++;
 					}
 				}
@@ -105,7 +99,7 @@ void Unit::update() {
 				/* TODO
 				Here, I need to add a way to avoid obstacles that weren't there at the creation of the vector field but are there now.
 				*/
-				if (_intendedNextTile->canUnitMoveOnThisTerrain(_type)) {		//This prevents calling the function if this unit intends to go into a wall
+				if (_intendedNextTile->canUnitMoveOnThisTerrain(_unit->getType())) {		//This prevents calling the function if this unit intends to go into a wall
 					//This function can change _intendedNextTile
 					avoidDynamicObstacle();
 				}
@@ -121,14 +115,14 @@ void Unit::update() {
 				_shouldTryToAvoidStationaryObstacleCounter = 0;
 
 				//Set distance
-				_distance = _currentTileP->isNeighbourDiagonal(_intendedNextTile) ?
+				_distance = _unit->getCurrentTileP()->isNeighbourDiagonal(_intendedNextTile) ?
 					globals::TILE_DIAGONAL_DISTANCE : globals::TILE_STRAIGHT_DISTANCE;
 
 				//Set pointers to this unit in the current tile and the next tile
 				setPointersToThisUnit(_intendedNextTile);
 
 				//Set the current tile to the tile the unit is moving onto
-				_currentTileP = _intendedNextTile;
+				_unit->setCurrentTileP(_intendedNextTile);
 
 				//Remove the top element of the corresponding stack
 				if (_groupId == -1) {
@@ -152,20 +146,6 @@ void Unit::update() {
 		move();
 	}
 }
-
-Engine* Unit::getEngineP() {
-	return _engine;
-}
-
-Unit::Type Unit::getType() {
-	return _type;
-}
-
-void Unit::setCurrentTileP(Tile* currentTileP) {
-	_currentTileP = currentTileP;
-}
-
-//OLD METHODS BELOW
 
 void Unit::updateVariables() {
 	/* Variables _wantsToMove, _followingLeader, _path, _leadersPathRelativeIdChange and _groupId are shared between 2 threads.
@@ -203,9 +183,9 @@ Tile* Unit::chooseNextTile() {
 	to a tile that was previously occupied by an unmoving unit and therefore the tile isn't
 	in the vector field. Given how rare this is, I think it's fine to just leave it and
 	just accept the fact that the unit will stop on that tile in that situation.
-	
-	The same can happen when the unit is following the vector field and avoids a stationary 
-	unit by going 45 degrees from the next planned tile (this tile can be can be absent in 
+
+	The same can happen when the unit is following the vector field and avoids a stationary
+	unit by going 45 degrees from the next planned tile (this tile can be can be absent in
 	the vector field)
 	*/
 
@@ -226,7 +206,7 @@ Tile* Unit::chooseNextTile() {
 			}
 		}
 	}
-	catch(const char* msg) {
+	catch (const char* msg) {
 		std::cout << msg << std::endl;		//This should never happen
 	}
 	return nextTile;
@@ -308,7 +288,7 @@ bool Unit::wouldFollowingLeaderResultInWrongDirection(Tile* untestedNextTile) {
 	Returns true if the difference between leader's path and vector path is 135 or more degrees.
 	*/
 
-	
+
 	//Some maths stuff. This should always work unless the map is extremely small.
 	int leadersRowChange = _leadersPathRelativeIdChange.top() / (_mapP->getColumns() - 1);
 	int leadersColumnChange = _leadersPathRelativeIdChange.top() - leadersRowChange * _mapP->getColumns();
@@ -370,7 +350,7 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 			tile1id = _mapP->positionToId(currentRow + rowChange, currentColumn + 1);
 			tile2id = _mapP->positionToId(currentRow + rowChange, currentColumn - 1);
 		}
-		
+
 	}
 	else {
 		//Original next tile is diagonal from the current tile
@@ -385,12 +365,12 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 	if (!wouldCloseTileCrossBorder(tile1id)) {
 		Tile* closeTile1 = _mapP->getTilesP()[tile1id];
 		//This condition works because I only allow group pathfinding for land units.
-		if (closeTile1->isAvailableForPathfinding(Unit::Type::LAND)) {	
+		if (closeTile1->isAvailableForPathfinding(Unit::Type::LAND)) {
 			//std::cout << "Close tile 1" << std::endl;
 			return closeTile1;
 		}
 	}
-	
+
 	//closeTile1 would either cross the border or the tile isn't available (it is occupied). I need to check the other tile now.
 	if (!wouldCloseTileCrossBorder(tile2id)) {
 		Tile* closeTile2 = _mapP->getTilesP()[tile2id];
@@ -403,7 +383,7 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 
 	//Neither one of the close tiles fits the requirements. Return nullptr.
 	//std::cout << "No close tile." << std::endl;
-	return nullptr;		
+	return nullptr;
 }
 
 bool Unit::wouldCloseTileCrossBorder(int tileId) {
@@ -470,7 +450,7 @@ void Unit::avoidDynamicObstacle() {
 			(therefore the first unit has a higher priority), the first unit will switch
 			its priority variable.
 			*/
-			
+
 			if (_groupId == -1 && blockingUnit->getGroupId(false) != -1) {
 				/* The other unit will make room. This is so that I don't have to find a new path.
 				No code here.		//I know this code is pointless but I find it more readable
@@ -510,7 +490,7 @@ void Unit::avoidDynamicObstacle() {
 								_higherPriorityTileInVectorField = newTile;
 							}
 						}
-						
+
 					}
 					else {
 						//This unit has the priority; the other unit will make room
@@ -645,7 +625,7 @@ Tile* Unit::getAnyAvailableNeighbourTile() {
 			return neighbour;
 		}
 	}
-	
+
 	return nullptr;
 }
 
@@ -692,14 +672,14 @@ void Unit::move() {
 		}
 		else {
 			if (_followingLeader && _leadersPathRelativeIdChange.empty()) {
-				/* If this unit was following the leader and the leader stopped, it's possible that this unit will still be 
+				/* If this unit was following the leader and the leader stopped, it's possible that this unit will still be
 				far away from the leader. When this happens, the unit will switch to following the vector field until it
 				finally reaches the leader or some other unit that are in the way.
 				*/
 				_followingLeader = false;
 			}
 		}
-		
+
 	}
 }
 
@@ -715,6 +695,10 @@ int Unit::getGroupId(bool isNew) {
 	else {
 		return _groupId;
 	}
+}
+
+Unit::Type Unit::getType() {
+	return _type;
 }
 
 Tile* Unit::getIntentedNextTile() {
