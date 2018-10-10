@@ -7,6 +7,8 @@
 #include "tile.h"
 #include "map.h"
 #include "unit.h"
+#include "engine.h"
+
 #include <algorithm>		//std::sort
 #include <queue>			//std::priority_queue
 #include <stack>			//std::stack
@@ -66,7 +68,7 @@ std::stack<Tile*> Pathfinder::bidirectionalDijkstra(Unit* unit, Tile* target) {
 	std::stack<Tile*> finalPath;
 
 	//Assign groupId of -1 to the unit, since this isn't a group
-	unit->setGroupId(-1, true);
+	unit->getEngineP()->setGroupId(-1, true);
 
 	//Initialize the algorithm - add start and target to analyzed and open tiles, set their G to 0
 	Tile* start = _mapP->getTilesP()[unit->getCurrentTileP()->getId()];
@@ -119,7 +121,7 @@ std::stack<Tile*> Pathfinder::dijkstra(Unit* unit, Tile* target) {
 	std::queue<Tile*> openTiles;
 
 	//Assign groupId of -1 to the unit, since this isn't a group
-	unit->setGroupId(-1, true);
+	unit->getEngineP()->setGroupId(-1, true);
 
 	//Initialize the algorithm - add the start tile to open tiles, set the G to 0
 	Tile* start = unit->getCurrentTileP();
@@ -254,7 +256,7 @@ void Pathfinder::threadStart() {
 		PathParameters* parameters = getFrontPathParameters();
 		std::vector<Unit*>* unitsP = parameters->getUnitsP();
 		for (int i = 0; i < unitsP->size(); i++) {
-			(*unitsP)[i]->setWantsToMove(false, true);
+			(*unitsP)[i]->getEngineP()->setWantsToMove(false, true);
 		}
 
 		if (unitsP->size() == 1) {
@@ -264,8 +266,8 @@ void Pathfinder::threadStart() {
 			std::stack<Tile*> path = dijkstra((*unitsP)[0], parameters->getTargetP());
 
 			if (path.size() != 0) {
-				(*unitsP)[0]->setPath(path, true);
-				(*unitsP)[0]->setWantsToMove(true, true);
+				(*unitsP)[0]->getEngineP()->setPath(path, true);
+				(*unitsP)[0]->getEngineP()->setWantsToMove(true, true);
 			}
 		}
 		else {
@@ -659,7 +661,7 @@ std::stack<Tile*> Pathfinder::dGetPath(bool& pathFound, Tile* start, Tile* targe
 //dijkstraForGroups (dfg)
 void Pathfinder::dfgAssignGroupId(std::vector<Unit*>& units, int groupId) {
 	for (int i = 0; i < units.size(); i++) {
-		units[i]->setGroupId(groupId, true);
+		units[i]->getEngineP()->setGroupId(groupId, true);
 	}
 }
 
@@ -772,7 +774,7 @@ void Pathfinder::dfgAnalyzeTile(Tile* tile, Tile* parent, std::queue<Tile*>& ope
 			Unit* unit = tile->getLandUnitP();
 
 			//I view the unit as a passable terrain if it wants to move (or is moving) or is in the same group
-			if (unit->getWantsToMove() || unit->getGroupId(true) == groupId) {	
+			if (unit->getEngineP()->getWantsToMove() || unit->getEngineP()->getGroupId(true) == groupId) {
 				tile->setG(newG);
 				tile->setGroupParent(parent, groupId);
 				openTiles.push(tile);
@@ -858,19 +860,19 @@ void Pathfinder::dfgSetLeadersPath(std::vector<Unit*>& units, std::stack<int> le
 	for (int i = 0; i < units.size(); i++) {
 		//Skip the unit if the tile hasn't been analyzed (it's impossible to get to the target from that tile)
 		if (units[i]->getCurrentTileP()->getG() != INT_MAX) {			//Must happen before resetting analyzed tiles
-			units[i]->setLeadersPathRelativeIdChange(leadersPathRelativeIdChange, true);
+			units[i]->getEngineP()->setLeadersPathRelativeIdChange(leadersPathRelativeIdChange, true);
 			if (leadersPathRelativeIdChange.empty() || !dfgShouldBeFollowingLeader(leadersPathRelativeIdChange.top(), units[i], groupId)) {
 				/* If the leader's path is empty (leader is on the target destination), other units have no reason to try to
 				follow the leader. It could result in errors because of trying to get values from an empty stack.
 
 				If following the leader's path meant going in the wrong direction, units won't follow the leader.
 				*/
-				units[i]->setFollowingLeader(false, true);
+				units[i]->getEngineP()->setFollowingLeader(false, true);
 			}
 			else {
-				units[i]->setFollowingLeader(true, true);			
+				units[i]->getEngineP()->setFollowingLeader(true, true);
 			}
-			units[i]->setWantsToMove(true, true);
+			units[i]->getEngineP()->setWantsToMove(true, true);
 		}
 	}
 }

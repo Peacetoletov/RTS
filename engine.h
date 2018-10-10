@@ -27,8 +27,6 @@ public:
 	bool getMoving();
 	bool getHasHigherPriority();
 	int getDistance();
-	bool getHovered();
-	bool getSelected();
 
 	//Setters
 	void setGroupId(int groupId, bool isFromOtherThread);
@@ -39,15 +37,13 @@ public:
 	void setMoving(bool moving);
 	void setHasHigherPriority(bool isMakingRoomForOtherUnit);
 	void setDistance(int distance);
-	void setHovered(bool hovered);
-	void setSelected(bool selected);
 
 private:
 	Unit* _unit;
 	Pathfinder* _pathfinderP;
 	Map* _mapP;
 	int _groupId = -1;							//-1 if the unit isn't in any group; 0-99 if it is in one.
-	float _speed = 0.25f;						//0.25 for debugging, 1.25 for fast, 2.25 for supersonic
+	float _speed = 2.25f;						//0.25 for debugging, 1.25 for fast, 2.25 for supersonic
 	Tile* _intendedNextTile;					//What tile this unit wants to go to
 	std::stack<Tile*> _path;
 	std::stack<int> _leadersPathRelativeIdChange;

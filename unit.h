@@ -29,9 +29,13 @@ public:
 	Engine* getEngineP();
 	Tile* getCurrentTileP();
 	Type getType();
+	bool getHovered();
+	bool getSelected();
 
 	//Setters
 	void setCurrentTileP(Tile* currentTileP);
+	void setHovered(bool hovered);
+	void setSelected(bool selected);
 
 private:
 	Engine* _engine;

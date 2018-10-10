@@ -4,6 +4,7 @@
 #include "map.h"
 #include "tile.h"
 #include "globals.h"
+#include "pathparameters.h"
 
 #include <iostream>
 
@@ -53,14 +54,14 @@ void Engine::update() {
 				*/
 				if (_followingLeader) {
 					//This works because I only allow land units to be grouped
-					Engine* nextTileUnitEngine = _intendedNextTile->getLandUnitP()->getEngineP();
-					if (nextTileUnitEngine == nullptr) {		//Wall
+					Unit* nextTileUnit = _intendedNextTile->getLandUnitP();		
+					if (nextTileUnit == nullptr) {		//Wall
 						_followingLeader = false;
 					}
-					else if (!nextTileUnitEngine->getWantsToMove() && nextTileUnitEngine->getGroupId(false) != _groupId) {		//Stationary unit that is not from this group
+					else if (!nextTileUnit->getEngineP()->getWantsToMove() && nextTileUnit->getEngineP()->getGroupId(false) != _groupId) {		//Stationary unit that is not from this group
 						_followingLeader = false;
 					}
-					else if (!nextTileUnitEngine->getWantsToMove()) {
+					else if (!nextTileUnit->getEngineP()->getWantsToMove()) {
 						/* Sometimes, when the units follow the leader, they might get stuck and they wouldn't form the cluster after
 						arriving at the target location, and remain in a long "tail" instead. This here fixes that problem: if this unit
 						is being blocked by a stationary unit from this group, increment a counter. When the counter reaches a certain
@@ -82,12 +83,12 @@ void Engine::update() {
 					chooseNextTile() will return a tile next to the original tile (the one being occupied by another unit). This way,
 					the unit will avoid stationary obstacles.
 					*/
-					Engine* nextTileUnitEngine = _intendedNextTile->getLandUnitP()->getEngineP();
-					if (nextTileUnitEngine == nullptr) {		//Test
+					Unit* nextTileUnit = _intendedNextTile->getLandUnitP();
+					if (nextTileUnit->getEngineP() == nullptr) {		//Test
 						std::cout << "This shouldn't be possible" << std::endl;
 					}
 
-					if (!nextTileUnitEngine->getWantsToMove()) {
+					if (!nextTileUnit->getEngineP()->getWantsToMove()) {
 						_shouldTryToAvoidStationaryObstacleCounter++;
 					}
 				}
@@ -147,7 +148,7 @@ void Engine::update() {
 	}
 }
 
-void Unit::updateVariables() {
+void Engine::updateVariables() {
 	/* Variables _wantsToMove, _followingLeader, _path, _leadersPathRelativeIdChange and _groupId are shared between 2 threads.
 	To prevent possible changes to some of the values while this function is running, I assign the values of the variables
 	into temporary variables called "variable_name + New". At the start of this function, I assign the values from these
@@ -175,7 +176,7 @@ void Unit::updateVariables() {
 	}
 }
 
-Tile* Unit::chooseNextTile() {
+Tile* Engine::chooseNextTile() {
 	/* This function can return a nullptr but that's fine because that only happens
 	when the unit isn't following the leader and is on the target tile of the vector field.
 
@@ -212,12 +213,12 @@ Tile* Unit::chooseNextTile() {
 	return nextTile;
 }
 
-Tile* Unit::getNextTileIfFollowingLeader() {
+Tile* Engine::getNextTileIfFollowingLeader() {
 	Tile* nextTile = nullptr;
 	if (_leadersPathRelativeIdChange.empty()) {
 		throw "Error in unit.cpp! _leadersPathRelativeIdChange is empty.";		//This should never happen
 	}
-	int newTileId = _currentTileP->getId() + _leadersPathRelativeIdChange.top();
+	int newTileId = _unit->getCurrentTileP()->getId() + _leadersPathRelativeIdChange.top();
 	/* Sometimes, this can result in an id that's out of bounds of the array. In that case, the unit will stop
 	following the leader and will return the group parent of the current tile.
 	*/
@@ -240,7 +241,7 @@ Tile* Unit::getNextTileIfFollowingLeader() {
 	return nextTile;
 }
 
-Tile* Unit::getNextTileIfFollowingVectorField() {
+Tile* Engine::getNextTileIfFollowingVectorField() {
 	Tile* nextTile = nullptr;
 	if (_higherPriorityTileInVectorField != nullptr) {
 		nextTile = _higherPriorityTileInVectorField;
@@ -248,7 +249,7 @@ Tile* Unit::getNextTileIfFollowingVectorField() {
 	}
 	else if (_shouldTryToAvoidStationaryObstacleCounter != _shouldTryToAvoidStationaryObstacleThreshold) {
 		//Normal situation
-		nextTile = _currentTileP->getGroupParent(_groupId);		//This can be a nullptr
+		nextTile = _unit->getCurrentTileP()->getGroupParent(_groupId);		//This can be a nullptr
 		/* nextTile can sometimes be a nullptr.
 		This happens when a non-leader unit reaches the target destionation when following the vector field.
 		This can also occasionally happen to the leader because of asynchonization.
@@ -262,7 +263,7 @@ Tile* Unit::getNextTileIfFollowingVectorField() {
 		If the parent of the current tile is the target tile, stop moving. Otherwise, it would create an infinite loop of jumping
 		around the target tile.
 		*/
-		if (_currentTileP->getGroupParent(_groupId)->getGroupParent(_groupId) == nullptr) {
+		if (_unit->getCurrentTileP()->getGroupParent(_groupId)->getGroupParent(_groupId) == nullptr) {
 			//std::cout << "Reached the target tile." << std::endl;
 			_wantsToMove = false;
 			_shouldTryToAvoidStationaryObstacleCounter = 0;
@@ -277,12 +278,12 @@ Tile* Unit::getNextTileIfFollowingVectorField() {
 	return nextTile;
 }
 
-bool Unit::wouldTileBeOutOfBounds(int tileId) {
+bool Engine::wouldTileBeOutOfBounds(int tileId) {
 	int tilesSize = _mapP->getColumns() * _mapP->getRows();
 	return !(tileId > 0 && tileId < tilesSize);
 }
 
-bool Unit::wouldFollowingLeaderResultInWrongDirection(Tile* untestedNextTile) {
+bool Engine::wouldFollowingLeaderResultInWrongDirection(Tile* untestedNextTile) {
 	/* Wrong direction means having a difference of 135 or more degrees:
 	If following the leader's path means going in the wrong direction, units won't follow the leader.
 	Returns true if the difference between leader's path and vector path is 135 or more degrees.
@@ -293,8 +294,16 @@ bool Unit::wouldFollowingLeaderResultInWrongDirection(Tile* untestedNextTile) {
 	int leadersRowChange = _leadersPathRelativeIdChange.top() / (_mapP->getColumns() - 1);
 	int leadersColumnChange = _leadersPathRelativeIdChange.top() - leadersRowChange * _mapP->getColumns();
 
-	int vectorRowChange = _mapP->idToRow(_currentTileP->getGroupParent(_groupId)->getId()) - _mapP->idToRow(_currentTileP->getId());
-	int vectorColumnChange = _mapP->idToColumn(_currentTileP->getGroupParent(_groupId)->getId()) - _mapP->idToColumn(_currentTileP->getId());
+	int vectorRowChange = _mapP->idToRow(_unit->getCurrentTileP()->getGroupParent(_groupId)->getId())
+		- _mapP->idToRow(_unit->getCurrentTileP()->getId());			//THIS RESULTED IN AN ERROR
+	/* Alright. How the fuck did this happen. I was testing it for 5 minutes or so and already got this error 3 times. The problem is
+	with the second part: " _mapP->idToRow(_unit->getCurrentTileP()->getId()) ". I have no idea how _unit->getCurrentTileP() can
+	return nullptr. That's literally impossible.
+
+	TODO: Fix this!
+	*/
+
+	int vectorColumnChange = _mapP->idToColumn(_unit->getCurrentTileP()->getGroupParent(_groupId)->getId()) - _mapP->idToColumn(_unit->getCurrentTileP()->getId());
 
 	if (leadersRowChange == 0 && leadersColumnChange == 0) {
 		std::cout << "This should never happen" << std::endl;
@@ -314,7 +323,7 @@ bool Unit::wouldFollowingLeaderResultInWrongDirection(Tile* untestedNextTile) {
 	return true;
 }
 
-Tile* Unit::tryToFindCloseAvailableTile() {
+Tile* Engine::tryToFindCloseAvailableTile() {
 	/* The tile that is pointed to by current tile's parent is blocked by a non-moving unit. Check the 2 closest tiles and if
 	at least one of them is available, assign nextTile to that tile. Otherwise, stop the unit by assigning nullptr to nextTile.
 	(the update function assigns false to _wantsToMove if nextTile is nullptr)
@@ -328,10 +337,10 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 	U = unit, O = obstacle, C = close tile
 	*/
 
-	int currentRow = _mapP->idToRow(_currentTileP->getId());
-	int currentColumn = _mapP->idToColumn(_currentTileP->getId());
-	int rowChange = _mapP->idToRow(_currentTileP->getGroupParent(_groupId)->getId()) - currentRow;
-	int columnChange = _mapP->idToColumn(_currentTileP->getGroupParent(_groupId)->getId()) - currentColumn;
+	int currentRow = _mapP->idToRow(_unit->getCurrentTileP()->getId());
+	int currentColumn = _mapP->idToColumn(_unit->getCurrentTileP()->getId());
+	int rowChange = _mapP->idToRow(_unit->getCurrentTileP()->getGroupParent(_groupId)->getId()) - currentRow;
+	int columnChange = _mapP->idToColumn(_unit->getCurrentTileP()->getGroupParent(_groupId)->getId()) - currentColumn;
 
 	int tile1id;
 	int tile2id;
@@ -386,11 +395,11 @@ Tile* Unit::tryToFindCloseAvailableTile() {
 	return nullptr;
 }
 
-bool Unit::wouldCloseTileCrossBorder(int tileId) {
+bool Engine::wouldCloseTileCrossBorder(int tileId) {
 	//Check if it leaves array bounds (= crossing on the top or bottom side)
 	if (!wouldTileBeOutOfBounds(tileId)) {
 		//Check if it crosses on the left or right side
-		int columnDiff = abs(_mapP->idToColumn(_currentTileP->getId()) - _mapP->idToColumn(tileId));
+		int columnDiff = abs(_mapP->idToColumn(_unit->getCurrentTileP()->getId()) - _mapP->idToColumn(tileId));
 		if (columnDiff <= 1) {
 			return false;
 		}
@@ -398,10 +407,10 @@ bool Unit::wouldCloseTileCrossBorder(int tileId) {
 	return true;
 }
 
-bool Unit::canMoveToNextTile(Tile* nextTile) {
-	if (nextTile->isAvailable(_type)) {
-		int columnDiff = abs(_mapP->idToColumn(_currentTileP->getId()) - _mapP->idToColumn(nextTile->getId()));
-		int rowDiff = abs(_mapP->idToRow(_currentTileP->getId()) - _mapP->idToRow(nextTile->getId()));
+bool Engine::canMoveToNextTile(Tile* nextTile) {
+	if (nextTile->isAvailable(_unit->getType())) {
+		int columnDiff = abs(_mapP->idToColumn(_unit->getCurrentTileP()->getId()) - _mapP->idToColumn(nextTile->getId()));
+		int rowDiff = abs(_mapP->idToRow(_unit->getCurrentTileP()->getId()) - _mapP->idToRow(nextTile->getId()));
 		if (columnDiff <= 1 && rowDiff <= 1) {
 			return true;
 		}
@@ -410,7 +419,7 @@ bool Unit::canMoveToNextTile(Tile* nextTile) {
 	return false;
 }
 
-void Unit::avoidDynamicObstacle() {
+void Engine::avoidDynamicObstacle() {
 	/* The unit on its way will probably encounter other units. This function handles how the unit reacts when
 	one gets in the way.
 	When 2 units are moving towards each other from opposite directions, they would get stuck.
@@ -418,26 +427,26 @@ void Unit::avoidDynamicObstacle() {
 	*/
 
 	//Select the unit that's in the way
-	Unit* blockingUnit = nullptr;
-	if (_type == Unit::Type::LAND) {
-		blockingUnit = _intendedNextTile->getLandUnitP();
+	Engine* blockingUnitEngine = nullptr;
+	if (_unit->getType() == Unit::Type::LAND) {
+		blockingUnitEngine = _intendedNextTile->getLandUnitP()->getEngineP();
 	}
 	else {
-		blockingUnit = _intendedNextTile->getAirUnitP();
+		blockingUnitEngine = _intendedNextTile->getAirUnitP()->getEngineP();
 	}
 
-	if (blockingUnit == nullptr) {
+	if (blockingUnitEngine == nullptr) {
 		std::cout << "Error in Unit::avoidDynamicObstacle()" << std::endl;
 		return;
 	}
 
 	//Check if the blocking stopped and doesn't want to move anymore
-	if (blockingUnit->getWantsToMove()) {
+	if (blockingUnitEngine->getWantsToMove()) {
 		/* Blocking unit hasn't finished its path yet, wants to move.
 
 		Check if the blocking unit intends to go to this tile
 		*/
-		if (blockingUnit->getIntentedNextTile()->getId() == _currentTileP->getId()) {
+		if (blockingUnitEngine->getIntentedNextTile()->getId() == _unit->getCurrentTileP()->getId()) {
 			/* Units are blocking each other
 
 			Rule list (which one of the 2 units will be going to the side to make room for the other one):
@@ -451,7 +460,7 @@ void Unit::avoidDynamicObstacle() {
 			its priority variable.
 			*/
 
-			if (_groupId == -1 && blockingUnit->getGroupId(false) != -1) {
+			if (_groupId == -1 && blockingUnitEngine->getGroupId(false) != -1) {
 				/* The other unit will make room. This is so that I don't have to find a new path.
 				No code here.		//I know this code is pointless but I find it more readable
 
@@ -471,18 +480,18 @@ void Unit::avoidDynamicObstacle() {
 
 				Tile* newTile = getAnyAvailableNeighbourTile();
 				if (newTile != nullptr) {
-					if (blockingUnit->getHasHigherPriority()) {
+					if (blockingUnitEngine->getHasHigherPriority()) {
 						//The other unit has the priority; this unit will make room
-						blockingUnit->setHasHigherPriority(false);		//reset the priority variable
+						blockingUnitEngine->setHasHigherPriority(false);		//reset the priority variable
 
 						//Push the additional tiles to the corresponding stack
 						if (_groupId == -1) {
-							_path.push(_currentTileP);
+							_path.push(_unit->getCurrentTileP());
 							_path.push(newTile);
 						}
 						else {
 							if (_followingLeader) {
-								int idDifference = newTile->getId() - _currentTileP->getId();
+								int idDifference = newTile->getId() - _unit->getCurrentTileP()->getId();
 								_leadersPathRelativeIdChange.push(-idDifference);
 								_leadersPathRelativeIdChange.push(idDifference);
 							}
@@ -526,10 +535,10 @@ void Unit::avoidDynamicObstacle() {
 			Instead if checking whether the target tile is available and completely stopping the unit if it isn't, I should always
 			find a path. If the target tile isn't available, then the new target will be the closest tile to it.
 			*/
-			if (targetTileP->isAvailableForPathfinding(_type)) {
+			if (targetTileP->isAvailableForPathfinding(_unit->getType())) {
 				//Set the path parameters
 				std::vector<Unit*> unitGroup;		//group of 1 unit
-				unitGroup.push_back(this);
+				unitGroup.push_back(_unit);
 				PathParameters* parameters = new PathParameters(targetTileP, unitGroup, -1);		//Deletion is handled in Pathfinder
 				_pathfinderP->pushPathParameters(parameters);
 
@@ -549,7 +558,7 @@ void Unit::avoidDynamicObstacle() {
 	}
 }
 
-Tile* Unit::getAnyAvailableNeighbourTile() {
+Tile* Engine::getAnyAvailableNeighbourTile() {
 	/* TODO: This could be improved. In the current situation, if 2 units block each other
 	vertically, there is a chance that the unit making room will be forced to make room
 	for a much longer time (many tiles) than is needed (1 tile).
@@ -558,14 +567,14 @@ Tile* Unit::getAnyAvailableNeighbourTile() {
 	/* Go through all neighbour tiles. If any of them is available, return it.
 	Start with straight neighbours, as the distance is shorter.
 	*/
-	int thisTileId = _currentTileP->getId();
+	int thisTileId = _unit->getCurrentTileP()->getId();
 	int neighbourId;
 
 	//Up
 	neighbourId = thisTileId - _mapP->getColumns();
 	if (!wouldCloseTileCrossBorder(neighbourId)) {
 		Tile* neighbour = _mapP->getTilesP()[neighbourId];
-		if (neighbour->isAvailable(_type)) {
+		if (neighbour->isAvailable(_unit->getType())) {
 			return neighbour;
 		}
 	}
@@ -573,7 +582,7 @@ Tile* Unit::getAnyAvailableNeighbourTile() {
 	neighbourId = thisTileId - 1;
 	if (!wouldCloseTileCrossBorder(neighbourId)) {
 		Tile* neighbour = _mapP->getTilesP()[neighbourId];
-		if (neighbour->isAvailable(_type)) {
+		if (neighbour->isAvailable(_unit->getType())) {
 			return neighbour;
 		}
 	}
@@ -581,7 +590,7 @@ Tile* Unit::getAnyAvailableNeighbourTile() {
 	neighbourId = thisTileId + 1;
 	if (!wouldCloseTileCrossBorder(neighbourId)) {
 		Tile* neighbour = _mapP->getTilesP()[neighbourId];
-		if (neighbour->isAvailable(_type)) {
+		if (neighbour->isAvailable(_unit->getType())) {
 			return neighbour;
 		}
 	}
@@ -589,7 +598,7 @@ Tile* Unit::getAnyAvailableNeighbourTile() {
 	neighbourId = thisTileId + _mapP->getColumns();
 	if (!wouldCloseTileCrossBorder(neighbourId)) {
 		Tile* neighbour = _mapP->getTilesP()[neighbourId];
-		if (neighbour->isAvailable(_type)) {
+		if (neighbour->isAvailable(_unit->getType())) {
 			return neighbour;
 		}
 	}
@@ -597,7 +606,7 @@ Tile* Unit::getAnyAvailableNeighbourTile() {
 	neighbourId = thisTileId - _mapP->getColumns() - 1;
 	if (!wouldCloseTileCrossBorder(neighbourId)) {
 		Tile* neighbour = _mapP->getTilesP()[neighbourId];
-		if (neighbour->isAvailable(_type)) {
+		if (neighbour->isAvailable(_unit->getType())) {
 			return neighbour;
 		}
 	}
@@ -605,7 +614,7 @@ Tile* Unit::getAnyAvailableNeighbourTile() {
 	neighbourId = thisTileId - _mapP->getColumns() + 1;
 	if (!wouldCloseTileCrossBorder(neighbourId)) {
 		Tile* neighbour = _mapP->getTilesP()[neighbourId];
-		if (neighbour->isAvailable(_type)) {
+		if (neighbour->isAvailable(_unit->getType())) {
 			return neighbour;
 		}
 	}
@@ -613,7 +622,7 @@ Tile* Unit::getAnyAvailableNeighbourTile() {
 	neighbourId = thisTileId + _mapP->getColumns() - 1;
 	if (!wouldCloseTileCrossBorder(neighbourId)) {
 		Tile* neighbour = _mapP->getTilesP()[neighbourId];
-		if (neighbour->isAvailable(_type)) {
+		if (neighbour->isAvailable(_unit->getType())) {
 			return neighbour;
 		}
 	}
@@ -621,7 +630,7 @@ Tile* Unit::getAnyAvailableNeighbourTile() {
 	neighbourId = thisTileId + _mapP->getColumns() + 1;
 	if (!wouldCloseTileCrossBorder(neighbourId)) {
 		Tile* neighbour = _mapP->getTilesP()[neighbourId];
-		if (neighbour->isAvailable(_type)) {
+		if (neighbour->isAvailable(_unit->getType())) {
 			return neighbour;
 		}
 	}
@@ -629,25 +638,25 @@ Tile* Unit::getAnyAvailableNeighbourTile() {
 	return nullptr;
 }
 
-void Unit::setPointersToThisUnit(Tile* nextTile) {
+void Engine::setPointersToThisUnit(Tile* nextTile) {
 	//This tile
-	if (_type == Unit::Type::LAND) {
-		_currentTileP->setLandUnitP(nullptr);
+	if (_unit->getType() == Unit::Type::LAND) {
+		_unit->getCurrentTileP()->setLandUnitP(nullptr);
 	}
 	else {
-		_currentTileP->setAirUnitP(nullptr);
+		_unit->getCurrentTileP()->setAirUnitP(nullptr);
 	}
 
 	//Next tile
-	if (_type == Unit::Type::LAND) {
-		nextTile->setLandUnitP(this);
+	if (_unit->getType() == Unit::Type::LAND) {
+		nextTile->setLandUnitP(_unit);
 	}
 	else {
-		nextTile->setAirUnitP(this);
+		nextTile->setAirUnitP(_unit);
 	}
 }
 
-void Unit::move() {
+void Engine::move() {
 	/* If the unit is moving, increment its internal clock (currentDistance) - how close it is to reaching the
 	total distance. Once it reaches the total distance, it is now fully on the new tile and can move to another one.
 	*/
@@ -683,11 +692,7 @@ void Unit::move() {
 	}
 }
 
-Tile* Unit::getCurrentTileP() {
-	return _currentTileP;
-}
-
-int Unit::getGroupId(bool isNew) {
+int Engine::getGroupId(bool isNew) {
 	//Use isNew = false for standard calls of this function
 	if (isNew) {
 		return _groupIdNew;
@@ -697,43 +702,31 @@ int Unit::getGroupId(bool isNew) {
 	}
 }
 
-Unit::Type Unit::getType() {
-	return _type;
-}
-
-Tile* Unit::getIntentedNextTile() {
+Tile* Engine::getIntentedNextTile() {
 	return _intendedNextTile;
 }
 
-std::stack<Tile*>* Unit::getPathP() {
+std::stack<Tile*>* Engine::getPathP() {
 	return &_path;
 }
 
-bool Unit::getWantsToMove() {
+bool Engine::getWantsToMove() {
 	return _wantsToMove;
 }
 
-bool Unit::getMoving() {
+bool Engine::getMoving() {
 	return _moving;
 }
 
-bool Unit::getHasHigherPriority() {
+bool Engine::getHasHigherPriority() {
 	return _hasHigherPriority;
 }
 
-int Unit::getDistance() {
+int Engine::getDistance() {
 	return _distance;
 }
 
-bool Unit::getHovered() {
-	return _hovered;
-}
-
-bool Unit::getSelected() {
-	return _selected;
-}
-
-void Unit::setGroupId(int groupId, bool isFromOtherThread) {
+void Engine::setGroupId(int groupId, bool isFromOtherThread) {
 	if (isFromOtherThread) {
 		_groupIdNew = groupId;
 		_shouldUpdateGroupIdNew = true;
@@ -743,7 +736,7 @@ void Unit::setGroupId(int groupId, bool isFromOtherThread) {
 	}
 }
 
-void Unit::setPath(std::stack<Tile*> path, bool isFromOtherThread) {
+void Engine::setPath(std::stack<Tile*> path, bool isFromOtherThread) {
 	if (isFromOtherThread) {
 		_pathNew = path;
 		_shouldUpdatePath = true;
@@ -753,7 +746,7 @@ void Unit::setPath(std::stack<Tile*> path, bool isFromOtherThread) {
 	}
 }
 
-void Unit::setLeadersPathRelativeIdChange(std::stack<int> path, bool isFromOtherThread) {
+void Engine::setLeadersPathRelativeIdChange(std::stack<int> path, bool isFromOtherThread) {
 	if (isFromOtherThread) {
 		_leadersPathRelativeIdChangeNew = path;
 		_shouldUpdateLeadersPathRelativeIdChange = true;
@@ -763,7 +756,7 @@ void Unit::setLeadersPathRelativeIdChange(std::stack<int> path, bool isFromOther
 	}
 }
 
-void Unit::setFollowingLeader(bool followingLeader, bool isFromOtherThread) {
+void Engine::setFollowingLeader(bool followingLeader, bool isFromOtherThread) {
 	if (isFromOtherThread) {
 		_followingLeaderNew = followingLeader;
 		_shouldUpdateFollowingLeaderNew = true;
@@ -773,7 +766,7 @@ void Unit::setFollowingLeader(bool followingLeader, bool isFromOtherThread) {
 	}
 }
 
-void Unit::setWantsToMove(bool wantsToMove, bool isFromOtherThread) {
+void Engine::setWantsToMove(bool wantsToMove, bool isFromOtherThread) {
 	if (isFromOtherThread) {
 		_wantsToMoveNew = wantsToMove;
 		_shouldUpdateWantsToMoveNew = true;
@@ -783,22 +776,14 @@ void Unit::setWantsToMove(bool wantsToMove, bool isFromOtherThread) {
 	}
 }
 
-void Unit::setMoving(bool moving) {
+void Engine::setMoving(bool moving) {
 	_moving = moving;
 }
 
-void Unit::setHasHigherPriority(bool hasHigherPriority) {
+void Engine::setHasHigherPriority(bool hasHigherPriority) {
 	_hasHigherPriority = hasHigherPriority;
 }
 
-void Unit::setDistance(int distance) {
+void Engine::setDistance(int distance) {
 	_distance = distance;
-}
-
-void Unit::setHovered(bool hovered) {
-	_hovered = hovered;
-}
-
-void Unit::setSelected(bool selected) {
-	_selected = selected;
 }

@@ -1,8 +1,8 @@
 #include "tile.h"
+#include "map.h"		
+#include "engine.h"
 
 #include <algorithm>		//std::min, std::max
-#include "map.h"		
-
 #include <iostream>
 
 Tile::Tile() {}
@@ -133,11 +133,11 @@ bool Tile::isAvailableForPathfinding(Unit::Type unitType) {
 	*/
 	if (canUnitMoveOnThisTerrain(unitType)) {
 		//Land
-		if (unitType == Unit::Type::LAND && (_landUnitP == nullptr || _landUnitP->getWantsToMove())) {
+		if (unitType == Unit::Type::LAND && (_landUnitP == nullptr || _landUnitP->getEngineP()->getWantsToMove())) {
 			return true;
 		}
 		//Air
-		if (unitType == Unit::Type::AIR && (_airUnitP == nullptr || _airUnitP->getWantsToMove())) {
+		if (unitType == Unit::Type::AIR && (_airUnitP == nullptr || _airUnitP->getEngineP()->getWantsToMove())) {
 			return true;
 		}
 	}
