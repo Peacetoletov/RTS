@@ -29,6 +29,14 @@ void Engine::update() {
 	*/
 
 	/* TODO
+	Fix a runtime error
+	*/
+
+	/* TODO
+	Fix a bug that causes units to get into a loop after some time of moving them
+	*/
+
+	/* TODO
 	Once refactoring, I will implement unit rotation and fluent movement (animation).
 	*/
 
@@ -294,11 +302,19 @@ bool Engine::wouldFollowingLeaderResultInWrongDirection(Tile* untestedNextTile) 
 	int leadersRowChange = _leadersPathRelativeIdChange.top() / (_mapP->getColumns() - 1);
 	int leadersColumnChange = _leadersPathRelativeIdChange.top() - leadersRowChange * _mapP->getColumns();
 
+	Tile* test = _unit->getCurrentTileP();
+	Tile* test2 = _unit->getCurrentTileP()->getGroupParent(_groupId);
+
 	int vectorRowChange = _mapP->idToRow(_unit->getCurrentTileP()->getGroupParent(_groupId)->getId())
 		- _mapP->idToRow(_unit->getCurrentTileP()->getId());			//THIS RESULTED IN AN ERROR
 	/* Alright. How the fuck did this happen. I was testing it for 5 minutes or so and already got this error 3 times. The problem is
 	with the second part: " _mapP->idToRow(_unit->getCurrentTileP()->getId()) ". I have no idea how _unit->getCurrentTileP() can
 	return nullptr. That's literally impossible.
+
+	Wait, what. I found out that _unit->getCurrentTileP() wasn't nullptr. Now really, what the actual fuck?!
+
+	Ok, visual studio is a piece is shit. Why the fuck would it tell me that the error is on line 309 when it really is on line 308? Like wtf?
+
 
 	TODO: Fix this!
 	*/

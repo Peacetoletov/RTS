@@ -49,6 +49,9 @@ bool Unit::getSelected() {
 }
 
 void Unit::setCurrentTileP(Tile* currentTileP) {
+	if (currentTileP == nullptr) {
+		std::cout << "wtf" << std::endl;
+	}
 	_currentTileP = currentTileP;
 }
 
