@@ -24,20 +24,11 @@ void Engine::update() {
 	*/
 
 	/* TODO
-	Once the unit avoidance is done, I will refactor a lot of this code. I will create a class called Gps, Wheel, Engine or something like
-	that and put everything that has something to do with movement and pathfinding in there.
-	*/
-
-	/* TODO
-	Fix a runtime error
-	*/
-
-	/* TODO
 	Fix a bug that causes units to get into a loop after some time of moving them
 	*/
 
 	/* TODO
-	Once refactoring, I will implement unit rotation and fluent movement (animation).
+	Once bugfixing is done, I will implement unit rotation and fluent movement (animation).
 	*/
 
 	/* TODO
@@ -241,9 +232,23 @@ Tile* Engine::getNextTileIfFollowingLeader() {
 	}
 
 	//Stop following the leader if it would mean going in the wrong direction.
-	if (_followingLeader && wouldFollowingLeaderResultInWrongDirection(nextTile)) {
-		_followingLeader = false;
-		nextTile = getNextTileIfFollowingVectorField();
+	try {
+		if (_followingLeader && wouldFollowingLeaderResultInWrongDirection(nextTile)) {
+			_followingLeader = false;
+			nextTile = getNextTileIfFollowingVectorField();
+		}
+	}
+	catch (const int exceptionCode) {
+		if (exceptionCode == 1) {
+			/* This can happen in the wouldFollowingLeaderResultInWrongDirection() function if the group
+			parent of the current tile is nullptr.
+			*/
+			_followingLeader = false;
+			nextTile = nullptr;				//unnecessary but it is here for increased readability
+		}
+		else {
+			std::cout << "Unknown exception code!" << std::endl;		//this should never happen
+		}
 	}
 
 	return nextTile;
@@ -259,7 +264,9 @@ Tile* Engine::getNextTileIfFollowingVectorField() {
 		//Normal situation
 		nextTile = _unit->getCurrentTileP()->getGroupParent(_groupId);		//This can be a nullptr
 		/* nextTile can sometimes be a nullptr.
-		This happens when a non-leader unit reaches the target destionation when following the vector field.
+		This happens when a non-leader unit reaches the target destionation when following the vector field
+		or when the units reach a destination that was occupied by other units in the time of the creation
+		of the vector field.
 		This can also occasionally happen to the leader because of asynchonization.
 		*/
 	}
@@ -297,28 +304,15 @@ bool Engine::wouldFollowingLeaderResultInWrongDirection(Tile* untestedNextTile) 
 	Returns true if the difference between leader's path and vector path is 135 or more degrees.
 	*/
 
+	if (_unit->getCurrentTileP()->getGroupParent(_groupId) == nullptr) {
+		throw 1;
+	}
 
 	//Some maths stuff. This should always work unless the map is extremely small.
 	int leadersRowChange = _leadersPathRelativeIdChange.top() / (_mapP->getColumns() - 1);
 	int leadersColumnChange = _leadersPathRelativeIdChange.top() - leadersRowChange * _mapP->getColumns();
 
-	Tile* test = _unit->getCurrentTileP();
-	Tile* test2 = _unit->getCurrentTileP()->getGroupParent(_groupId);
-
-	int vectorRowChange = _mapP->idToRow(_unit->getCurrentTileP()->getGroupParent(_groupId)->getId())
-		- _mapP->idToRow(_unit->getCurrentTileP()->getId());			//THIS RESULTED IN AN ERROR
-	/* Alright. How the fuck did this happen. I was testing it for 5 minutes or so and already got this error 3 times. The problem is
-	with the second part: " _mapP->idToRow(_unit->getCurrentTileP()->getId()) ". I have no idea how _unit->getCurrentTileP() can
-	return nullptr. That's literally impossible.
-
-	Wait, what. I found out that _unit->getCurrentTileP() wasn't nullptr. Now really, what the actual fuck?!
-
-	Ok, visual studio is a piece is shit. Why the fuck would it tell me that the error is on line 309 when it really is on line 308? Like wtf?
-
-
-	TODO: Fix this!
-	*/
-
+	int vectorRowChange = _mapP->idToRow(_unit->getCurrentTileP()->getGroupParent(_groupId)->getId()) - _mapP->idToRow(_unit->getCurrentTileP()->getId());			
 	int vectorColumnChange = _mapP->idToColumn(_unit->getCurrentTileP()->getGroupParent(_groupId)->getId()) - _mapP->idToColumn(_unit->getCurrentTileP()->getId());
 
 	if (leadersRowChange == 0 && leadersColumnChange == 0) {
